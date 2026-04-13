@@ -25,3 +25,65 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: cs.CV
+      description: 计算机视觉相关的持续学习（Continual Learning）研究文章
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: continual learning
+          keyword_cn: 持续学习
+          query: continual learning in computer vision
+        - keyword: incremental learning
+          keyword_cn: 增量学习
+          query: class-incremental or task-incremental learning methods
+        - keyword: catastrophic forgetting
+          keyword_cn: 灾难性遗忘
+          query: mitigating catastrophic forgetting in neural networks
+        - keyword: class-incremental learning
+          keyword_cn: 类增量学习
+          query: class-incremental learning for image classification
+        - keyword: online learning
+          keyword_cn: 在线学习
+          query: online continual learning for streaming data
+        - keyword: task-incremental learning
+          keyword_cn: 任务增量学习
+          query: task-incremental learning strategies
+      intent_queries:
+        - query: state of the art methods for continual learning in computer vision
+          query_cn: 计算机视觉中持续学习的最先进方法
+          enabled: true
+          source: manual
+          note: ''
+        - query: survey of incremental learning techniques for image recognition
+          query_cn: 图像识别增量学习技术综述
+          enabled: true
+          source: manual
+          note: ''
+        - query: addressing catastrophic forgetting in deep vision models
+          query_cn: 解决深度视觉模型中的灾难性遗忘问题
+          enabled: true
+          source: manual
+          note: ''
+        - query: benchmarking continual learning algorithms on vision datasets
+          query_cn: 在视觉数据集上评估持续学习算法
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-04-13T14:58:10.438Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
