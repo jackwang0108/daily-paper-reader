@@ -1,0 +1,78 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-001.webp",
+      "caption": "Figure 1. “Tail performance degradation” from the loss landscape view. Starting from a randomly initialized point θ(t0) of LT model, (a) Training only on tail classes converges to θ(t1) in a flat region, while (b) standard training on the long-tailed dataset converges to θ(t2) in a sharp region. The optimization trajectory settles in θ(t2), which causes tail performance degradation by diverging from the tail convergence point θ(t1). In contrast, our optimization (red line) steers the model towards a solution θ∗ that remains closer to the tail-class minimum θ(t1) and resides in a flatter region (θ1 and θ2 on the axes denote projection directions for 2D visualization [23]).",
+      "page": 1,
+      "index": 1,
+      "width": 496,
+      "height": 279
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-002.webp",
+      "caption": "Table 1. Results on CIFAR100-LT [4] and CIFAR10-LT datasets [4]. The imbalance ratio r is set to 100, 50 and 10. Additionally, we present the results for different groups (“Many”, “Med.” and “Few”) in CIFAR100-LT with r = 100. † denotes methods that utilize Large Language Models.",
+      "page": 6,
+      "index": 2,
+      "width": 1029,
+      "height": 617
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-003.webp",
+      "caption": "Table 3. Top-1 accuracy of ResNeXt-50 on ImageNet-LT [37].",
+      "page": 7,
+      "index": 3,
+      "width": 483,
+      "height": 388
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-004.webp",
+      "caption": "Table 2. Top-1 accuracy of ResNet-50 on ImageNet-LT [37] and iNaturalist 2018 [53]. † denotes methods that utilize Large Language Models.",
+      "page": 7,
+      "index": 4,
+      "width": 498,
+      "height": 450
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-005.webp",
+      "caption": "Figure 9. Eigenvalue density distributions for head and tail layers, arranged by CE (the baseline method with the naive Cross Entropy loss), SAM [10], and our method.",
+      "page": 14,
+      "index": 5,
+      "width": 1036,
+      "height": 488
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-006.webp",
+      "caption": "Figure 2. (a) Standard training results in a sharp loss landscape for tail classes, where the corresponding feature quality peaks and then declines. (b) In contrast, our method flattens the landscape and preserves high feature quality for both head and tail classes.",
+      "page": 3,
+      "index": 6,
+      "width": 496,
+      "height": 450
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-007.webp",
+      "caption": "Figure 8. The impact of the perturbation scale.",
+      "page": 13,
+      "index": 7,
+      "width": 398,
+      "height": 313
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-008.webp",
+      "caption": "Figure 6. Gradient imbalance in long-tail learning. The bars denote the mean similarity between class-level and batch-level gradients in each batch. This experiment compares our framework against the Cross-Entropy (CE) baseline on the CIFAR10-LT dataset [4]. We show the result of the top two head classes and the last two tail classes.",
+      "page": 8,
+      "index": 8,
+      "width": 496,
+      "height": 300
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21217v1/fig-009.webp",
+      "caption": "Figure 3. Our framework consists of two key components: (a) The Grouped Sharpness Aware (GSA) module, which minimizes group-specific sharpness to find flat minima. (b) The Grouped Knowledge Preservation (GKP) module, which prevents tail performance degradation of other groups’ optimal parameters.",
+      "page": 4,
+      "index": 9,
+      "width": 882,
+      "height": 400
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-001.webp",
+      "caption": "Table 2: MIR, LwF, and HAT Results on CLINC150 Dataset",
+      "page": 11,
+      "index": 1,
+      "width": 1008,
+      "height": 401
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-002.webp",
+      "caption": "Table 4: MIR+LwF+HAT Results on CLINC150 Dataset",
+      "page": 15,
+      "index": 2,
+      "width": 414,
+      "height": 409
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-003.webp",
+      "caption": "Figure 10: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with LwF+HAT across all architectures.",
+      "page": 15,
+      "index": 3,
+      "width": 977,
+      "height": 479
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-004.webp",
+      "caption": "Figure 4: Avarage Accuracy change over tasks for Naive Sequential training for each architecture.",
+      "page": 10,
+      "index": 4,
+      "width": 977,
+      "height": 325
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-005.webp",
+      "caption": "Table 1: Baseline Results on CLINC150 Dataset",
+      "page": 10,
+      "index": 5,
+      "width": 848,
+      "height": 196
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-006.webp",
+      "caption": "Figure 8: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+LWF across all architectures.",
+      "page": 14,
+      "index": 6,
+      "width": 977,
+      "height": 477
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-007.webp",
+      "caption": "Figure 9: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+HAT across all architectures.",
+      "page": 14,
+      "index": 7,
+      "width": 977,
+      "height": 479
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-008.webp",
+      "caption": "Figure 1: Utterance Length Distribution in CLINC150 Dataset",
+      "page": 3,
+      "index": 8,
+      "width": 896,
+      "height": 521
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-009.webp",
+      "caption": "Table 3: MIR, LwF, and HAT Results on CLINC150 Dataset",
+      "page": 13,
+      "index": 9,
+      "width": 1008,
+      "height": 401
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-010.webp",
+      "caption": "Figure 2: 20 Most Frequent Words in CLINC150 Dataset",
+      "page": 4,
+      "index": 10,
+      "width": 902,
+      "height": 452
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-011.webp",
+      "caption": "Figure 7: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with HAT across all architectures.",
+      "page": 12,
+      "index": 11,
+      "width": 977,
+      "height": 485
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-012.webp",
+      "caption": "Figure 3: Schematic diagram of ANN, GRU, and Transformer encoder",
+      "page": 20,
+      "index": 12,
+      "width": 948,
+      "height": 295
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-013.webp",
+      "caption": "Table 5: Best continual learning configuration per architecture on CLINC150.",
+      "page": 16,
+      "index": 13,
+      "width": 810,
+      "height": 202
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18641v1/fig-014.webp",
+      "caption": "Figure 11: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+LwF+HAT across all architectures.",
+      "page": 16,
+      "index": 14,
+      "width": 977,
+      "height": 473
+    }
+  ]
+}

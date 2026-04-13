@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-001.webp",
+      "caption": "Fig. 7: Mean accuracy versus total retraining time on the Raspberry Pi 4 prototype. Each point is annotated with efficiency E , defined as mean accuracy per retraining time.",
+      "page": 11,
+      "index": 1,
+      "width": 529,
+      "height": 381
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-002.webp",
+      "caption": "Fig. 1: Illustration of synchronous and asynchronous data drift.",
+      "page": 2,
+      "index": 2,
+      "width": 529,
+      "height": 433
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-003.webp",
+      "caption": "Fig. 4: The integrated pipeline of DriftGuard. At each time step t, the server collects the set of observations Ot = {otc} via inference from all devices. Based on Ot, the server performs clustering and generates the retraining configuration πt. The pipeline dynamically triggers either global retraining of shared parameters or group retraining of local parameters in specific groups.",
+      "page": 7,
+      "index": 3,
+      "width": 1076,
+      "height": 485
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-004.webp",
+      "caption": "Fig. 5: Mean accuracy (Ā) over time steps across datasets and models, with curves smoothed using a Gaussian filter (σ = 1.5). The dashed grey line denotes the reference threshold, defined as the median accuracy across all methods and time steps. The shaded region indicates the portion below the reference threshold.",
+      "page": 10,
+      "index": 4,
+      "width": 1076,
+      "height": 442
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-005.webp",
+      "caption": "Fig. 6: Cumulative retraining cost (TC) over time steps. Markers denote different types of retraining events.",
+      "page": 10,
+      "index": 5,
+      "width": 1076,
+      "height": 434
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-006.webp",
+      "caption": "Fig. 2: The three steps in the FL retraining framework under asynchronous data drift. Step 1: At each time step t, devices perform local inference and report observations to the server. Step 2: The server determines the retraining configuration πt = (Trig, S, θ), which specifies whether to retrain (Trig), which devices participate (S), and which parameters to update (θ). Step 3: If retraining is triggered, the selected devices perform FL retraining on the specified parameters.",
+      "page": 4,
+      "index": 6,
+      "width": 1076,
+      "height": 392
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-007.webp",
+      "caption": "TABLE IV: Efficiency comparison across datasets and models. Each cell reports E (Ā/TC), where E = Ā/TC measures accuracy achieved per unit retraining cost. * marks the best result for each experimental configuration.",
+      "page": 9,
+      "index": 7,
+      "width": 1076,
+      "height": 188
+    },
+    {
+      "url": "assets/figures/arxiv/2603.18872v1/fig-008.webp",
+      "caption": "Fig. 3: The MoE-based architecture in DriftGuard. A branchlevel soft gating network decomposes the model into a shared branch (blue) and a local branch (orange), containing shared and local parameters respectively. Within the shared branch, a layer-level hard gating network activates different subsets of neurons for inputs from different distributions.",
+      "page": 5,
+      "index": 8,
+      "width": 529,
+      "height": 460
+    }
+  ]
+}

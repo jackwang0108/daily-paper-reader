@@ -1,0 +1,110 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-001.webp",
+      "caption": "Figure 6: Qualitative results on Vaihingen and Postdam",
+      "page": 11,
+      "index": 1,
+      "width": 970,
+      "height": 233
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-002.webp",
+      "caption": "Figure 7: Robustness to task/domain order on LoveDA. We evaluate three task orders (URM: Urban→Rural→Mixed, RUM: Rural→Urban→Mixed, MUR: Mixed→Urban→Rural) and three random seeds per order for MiR (top) and ProtoFlow (bottom).",
+      "page": 11,
+      "index": 2,
+      "width": 956,
+      "height": 405
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-003.webp",
+      "caption": "Figure 1: Existing RS CISS treats each step as an isolated snapshot and heuristically corrects drifting prototypes, whereas ProtoFlow models class prototypes as time-driven trajectories and learns a vector field that explicitly shapes their flow geometry to reduce forgetting.",
+      "page": 2,
+      "index": 3,
+      "width": 976,
+      "height": 316
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-004.webp",
+      "caption": "Figure 9: Class-level ∆-curvature vs. ∆-forgetting. Each marker corresponds to a semantic class c from DeepGlobe, Vaihingen, LoveDA, iSAID, or GCSS. The horizontal axis is ∆κ̄c = κ̄ProtoFlow",
+      "page": 29,
+      "index": 4,
+      "width": 667,
+      "height": 492
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-005.webp",
+      "caption": "Figure 4: Impact of time shuffling on LoveDA.",
+      "page": 10,
+      "index": 5,
+      "width": 759,
+      "height": 377
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-006.webp",
+      "caption": "Figure 5: Prototype flow visualization on DeepGlobe. We project class prototypes into 2D and visualize their trajectories across incremental steps. (a) ProtoFlow: trajectories are smooth, monotone, and well separated. (b) w/o Curvature: individual trajectories exhibit stronger self-wrapping, oscillation, and backtracking. (c) w/o Separation: trajectories are increasingly crowded into a shared region, resulting in reduced margins and more cross-class intersections. (d) w/o Time: trajectories show stage-wise direction mismatch and stronger turning/correction patterns. Open circles and filled squares denote the first and last incremental steps, respectively.",
+      "page": 10,
+      "index": 6,
+      "width": 964,
+      "height": 215
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-007.webp",
+      "caption": "Table 2: Results on the domain-incremental LoveDA protocol and large-scale iSAID/GCSS benchmarks.",
+      "page": 8,
+      "index": 7,
+      "width": 768,
+      "height": 397
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-008.webp",
+      "caption": "Figure 2: Overall ProtoFlow framework. Non-stationary RS streams bring new classes over time. A segmentation network produces pixel features, which are aggregated by a prototype estimator and stored in a prototype bank. A time-aware ProtoFlow Field predicts how historical prototypes should move, and a prototype regularizer enforces flow consistency, low curvature and class separation. These prototype losses are combined with standard segmentation and distillation losses to jointly update the network and flow field, stabilizing old classes while learning new ones.",
+      "page": 4,
+      "index": 8,
+      "width": 927,
+      "height": 374
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-009.webp",
+      "caption": "Figure 8: Inter-class prototype angle and margin distributions (DeepGlobe + LoveDA, final step). Left: histograms of pairwise prototype angles θc,c′ (in degrees) for MiR, ProtoFlow w/o Separation, and full ProtoFlow. Right: violin plots of the same angle distributions.",
+      "page": 12,
+      "index": 9,
+      "width": 768,
+      "height": 362
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-010.webp",
+      "caption": "Table 3: Single-factor ablations of ProtoFlow.",
+      "page": 9,
+      "index": 10,
+      "width": 590,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-011.webp",
+      "caption": "Figure 3: Per-class correlation between prototype trajectory curvature and forgetting.",
+      "page": 9,
+      "index": 11,
+      "width": 909,
+      "height": 510
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-012.webp",
+      "caption": "Figure 11: Sensitivity of ProtoFlow to curvature and separation weights on LoveDA.",
+      "page": 31,
+      "index": 12,
+      "width": 745,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03212v1/fig-013.webp",
+      "caption": "Figure 10: Class-wise IoU and forgetting distributions on DeepGlobe and LoveDA.",
+      "page": 31,
+      "index": 13,
+      "width": 767,
+      "height": 594
+    }
+  ]
+}

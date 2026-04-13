@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.15184v1/fig-001.webp",
+      "caption": "Figure 3: Reverse Forgetting vs Catastrophic Forgetting Trend comparison (No. of Task vs Accuracy( in %)) of CATFormer against DSD-SNN [5] and same SpikFormer on [20, 21, 22, 23, 40]. The dotted line represents the average accuracy across tasks as the number of tasks increases.",
+      "page": 6,
+      "index": 1,
+      "width": 933,
+      "height": 562
+    },
+    {
+      "url": "assets/figures/arxiv/2603.15184v1/fig-002.webp",
+      "caption": "Figure 1: Test performance variation with respect to the progress in the number of trained tasks (for a maximum of 50 tasks). CATFormer (ours) maintains consistent performance with other existing CIL methods when implemented on a Spiking Transformer. All methods are evaluated on CIFAR 100.",
+      "page": 2,
+      "index": 2,
+      "width": 830,
+      "height": 500
+    },
+    {
+      "url": "assets/figures/arxiv/2603.15184v1/fig-003.webp",
+      "caption": "Table 1: Comparison of standard CIL accuracy (%) on Split CIFAR-100 across different task granularities. Reported average test accuracy after all tasks. DSD-SNN results (25/50 tasks)[5]; other CIL baselines [20, 21, 22, 23, 40] are evaluated on SpikFormer [7]. Task 0 and Task k describe the total number of parameter updates during the 0th and kth training tasks, respectively.",
+      "page": 7,
+      "index": 3,
+      "width": 975,
+      "height": 293
+    },
+    {
+      "url": "assets/figures/arxiv/2603.15184v1/fig-004.webp",
+      "caption": "Table 2: Task-wise accuracy (%) of CATFormer with respect to the state-of-the-art SNNs on static and neuromorphic datasets. Methods marked with * denote online continual learning approaches.",
+      "page": 8,
+      "index": 4,
+      "width": 494,
+      "height": 302
+    },
+    {
+      "url": "assets/figures/arxiv/2603.15184v1/fig-005.webp",
+      "caption": "Figure 2: The diagram depicts the full architecture and workflow of CATFormer.",
+      "page": 4,
+      "index": 5,
+      "width": 790,
+      "height": 560
+    }
+  ]
+}

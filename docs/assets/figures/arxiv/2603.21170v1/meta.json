@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-001.webp",
+      "caption": "Table 1: Average and final accuracy [%] with methods using ViT-B/16-IN21K and PAM using ResNets.",
+      "page": 6,
+      "index": 1,
+      "width": 904,
+      "height": 299
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-002.webp",
+      "caption": "Figure 3: Parameter size vs. accuracy: The left panel shows that PAM challenges existing and future FM-based methods; and the right panel presents the parameter count for different methods after completing all sessions.",
+      "page": 6,
+      "index": 2,
+      "width": 841,
+      "height": 297
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-003.webp",
+      "caption": "Figure 2: PAM freezes the first three layers of a pre-trained ResNet to preserve general knowledge while dynamically adding a task-specific last layer for each new task. To improve parameter efficiency, each last layer is structurally pruned to become ‘slim’ before training on its corresponding task. After training, the weights are frozen to prevent forgetting.",
+      "page": 2,
+      "index": 3,
+      "width": 759,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-004.webp",
+      "caption": "Figure 4: Ablations of different components for the PAM method. (a) Effect of pruning timing on the performance. (b) Impact of different sparsity levels on performance. (c) Comparison of task-specific adaptation module selection strategies during inference.",
+      "page": 7,
+      "index": 4,
+      "width": 895,
+      "height": 253
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-005.webp",
+      "caption": "Figure 5: Analysis of PAM across different evaluation settings. (a) Final incremental accuracy after all tasks, (b) per-task training accuracy illustrating the effect of initialization strategies for pruned adaptation modules, and (c) performance of weighted ensemble strategies compared to the single best module. Ratios show the relative contribution of the most confident module and the remaining modules (e.g., 0.9/0.1).",
+      "page": 7,
+      "index": 5,
+      "width": 893,
+      "height": 245
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-006.webp",
+      "caption": "Figure 6: PAM achieves noticeably more stable accuracy throughout long-horizon experiments with challenging ImageNet-R (IN-R) dataset, reflecting its robustness against performance degradation as tasks accumulate.",
+      "page": 8,
+      "index": 6,
+      "width": 860,
+      "height": 242
+    },
+    {
+      "url": "assets/figures/arxiv/2603.21170v1/fig-007.webp",
+      "caption": "Figure 7: Correct module alignment of the PAM: (a) The confusion matrix shows that PAM reliably selects the correct adaptation module. (b) Comparing CIL and TIL results illustrates that providing true task identifiers yields a marginal improvement, indicating that PAM’s performance is already close to the TIL upper bound.",
+      "page": 9,
+      "index": 7,
+      "width": 730,
+      "height": 312
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.20696v1/fig-001.webp",
+      "caption": "Figure 1: Relationship between the ℓ2 error and the batch number b in online learning of highdimensional GLMs, where for ease of display we assume each batch contains n samples, so that Nb = ∑b j=1 nj = nb. The log b term is introduced to ensure the error bounds hold uniformly for all batches b ≥ 1.",
+      "page": 4,
+      "index": 1,
+      "width": 874,
+      "height": 451
+    }
+  ]
+}

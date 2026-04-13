@@ -1,0 +1,894 @@
+Title: A Comparative Empirical Study of Catastrophic Forgetting Mitigation in Sequential Task Adaptation for Continual Natural Language Processing Systems
+
+URL Source: https://arxiv.org/pdf/2603.18641v1
+
+Published Time: Fri, 20 Mar 2026 00:51:13 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# A Comparative Empirical Study of Catastrophic Forgetting Mitigation in Sequential Task Adaptation for Continual Natural Language Processing Systems 
+
+## Aram Abrahamyan, Sachin Kumar ∗
+
+Zaven P. and Sonia Akian College of Science and Engineering, American University of Armenia, Yerevan 0019, Armenia 
+
+A R T I C L E I N F O 
+
+Keywords :Catastrophic Forgetting Continual Learnign Natural Language Processing Sequential Task Adaptation 
+
+A B S T R A C T 
+
+Neural language models deployed in real-world applications must continually adapt to new tasks and domains without forgetting previously acquired knowledge. This work presents a comparative empirical study of catastrophic forgetting mitigation in continual intent classi-fication. Using the CLINC150 dataset, we construct a 10-task label-disjoint scenario and evaluate three backbone architectures: a feed-forward Artificial Neural Network (ANN), a Gated Recurrent Unit (GRU), and a Transformer encoder, under a range of continual learning (CL) strategies. We consider one representative method from each major CL family: replay-based Maximally Interfered Retrieval (MIR), regularization-based Learning without Forgetting (LwF), and parameter-isolation via Hard Attention to Task (HAT), both individually and in all pairwise and triple combinations. Performance is assessed with average accuracy, macro F1, and backward transfer, capturing the stability-plasticity trade-off across the task sequence. Our results show that naive sequential fine-tuning suffers from severe forgetting for all architectures and that no single CL method fully prevents it. Replay emerges as a key ingredient: MIR is the most reliable individual strategy, and combinations that include replay (MIR+HAT, MIR+LwF, MIR+LwF+HAT) consistently achieve high final performance with near-zero or mildly positive backward transfer. The optimal configuration is architecture-dependent. MIR+HAT yields the best result for ANN and Transformer, MIR+LwF+HAT, on the other hand, works the best for GRU, and in several cases CL methods even surpass joint training, indicating a regularization effect. These findings highlight the importance of jointly selecting backbone architecture and CL mechanism when designing continual intent-classification systems. 
+
+## 1. Introduction and Background 
+
+Neural language models are often trained on fixed datasets under the assumption that the task and data distribution remain stable. However, real-world NLP applications must operate in changing environments where new tasks and domains emerge over time. When models are updated with data from new tasks without revisiting earlier training examples, they tend to lose previously acquired knowledge. This phenomenon, known as catastrophic forgetting , poses a major obstacle for building adaptive NLP systems. Continual learning offers a framework for enabling models to learn from streams of tasks without forgetting earlier ones. Retraining on all past and present data is usually impractical due to computational cost, storage requirements, or privacy constraints, making continual learning a more viable solution. As reviewed in recent surveys [1], continual learning methods are commonly grouped into three families: replay-based methods, regularization-based methods (RBM), and parameter-isolation methods (PIM). Replay-based methods store a subset of samples from earlier tasks and interleave them with new data during training. This simple strategy can effectively preserve knowledge of previous tasks. More advanced approaches, such as Maximum Interfered Retrieval (MIR) [2], select past samples based on their likelihood of interference with the current update. Lopez-Paz and Ranzato [3] demonstrate that replay-based approaches tend to outperform regularization-based techniques in many settings. Regularization-based methods constrain changes to parameters that were important for earlier tasks. For example, Elastic Weight Consolidation (EWC) [4] penalizes large updates to parameters with high estimated importance, while Learning without Forgetting (LwF) [5] uses knowledge distillation to preserve the behaviour of previous models. 
+
+<aram_abrahamyan@edu.aua.am> (A. Abrahamyan); <s.kumar@aua.am> (S. Kumar ∗)
+
+> ORCID
+
+(s): 
+
+First Author et al.: Preprint submitted to Elsevier Page 1 of 19 
+
+> arXiv:2603.18641v1 [cs.CL] 19 Mar 2026 Continual Learning in NLP and Catastrophic Forgetting
+
+Parameter-isolation methods assign different subsets of model parameters to different tasks. This can be achieved by expanding the architecture for new tasks, as in Progressive Neural Networks [6], or by learning sparse task-specific masks that control neuron activations, as in PackNet [7] and Hard Attention to Task (HAT) [8]. Although most early work in continual learning focused on computer vision, the field has gained increasing attention in NLP. Studies have explored replay, RBM, and PIM techniques for text classification, language modeling, and machine translation. However, less is known about how model architecture influences susceptibility to catastrophic forgetting and the effectiveness of different continual learning strategies. Beyond these classical methods, a broader body of work has analyzed continual learning and its variants from both general and NLP-specific perspectives. Parisi et al. provide a comprehensive review of lifelong learning with neural networks [9], while recent surveys discuss continual learning with pre-trained models and large-scale architectures [10]. In NLP, several surveys highlight that continual learning must handle task, domain, and label shifts that differ from typical vision benchmarks [11, 12]. At the method level, episodic-memory and replay-based approaches such as MBPA++ [13] and language-model-based replay in LAMOL [14] have been proposed for lifelong language learning, and specialized regularization schemes have been developed for continual text classification [15]. For intent classification and task-oriented dialogue systems, recent work has investigated continual, class-incremental, and open-world intent learning, including methods for incrementally adding new intents, handling out-of-scope queries, and performing generalized intent discovery [16, 17, 18, 19]. However, these studies rarely compare fundamentally different architectures under a unified continual-learning setup, leaving open how model design interacts with replay, regularization, and parameter-isolation strategies. In this work, we study continual learning for intent classification using a controlled sequence of ten tasks with disjoint label sets. We compare three neural architectures that represent distinct modeling paradigms: a simple feed-forward Artificial Neural Network (ANN) using pooled embeddings, a recurrent Gated Recurrent Unit (GRU) model that captures temporal dependencies, a Transformer encoder based on self-attention. Together, these models span a spectrum from lightweight feed-forward computation to recurrence and global attention. The main objective of this study is to find answers to the following reseach questions: 
+
+• How do continual learning (CL) methods compare to naive sequential fine-tuning and joint training? 
+
+• How do replay, regularization, and parameter-isolation-based strategies differ in terms of stability and plasticity? 
+
+• To what extent does the underlying architecture influence continual learning behaviour? To address these questions, we adopt the following experimental design: 1. Construct ten label-disjoint tasks from the benchmark intent-classification dataset and define consistent train/validation/test splits for each task. 2. Apply a shared preprocessing and tokenization pipeline and prepare data loaders for all tasks. 3. For each architecture (ANN, GRU, Transformer), tune global hyperparameters and train baseline models under joint training and naive sequential fine-tuning. 4. Train continual learning models using replay (MIR), regularization-based (LwF), parameter-isolation (HAT) methods, and their pairwise combinations across all ten tasks. 5. Record the performance matrix 𝑅 𝑖,𝑗 for accuracy and macro F1, and compute AA, AF1, BWT, FWT, and forgetting measures. 6. Analyze how stability and plasticity vary across methods and architectures, and identify which combinations yield the best trade-offs for continual intent classification. 
+
+## 2. Dataset Description 
+
+The experiments in this study use the CLINC150 dataset [20], a publicly available benchmark designed for intent detection in task-oriented dialogue systems. The dataset is released in four configurations, and for this work we use the full version, which contains 23,700 utterances grouped into 150 distinct intents. These intents span ten broader   
+
+> First Author et al.: Preprint submitted to Elsevier Page 2 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+domains, making the dataset both diverse and representative of real conversational scenarios. Each entry consists of a short user utterance paired with an intent label, and the data is provided with predefined training, validation, and test splits containing 15,000, 3,000, and 4,500 samples respectively. In addition to in-scope utterances, CLINC150 includes a set of out-of-scope examples intended to assess whether models can recognize inputs that fall outside the known intent space. Since the focus of this project is continual learning over clearly defined intents, these out-of-scope samples are removed. They account for 100 training examples, 100 validation examples, and 1,000 test examples. After discarding them, the remaining dataset is well balanced, with each intent represented by a similar number of samples. This balance is beneficial for training models without introducing prior bias toward particular labels. The dataset is cleanly formatted in JSON and contains no missing values, so only modest preprocessing is required. All text is lowercased to maintain consistency, and simple cleaning operations are applied to remove URLs and unnecessary whitespace while keeping the text suitable for modern transformer tokenizers. The user utterances are then processed using the Hugging Face DistilBERT tokenizer, which produces token indices and attention masks. Intent labels are converted into numerical identifiers through label encoding, and all token sequences are padded or truncated to a fixed length of 64 tokens to ensure uniform input dimensions for the neural models. An exploratory analysis of the dataset confirms that, aside from the out-of-scope category that is excluded from further experimentation, the distribution of samples across the 150 intents is highly uniform. This balanced structure supports fair evaluation of continual learning methods, since differences in performance can be attributed to the methods themselves rather than to imbalance in the underlying data. Moreover, we found out that the average length of user utterances is around 40 words with the minimum being 2 words and maximum being 136 words long, with some variation across different intents. This indicates that the dataset contains a mix of short and moderately long queries. The median of the utterance length is 38 words which itself indicates that the distribution of the lengths of utternaces is skewed just a little bit, it is more or less bell-shaped. The half of the samples have lengths between 27 and 52 words, that is why we chose the maximum sequence length to be 64. We found out that the dataset has a rich vocabulary, with many unique words used across different intents (total of 7446 unique words). This diversity can help in training models that generalize well to unseen data. See Figure 1 for more details about the distribution of utterance lengths. 
+
+Figure 1: Utterance Length Distribution in CLINC150 Dataset Furthermore, there are a lot of stopwords in the dataset (100754 out of 202057 words are stopwords), which we decided not to remove to keep input distribution as close as possible to the real-world data distribution and to   
+
+> First Author et al.: Preprint submitted to Elsevier Page 3 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+what moder neural models such as Transformers are trained on. Many so-called stopwords, for example, auxiliaries, negations, prepositions carry important intent and semantic information, so removing could distort meaning of the sentences, whihc is undesirable. Figure 2 shows that the most frequent words along all the samples are stopwords. 
+
+Figure 2: 20 Most Frequent Words in CLINC150 Dataset 
+
+## 3. Methodology and Research Plan 
+
+In this section we describe the continual learning setting, model architectures, continual learning methods, and the overall research plan adopted in this work. 
+
+3.1. Continual Learning Setting 
+
+We consider a supervised continual learning scenario with 𝑇 = 10 sequential tasks {𝑡 }10 
+
+> 𝑡 =1
+
+. As described in the Dataset section, the full set of intent labels is partitioned into 10 disjoint subsets, each defining one task with its own train, validation, and test split. Formally, if  is the set of all labels, then 
+
+ =
+
+> 10
+
+⋃
+
+> 𝑡 =1
+
+𝑡 , 𝑖 ∩ 𝑗 = ∅ for 𝑖 ≠ 𝑗, 
+
+and task 𝑡 is a standard multi-class classification problem over labels 𝑡 . The model is trained on the tasks in order 
+
+1, … , 10 . After finishing training on task 𝑡 , we evaluate the current model on all test sets 1, … , 𝑡 . This allows us to track both performance on the current task and potential forgetting on earlier tasks. 
+
+Algorithm 1 Task construction on CLINC150 
+
+Require: CLINC150 dataset  with label set 
+
+Require: Number of tasks 𝑇 = 10  
+
+> 1:
+
+Partition  into disjoint subsets {𝑡 }𝑇 𝑡 =1 
+
+with 𝑖 ∩ 𝑗 = ∅ for 𝑖 ≠ 𝑗  
+
+> 2:
+
+for 𝑡 = 1 to 𝑇 do  
+
+> 3:
+
+Build task 𝑡 = ( train  
+
+> 𝑡
+
+, val  
+
+> 𝑡
+
+, test  
+
+> 𝑡
+
+)
+
+using only labels in 𝑡  
+
+> 4:
+
+end for   
+
+> First Author et al.: Preprint submitted to Elsevier Page 4 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+3.2. Preprocessing and Representation 
+
+The preprocessing is kept minimal to retain the natural text distribution. We lowercase all text, remove URLs, and collapse multiple spaces. We do not perform stopword removal or stemming/lemmatization since many function words and negations carry important intent information and we aim to avoid unnecessary distribution shifts in a continual learning setting. Tokenization is performed using the AutoTokenizer from Hugging Face’s Transformers library (DistilBERT) to produce INPUT _IDS and ATTENTION _MASK . Intent labels are converted to numerical format using label encoding. Sequences are padded or truncated to a fixed length of 64 tokens (50% of the utterances have length in range of 27 to 52). 
+
+Algorithm 2 Preprocessing and tokenization 
+
+Require: Tasks {𝑡 }𝑇 𝑡 =1 , max length 𝐿  
+
+> 1:
+
+for each utterance 𝑥 in all 𝑡 do  
+
+> 2:
+
+Lowercase 𝑥 , remove URLs, collapse multiple whitespace  
+
+> 3:
+
+Tokenize 𝑥 with a DistilBERT tokenizer  
+
+> 4:
+
+Pad or truncate tokens to fixed length 𝐿 (e.g., 𝐿 = 64 ) 
+
+> 5:
+
+end for  
+
+> 6:
+
+Encode all intent labels 𝑦 as integer IDs shared across tasks 
+
+3.3. Model Architectures 
+
+We compare three neural architectures that represent distinct modelling paradigms for text ( See Figure 3 ). First, we use a simple feed-forward Artificial Neural Network (ANN as a lightweight baseline with limited sequence-modelling capacity, to reveal how a non-sequential model behaves under continual learning. Second, we employ a Gated Recurrent Unit (GRU) network, which explicitly encodes word order and local temporal dependencies and is representative of classic recurrent sequence models widely used in earlier NLP systems. Third, we consider a Transformer encoder, which models long-range and global token interactions via self-attention and reflects modern attention-based architectures for text classification. We select ANN, GRU, and Transformer because they span three complementary modelling paradigms: shallow feed-forward, recurrent, and attention-based. This spectrum enables us to investigate whether continual learning performance is driven primarily by the CL strategy or is also strongly shaped by the underlying architectural inductive biases and capacity.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 5 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+3.4. Training Protocol and Evaluation Metrics 
+
+For each architecture (ANN, GRU, Transformer) we train: 
+
+• Baselines: – Joint training , where a single model is trained on the union of all tasks. This serves as an upper bound without continual constraints. 
+
+– Naive sequential fine-tuning , where tasks are learned one after another with no CL mechanism. 
+
+• Continual learning runs: Replay (MIR), RBM (LwF), PIM (HAT), and all combinations mentioned above. Global hyperparameters (learning rate, batch size, number of epochs, patience, etc.) are tuned using Bayesian optimization with a fixed seed of 42 on validation splits from the early tasks, and then fixed for the remaining experiments for fair comparison. The hardware used includes an NVIDIA RTX 3070 GPU, 64GB RAM, and an Intel i7 11 Gen CPU. Let 𝑅 𝑖,𝑗 denote the performance on task 𝑗 after finishing training on task 𝑖 . We use the following metrics: 
+
+• Average Accuracy (AA) after the final task AA measures the overall classification performance of a continual learning model after it has seen all 𝑇 tasks. The term 𝑅 𝑇 ,𝑗 denotes the test accuracy on task 𝑗 after training has finished on the final task 𝑇 , and the metric simply averages this value over all tasks. A high AA indicates that the model retains good performance across the entire task sequence at the end of training. In this work, AA serves as a global summary of how well each architecture–strategy combination preserves task performance after sequential training. 
+
+AA = 1
+
+𝑇 
+
+> 𝑇
+
+∑
+
+> 𝑗 =1
+
+𝑅 𝑇 ,𝑗 .
+
+• Average F1 Score (AF1) after the final task AF1 is defined analogously to AA, but uses the (macro-)F1 score 𝐹 1𝑇 ,𝑗 instead of accuracy. Because F1 accounts for both precision and recall and is less sensitive to class imbalance than accuracy, it provides a more informative measure in multi-class intent classification, where some intents are less frequent in case of some CL methods. In our experiments, AF1 complements AA by highlighting cases where a method may achieve good accuracy but still perform poorly on minority classes. 
+
+AF1 = 1
+
+𝑇 
+
+> 𝑇
+
+∑
+
+> 𝑗 =1
+
+𝐹 1𝑇 ,𝑗 .
+
+• Backward Transfer with Accuracy or F1-Score (BWT) 
+
+BWT quantifies how learning new tasks influences performance on previously learned tasks. For each task 
+
+𝑗 < 𝑇 , we compare the final performance on task 𝑗 after completing all tasks, 𝑅 (acc/F1 ) 
+
+> 𝑇 ,𝑗
+
+, with the performance on 𝑗 immediately after it was first learned, 𝑅 (acc/F1 ) 
+
+> 𝑗,𝑗
+
+. Positive BWT indicates beneficial backward transfer (improvements on past tasks due to later training), whereas negative BWT reflects degradation, i.e., catastrophic forgetting. In this work, we use BWT (computed with both accuracy and F1) to directly assess the degree of forgetting or positive transfer induced by each continual learning strategy. 
+
+BWT acc∕F1 = 1
+
+𝑇 − 1  
+
+> 𝑇 −1
+
+∑
+
+> 𝑗 =1
+
+(𝑅 (𝑎𝑐𝑐 ∕𝐹 1)  
+
+> 𝑇 ,𝑗
+
+− 𝑅 (𝑎𝑐𝑐 ∕𝐹 1) 
+
+> 𝑗,𝑗
+
+).
+
+• Final Average Backward Transfer (𝐵𝑊 𝑇 )
+
+While BWT is defined per task, BWT acc/F1 aggregates these values over the whole sequence to yield a single scalar that summarizes the overall backward transfer behaviour of a model. Here, BWT 𝑖 denotes the average backward transfer up to task 𝑖 , and BWT acc/F1 averages these quantities over all 𝑇 tasks. This metric is particularly   
+
+> First Author et al.: Preprint submitted to Elsevier Page 6 of 19
+
+Continual Learning in NLP and Catastrophic Forgetting 
+
+useful in our study because it allows a compact comparison of architectures and strategies in terms of their overall tendency to forget or improve past tasks throughout training, rather than only at individual time points. 
+
+BWT acc∕F1 = 1
+
+𝑇 
+
+> 𝑇
+
+∑
+
+> 𝑖 =1
+
+BWT acc∕F1 𝑖 , where BWT 𝑖 = 1
+
+𝑖 − 1 
+
+> 𝑖 −1
+
+∑
+
+> 𝑗 =1
+
+(𝑅 (𝑎𝑐𝑐 ∕𝐹 1)  
+
+> 𝑖,𝑗
+
+− 𝑅 (𝑎𝑐𝑐 ∕𝐹 1) 
+
+> 𝑗,𝑗
+
+).
+
+These metrics allow us to quantify the trade-off between stability (retaining old tasks) and plasticity (learning new tasks). 
+
+Algorithm 3 Metric computation for pair (𝑎, 𝑐 )
+
+Require: 𝑅 (acc ), 𝑅 (F1 ) 
+
+> 1:
+
+AA = 1
+
+𝑇 
+
+∑𝑇 𝑗 =1 𝑅 (acc ) 
+
+> 𝑇 ,𝑗
+> 2:
+
+AF1 = 1
+
+𝑇 
+
+∑𝑇 𝑗 =1 𝑅 (F1 ) 
+
+> 𝑇 ,𝑗
+> 3:
+
+BWT acc = 1
+
+𝑇 − 1 
+
+∑𝑇 −1 
+
+> 𝑗 =1
+
+(𝑅 (acc ) 
+
+> 𝑇 ,𝑗
+
+− 𝑅 (acc )
+
+> 𝑗,𝑗
+
+) 
+
+> 4:
+
+Analogously compute BWT F1 
+
+3.5. Continual Learning Methods 
+
+To mitigate catastrophic forgetting, we implement and evaluate three representative continual learning methods from each family described in the Literature Review section, namely Maximally Interfered Retrieval (MIR), Learning without Forgetting (LwF), and Hard Attention to Task (HAT). 
+
+3.5.1. Replay: Maximally Interfered Retrieval (MIR) 
+
+The replay-based method maintains a memory buffer of samples from previous tasks. However, those samples are not selected randomly but the most hurt by learning the new task. For the first step of learning a new task, we do a virtual update on the current batch 𝑆 , meaning we pretend we take one gradient step: 
+
+𝜃 ′ = 𝜃 − 𝛼 ∇𝜃 (𝑓 𝜃 , 𝑆 )
+
+Then, we measure how much each memory sample is hurt. For each stored (old) example (𝑥 𝑖 , 𝑦 𝑖 ) in the memory buffer, we compute the loss before and after the virtual update: 
+
+(𝑥 𝑖 , 𝑦 𝑖 , 𝜃 ) & (𝑥 𝑖 , 𝑦 𝑖 , 𝜃 ′)
+
+Define 𝑟 𝑖 = (𝑥 𝑖 , 𝑦 𝑖 , 𝜃 ) − (𝑥 𝑖 , 𝑦 𝑖 , 𝜃 ′). If 𝑟 𝑖 > 0, it means this update made the old example worse and we encountered catastrophic forgetting. Then we select the top 𝑘 samples with the highest 𝑟 𝑖 values (the most forgotten samples) to replay alongside the new task data. The samples with the highest interference are the most informative to rehearse to mitigate forgetting. 
+
+Algorithm 4 MIR: targeted replay subroutine                                         
+
+> 1: function MIRR EPLAY (𝑆 𝑡 , 𝐵, 𝑐, 𝜃 )2: if 𝑐 uses MIR and 𝐵 is not empty then
+> 3: 𝜃 ′←𝜃 −𝜂 ∇𝜃 task (𝑆 𝑡 ;𝜃 )
+> 4: for each (𝑥 𝑚 , 𝑦 𝑚 ) ∈ 𝐵 do
+> 5: 𝑟 𝑚 ←task (𝑥 𝑚 , 𝑦 𝑚 ;𝜃 ′) − task (𝑥 𝑚 , 𝑦 𝑚 ;𝜃 )
+> 6: end for
+> 7: 𝑀 𝑡 ←TopK ({( 𝑥 𝑚 , 𝑦 𝑚 )} ,{𝑟 𝑚 })
+> 8: 𝑆 𝑡 ←𝑆 𝑡 ∪𝑀 𝑡
+> 9: end if
+> 10: return 𝑆 𝑡
+> 11: end function
+
+First Author et al.: Preprint submitted to Elsevier Page 7 of 19 Continual Learning in NLP and Catastrophic Forgetting 
+
+3.5.2. Regularization-Based Method (RBM): Learning without Forgetting (LwF) 
+
+The regularization-based method keeps a copy of the model before training on a new task (the “teacher”) with parameters 𝜃 𝑜𝑙𝑑 and trains a new model (the “student”) with parameters 𝜃 𝑛𝑒𝑤 on the new task data. For an input 𝑥 , let 
+
+𝑧 old (𝑥 ) and 𝑧 new (𝑥 ) denote the teacher and student logits. Using a temperature 𝑇 > 1, we define: 
+
+𝑝 𝑇 𝑜𝑙𝑑 (𝑥 ) = 𝑠𝑜𝑓 𝑡𝑚𝑎𝑥 
+
+( 𝑧 𝑜𝑙𝑑 (𝑥 )
+
+𝑇 
+
+)
+
+, 𝑝 𝑇 𝑛𝑒𝑤 (𝑥 ) = 𝑠𝑜𝑓 𝑡𝑚𝑎𝑥 
+
+( 𝑧 𝑛𝑒𝑤 (𝑥 )
+
+𝑇 
+
+)
+
+The total loss for training on the new task is a combination of the standard cross-entropy loss on the new task labels and a Kullback–Leibler divergence term: 
+
+ = task + 𝛼𝑇 2 ⋅ KL (𝑝 𝑇 
+
+> old
+
+(𝑥 ) ‖ 𝑝 𝑇 
+
+> new
+
+(𝑥 )),
+
+where 𝛼 controls the strength of the regularization. This Learning without Forgetting (LwF) objective penalizes updates that would drastically alter the output distribution learned on previous tasks, even though no raw data from those tasks is stored. 
+
+Algorithm 5 LwF: distillation loss subroutine  
+
+> 1:
+
+function LWFL OSS (task , 𝑆 𝑡 , 𝑧, 𝜃 old , 𝑐 ) 
+
+> 2:
+
+if 𝑐 uses LwF then  
+
+> 3:
+
+for each (𝑥, 𝑦 ) ∈ 𝑆 𝑡 do  
+
+> 4:
+
+Compute teacher logits 𝑧 old (𝑥 ) from 𝜃 old  
+
+> 5:
+
+𝑝 𝑇 
+
+> old
+
+(𝑥 ) = sof tmax( 𝑧 old (𝑥 )∕ 𝑇 ) 
+
+> 6:
+
+𝑝 𝑇 
+
+> new
+
+(𝑥 ) = sof tmax( 𝑧 (𝑥 )∕ 𝑇 ) 
+
+> 7:
+
+end for  
+
+> 8:
+
+dist ← 1
+
+> |𝑆 𝑡 |
+
+∑(𝑥,𝑦 )∈ 𝑆 𝑡 𝑇 2 KL( 𝑝 𝑇 
+
+> old
+
+(𝑥 ) ‖ 𝑝 𝑇 
+
+> new
+
+(𝑥 ))  
+
+> 9:
+
+ ← task + 𝛼 dist  
+
+> 10:
+
+else  
+
+> 11:
+
+ ← task  
+
+> 12:
+
+end if  
+
+> 13:
+
+return  
+
+> 14:
+
+end function 
+
+3.5.3. Parameter Isolation Method (PIM): Hard Attention to Task (HAT) 
+
+The parameter isolation method uses Hard Attention to Task (HAT), which learns task-specific masks that gate neuron activations. For each layer 𝑙 and task 𝑡 , a task embedding is transformed into a gate vector 𝑎 (𝑙,𝑡 ) = 𝜎 (𝑠 ⋅ 𝑒 (𝑙,𝑡 )),where 𝑒 (𝑙,𝑡 ) is the task embedding, 𝜎 is the sigmoid function, and 𝑠 is a scaling hyperparameter. Activations are masked as: 
+
+ℎ′( 𝑙 ) = 𝑎 (𝑙,𝑡 ) ⊙ ℎ (𝑙 ),
+
+where ⊙ denotes element-wise multiplication, ℎ(𝑙 ) are the original activations at layer 𝑙 . After training task 𝑡 , we maintain cumulative masks that record which units have been heavily used so far. 
+
+𝑚 (𝑙 ) 
+
+> ≤𝑡
+
+= max( 𝑚 (𝑙 )
+
+> ≤𝑡 −1
+
+, 𝑎 (𝑙,𝑡 ))
+
+𝑚 (𝑙 ) 
+
+> ≤𝑡
+
+shows how much each neuron in layer 𝑙 has been used by tasks up to 𝑡 . During training of task 𝑡 + 1 gradients are scaled down where 𝑚 (𝑙 )≤𝑡 is high. Thus, those neurons belonging to previous tasks are protected from significant updates, effectively isolating parameters for different tasks. 
+
+First Author et al.: Preprint submitted to Elsevier Page 8 of 19 Continual Learning in NLP and Catastrophic Forgetting 
+
+Algorithm 6 HAT: task-specific masking subroutine  
+
+> 1:
+
+function HATM ASKING (, 𝑐 ) 
+
+> 2:
+
+if 𝑐 uses HAT then  
+
+> 3:
+
+for each layer 𝑙 do  
+
+> 4:
+
+𝑎 (𝑙,𝑡 ) = 𝜎 (𝑠 ⋅ 𝑒 (𝑙,𝑡 )) 
+
+> 5:
+
+Mask activations ℎ(𝑙 ) ← 𝑎 (𝑙,𝑡 ) ⊙ ℎ (𝑙 ) 
+
+> 6:
+
+During backprop, scale gradients using cumulative masks  
+
+> 7:
+
+end for  
+
+> 8:
+
+end if  
+
+> 9:
+
+return  ⊳ unchanged in form, but gradients are masked  
+
+> 10:
+
+end function 
+
+3.5.4. Combined Strategies 
+
+In addition to evaluating MIR, LwF, and HAT individually, we also consider their combinations (Replay+RBM, Replay+PIM, RBM+PIM, and Replay+RBM+PIM). In these settings, memory replay, distillation, and masking are applied jointly. This enables us to quantify whether hybrid methods offer better stability–plasticity trade-offs than any single strategy. 
+
+Algorithm 7 Continual learning training loop 
+
+Require: Architectures , CL methods 
+
+Require: Tasks {𝑡 }𝑇 𝑡 =1  
+
+> 1:
+
+for each architecture 𝑎 ∈  do  
+
+> 2:
+
+Fix hyperparameters 𝜙 ⋆𝑎  
+
+> 3:
+
+for each CL method 𝑐 ∈  do  
+
+> 4:
+
+Initialize model parameters 𝜃 for 𝑎  
+
+> 5:
+
+Initialize CL-specific state (buffer 𝐵 , teacher 𝜃 old , HAT masks)  
+
+> 6:
+
+for 𝑡 = 1 to 𝑇 do ⊳ sequential tasks  
+
+> 7:
+
+while not early-stopped on val  
+
+> 𝑡
+
+do  
+
+> 8:
+
+if 𝑐 uses MIR then  
+
+> 9:
+
+Sample minibatch 𝑆 𝑡 from train  
+
+> 𝑡
+> 10:
+
+𝑆 𝑡 ← MIRR EPLAY (𝑆 𝑡 , 𝐵, 𝜃 ) 
+
+> 11:
+
+end if  
+
+> 12:
+
+(task , 𝑧 ) ← FORWARD AND TASK LOSS (𝑆 𝑡 , 𝜃 ) 
+
+> 13:
+
+ ← task  
+
+> 14:
+
+if 𝑐 uses LwF then  
+
+> 15:
+
+ ← LWFL OSS (, 𝑆 𝑡 , 𝑧, 𝜃 old ) 
+
+> 16:
+
+end if  
+
+> 17:
+
+if 𝑐 uses HAT then  
+
+> 18:
+
+ ← HATM ASKING (, 𝑡 ) 
+
+> 19:
+
+end if  
+
+> 20:
+
+Update parameters 𝜃 ← 𝜃 − 𝜂 ∇𝜃  
+
+> 21:
+
+if 𝑐 uses MIR then  
+
+> 22:
+
+Update memory buffer 𝐵 with samples from 𝑆 𝑡  
+
+> 23:
+
+end if  
+
+> 24:
+
+end while  
+
+> 25:
+
+Evaluate on tasks 1..𝑡 and fill 𝑅 (acc ), 𝑅 (F1 ) 
+
+> 26:
+
+if 𝑐 uses LwF then  
+
+> 27:
+
+𝜃 old ← 𝜃  
+
+> 28:
+
+end if  
+
+> 29:
+
+end for  
+
+> 30:
+
+Compute AA, AF1, BWT using Algorithm 3  
+
+> 31:
+
+end for  
+
+> 32:
+
+end for 
+
+First Author et al.: Preprint submitted to Elsevier Page 9 of 19 Continual Learning in NLP and Catastrophic Forgetting 
+
+## 4. Experiments and Results 
+
+In this section we describe the experimental setup and present quantitative results for the three architectures (ANN, GRU, Transformer) combined with the continual learning methods introduced in Section 3. All experiments are implemented in Python using PyTorch and Hugging Face’s Transformers library. All models are trained on the 10-task split of the CLINC150 dataset described above. For each architecture (ANN, GRU, Transformer), we first tune global hyperparameters (learning rate, batch size, number of epochs, patience for early stopping) using Bayesian optimization with a fixed seed of 42 on the full dataset. These hyperparameters are then fixed for all subsequent experiments to ensure fair comparison across methods. For each task, we use the provided training set and create a validation split by holding out a fixed proportion of the training examples. Training proceeds task by task: after finishing task 𝑡 , we evaluate the model on the test sets of all tasks 1, … , 𝑡 and store the resulting accuracy and macro F1 scores in the performance matrix 𝑅 𝑖,𝑗 . From this matrix we compute Average Accuracy (AA), Backward Transfer (BWT), and Average F1-score (AF1) as defined in Section 3.4. We begin by comparing two baselines (Joint training and Naive sequential fine-tuning) described in Section 3.4 for each architecture. Table 1: Baseline Results on CLINC150 Dataset 
+
+Model Joint Training Naive Sequential Fine-Tuning 
+
+Artificial Neural Net-work (ANN) 
+
+𝐴𝑐𝑐𝑢𝑟𝑎𝑐𝑦 = 0 .877 𝐴𝐴 = 0 .1004 , 𝐴𝐹 1 = 0 .104 
+
+Gated Recurrent Unit (GRU) 
+
+𝐴𝑐𝑐𝑢𝑟𝑎𝑐𝑦 = 0 .845 𝐴𝐴 = 0 .0916 , 𝐴𝐹 1 = 0 .0915 
+
+Transformer Encoder 𝐴𝑐𝑐𝑢𝑟𝑎𝑐𝑦 = 0 .8707 𝐴𝐴 = 0 .1018 , 𝐴𝐹 1 = 0 .1048 
+
+As expected, joint training achieves the highest overall performance, while naive sequential fine-tuning suffers from substantial catastrophic forgetting. We did not include BWT for naive fine-tuning since it is overwhelmingly negative due to forgetting. We can Interpret the poorer performance of Transformer compared to ANN in joint training as Transformer is a data-hungry model and may require more data or pretraining to fully leverage its capacity. See Figure 4 for details. 
+
+Figure 4: Avarage Accuracy change over tasks for Naive Sequential training for each architecture. The next set of experiments evaluates the three continual learning methods (MIR, LwF, HAT) individually across all three architectures.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 10 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+Table 2: MIR, LwF, and HAT Results on CLINC150 Dataset 
+
+Model MIR LwF HAT 
+
+Artificial Neural Network (ANN) 
+
+𝐴𝐴 = 0 .193 , 𝐴𝐹 1 = 0 .227 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .7678 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .7243 
+
+𝐴𝐴 = 0 .0071 , 𝐴𝐹 1 = 0 .0017 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .3415 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .3476 
+
+𝐴𝐴 = 0 .4133 , 𝐴𝐹 1 = 0 .4507 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .4991 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .4470 
+
+Gated Recurrent Unit (GRU) 
+
+𝐴𝐴 = 0 .5849 , 𝐴𝐹 1 = 0 .6906 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .2271 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .1444 
+
+𝐴𝐴 = 0 .1889 , 𝐴𝐹 1 = 0 .2191 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .5568 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .5399 
+
+𝐴𝐴 = 0 .0942 , 𝐴𝐹 1 = 0 .0962 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .9573 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .9544 
+
+Transformer Encoder 
+
+𝐴𝐴 = 0 .7444 , 𝐴𝐹 1 = 0 .8217 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .1592 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .1017 
+
+𝐴𝐴 = 0 .5253 , 𝐴𝐹 1 = 0 .6218 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .1334 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .1168 
+
+𝐴𝐴 = 0 .1302 , 𝐴𝐹 1 = 0 .1419 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .906 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .8849 
+
+For the ANN, HAT clearly outperforms the other methods, reaching 𝐴𝐴 = 0 .41 and 𝐴𝐹 1 = 0 .45 , while MIR remains much weaker and LwF almost completely collapses (near-zero accuracy and F1). However, even with HAT the ANN still shows strong forgetting, with 𝐵𝑊 𝑇 ≈ −0 .5.
+
+For the GRU, the best results are obtained with MIR ( 𝐴𝐴 ≈ 0 .58 , 𝐴𝐹 1 ≈ 0 .69 ), with substantially milder forgetting (𝐵𝑊 𝑇 𝑎𝑐𝑐 ≈ −0 .23 , 𝐵𝑊 𝑇 𝐹 1 ≈ −0 .14 ) compared to LwF and especially HAT, which both degrade heavily. This suggests that replay is particularly well suited to recurrent models in this setting. For the Transformer, MIR again achieves the strongest performance, with 𝐴𝐴 ≈ 0 .74 and 𝐴𝐹 1 ≈ 0 .82 and relatively small negative backward transfer. LwF provides moderate gains( 𝐴𝐴 ≈ 0 .53 , 𝐴𝐹 1 ≈ 0 .62 ) with slightly improved BWT, whereas HAT fails to learn the task sequence effectively. Overall, MIR is the most reliable method across architectures, HAT only helps the simple ANN, and LwF yields intermediate improvements, especially for the Transformer, while none of the methods fully eliminates forgetting. However, in some cases we observe that though the average accuracy is low, the backward transfer is close to 0, meaning that the model is stable but not plastic enough to learn new tasks (e.g. GRU+MIR, Transformer + MIR, Transformer+LwF).   
+
+> First Author et al.: Preprint submitted to Elsevier Page 11 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+Figure 5: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR across all architectures. 
+
+Figure 6: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with LwF across all architectures. 
+
+Figure 7: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with HAT across all architectures. Afterwards, we evaluate all pairwise combinations of the three continual learning methods (MIR+LwF, MIR+HAT, LwF+HAT) for each architecture.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 12 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+Table 3: MIR, LwF, and HAT Results on CLINC150 Dataset 
+
+Model MIR+LwF MIR+HAT HAT+LwF 
+
+Artificial Neural Network (ANN) 
+
+𝐴𝐴 = 0 .0249 , 𝐴𝐹 1 = 0 .0234 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .1486 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .1719 
+
+𝐴𝐴 = 0 .9738 , 𝐴𝐹 1 = 0 .9737 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = 0 .0002 
+
+𝐵𝑊 𝑇 𝐹 1 = 0 .0001 
+
+𝐴𝐴 = 0 .0502 , 𝐴𝐹 1 = 0 .053 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .2484 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .3160 
+
+Gated Recurrent Unit (GRU) 
+
+𝐴𝐴 = 0 .732 , 𝐴𝐹 1 = 0 .8173 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = 0 .0005 
+
+𝐵𝑊 𝑇 𝐹 1 = 0 .0003 
+
+𝐴𝐴 = 0 .876 , 𝐴𝐹 1 = 0 .8657 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .0412 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .0440 
+
+𝐴𝐴 = 0 .2156 , 𝐴𝐹 1 = 0 .2638 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .5354 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .5428 
+
+Transformer Encoder 
+
+𝐴𝐴 = 0 .7533 , 𝐴𝐹 1 = 0 .8313 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = 0 .0211 
+
+𝐵𝑊 𝑇 𝐹 1 = 0 .0115 
+
+𝐴𝐴 = 0 .8733 , 𝐴𝐹 1 = 0 .8696 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .0530 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .0568 
+
+𝐴𝐴 = 0 .324 , 𝐴𝐹 1 = 0 .3644 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .4577 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .4118 
+
+For ANN, only the MIR+HAT combination is truly effective: it reaches almost perfect performance with 𝐴𝐴 =0.9738 and 𝐴𝐹 1 = 0 .9737 , and essentially zero backward transfer ( 𝐵𝑊 𝑇 𝑎𝑐𝑐 ≈ 0 , 𝐵𝑊 𝑇 𝐹 1 ≈ 0 ), meaning it both learns all tasks well and completely avoids forgetting. In contrast, MIR+LwF and HAT+LwF remain close to chance level and still exhibit noticeable negative BWT, showing that for a simple feed-forward model, HAT only becomes useful when paired with replay. For GRU and Transformer, combined methods again clearly outperform single ones. On the GRU, MIR+HAT yields the highest accuracy ( 𝐴𝐴 = 0 .876 , 𝐴𝐹 1 = 0 .8657 ) with only mild forgetting, while MIR+LwF also performs strongly ( 𝐴𝐴 = 0 .732 , 𝐴𝐹 1 = 0 .8173 ) and even has slightly positive average BWT, indicating small beneficial backward transfer. HAT+LwF, however, is much weaker and shows strong negative BWT. A similar pattern appears for the Transformer: MIR+HAT achieves the best overall accuracy and F1 ( 𝐴𝐴 = 0 .8733 ,
+
+𝐴𝐹 1 = 0 .8696 ) with small negative BWT, whereas MIR+LwF attains slightly lower AA/F1 but exhibits positive BWT, suggesting that combining replay with distillation can even improve earlier tasks. HAT+LwF again underperforms. Overall, combinations that include MIR (MIR+HAT, MIR+LwF) consistently deliver high final performance and near-zero (or slightly positive) BWT, showing that replay is the key ingredient and that regularization or parameter isolation work best as complements rather than standalone solutions.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 13 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+Figure 8: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+LWF across all architectures. 
+
+Figure 9: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+HAT across all architectures.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 14 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+Figure 10: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with LwF+HAT across all architectures. Lastly, we evaluate the unified combination of all three continual learning methods (MIR+LwF+HAT) for each architecture. Table 4: MIR+LwF+HAT Results on CLINC150 Dataset 
+
+Model MIR+LwF+HAT 
+
+Artificial Neural Network (ANN) 
+
+𝐴𝐴 = 0 .8476 , 𝐴𝐹 1 = 0 .5956 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .0069 
+
+𝐵𝑊 𝑇 𝐹 1 = 0 .0078 
+
+Gated Recurrent Unit (GRU) 
+
+𝐴𝐴 = 0 .9062 , 𝐴𝐹 1 = 0 .8781 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .0345 
+
+𝐵𝑊 𝑇 𝐹 1 = −0 .0318 
+
+Transformer Encoder 
+
+𝐴𝐴 = 0 .8711 , 𝐴𝐹 1 = 0 .751 ,𝐵𝑊 𝑇 𝑎𝑐𝑐 = −0 .0225 
+
+𝐵𝑊 𝑇 𝐹 1 = 0 .0349 
+
+For the ANN, the triple method reaches 𝐴𝐴 = 0 .85 , 𝐴𝐹 1 = 0 .6956 with almost zero average backward transfer (slightly negative in accuracy and slightly positive in F1), indicating that it largely prevents forgetting while achieving strong, but not maximal, performance. However, this is still worse than the best ANN configuration (MIR+HAT), which achieved almost perfect AA and AF1, suggesting that adding LwF on top of MIR+HAT can actually hurt the simple feed-forward model. For the GRU, the unified MIR+LwF+HAT configuration achieves the best overall results across all GRU setups, with 𝐴𝐴 = 0 .91 and 𝐴𝐹 1 = 0 .88 , and only mild negative backward transfer. This shows a clear synergy: replay, distillation, and parameter isolation complement each other particularly well for recurrent architectures. For the Transformer, MIR+LwF+HAT attains accuracy comparable to MIR+HAT ( 𝐴𝐴 = 0 .87 ), but with lower macro F1 and near-zero or slightly positive BWT, meaning it slightly improves stability at the cost of some class-wise   
+
+> First Author et al.: Preprint submitted to Elsevier Page 15 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+performance. Overall, the unified method is most beneficial for the GRU, offers a stability-focused trade-off for the Transformer, and is unnecessary or even slightly detrimental compared to MIR+HAT for the ANN. 
+
+Figure 11: AA, AF1, and average BWT over accuracy and F1 as they change over tasks for sequential training with MIR+LwF+HAT across all architectures. Table 5: Best continual learning configuration per architecture on CLINC150. 
+
+Model Best CL approach AA AF1 𝑩𝑾 𝑻 𝒂𝒄𝒄 Runtime 
+
+Artificial Neural Net-work (ANN) MIR+HAT 0.9738 0.9737 0.0002 Fastets Gated Recurrent Unit (GRU) MIR+LwF+HAT 0.9062 0.8781 -0.0345 Slowest Transformer Encoder MIR+HAT 0.8733 0.8696 -0.0530 Moderate 
+
+## 5. Discussion 
+
+In this section we discuss the main empirical findings and relate them to the research questions posed earlier. Overall, the resluts confirm that naive sequential fine-tuning is not sufficient for continual intent classification (Table 1), but also show that there is no universal good choice for continual learning approach. The effectiveness of a each strategy depends strongly on both the underlying neural network architecture and on whether methods are used individually or in combination. When used in isolation (Table 2), replay-based MIR is consistently the strongest method across architectures, but it still exhibits substantial forgetting, especially for the simpler models. For the ANN, MIR alone yields low final performance ( 𝐴𝐴 ≈ 0 .19 , 𝐴𝐹 1 ≈ 0 .23 ) and strongly negative backward transfer. LwF alone performs even worse (near-zero accuracy and F1 for the ANN), and HAT alone fails to stabilize learning for GRU and Transformer models (e.g., for the GRU with HAT we observe 𝐴𝐴 ≈ 0 .09 and 𝐵𝑊 𝑇 𝑎𝑐𝑐 ≈ −0 .96 ). These results suggest that, in this setup, no single CL mechanism is sufficient: replay, distillation, and masking each address different aspects of catastrophic forgetting. However, these results give an intuition that they can give better results when combined. The combined methods show a dramatic improvement (Table 3). For the ANN, MIR+HAT almost completely solves catastrophic forgetting, achieving 𝐴𝐴 ≈ 0 .97 , 𝐴𝐹 1 ≈ 0 .97 , and essentially zero average backward transfer. For the GRU and Transformer,   
+
+> First Author et al.: Preprint submitted to Elsevier Page 16 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+combinations that include MIR again dominate: MIR+HAT and MIR+LwF both deliver high final performance, while HAT+LwF remains comparatively weak. Importantly, some combinations (e.g., MIR+LwF for GRU and Transformer) achieve slightly positive average backward transfer, indicating that revisiting carefully selected past examples with distillation can even improve performance on earlier tasks. The unified configuration MIR+LwF+HAT (Table 4) further clarifies the picture. For the GRU, this triple combination yields the best overall performance across all GRU setups ( 𝐴𝐴 ≈ 0 .91 , 𝐴𝐹 1 ≈ 0 .88 ) with only mild negative backward transfer, suggesting a genuine synergy between replay, regularization, and parameter isolation. For the Transformer, the triple method reaches accuracy comparable to MIR+HAT but with slightly lower macro F1 and near-zero or slightly positive backward transfer, pointing to a trade-off between class-wise performance and stability. For the ANN, however, MIR+HAT remains the best configuration; adding LwF on top of MIR+HAT lowers performance while offering little additional stability benefit. This asymmetry highlights that the same CL components interact differently depending on the underlying architecture. The final best results of each architecture with the respective best CL approach yield better results than by the joint training, meaning that continual learning methods can help generalization by acting as a regularizer. On of the central goals of this work was to balance stability and plasticity. In our results we observe that inidividual methods often favour one side of the trade-off. For instance, MIR alone improves plasticity by revisiting past samples, but still allows some forgetting, especially for simpler models. LwF alone tends to prioritize stability, but at the cost of plasticity, leading to poor learning of new tasks. HAT alone can strongly protect past knowledge, but may overly restrict plasticity, especially for complex architectures like GRU and Transformer. However, when combined, these approaches tend to balance each other out, leading to both high final performance and near-zero or slightly positive backward transfer. MIR+HAT for the ANN achieves both high final performance and almost zero backward transfer, demonstrating that replay can supply the necessary plasticity while HAT protects previously used capacity. For GRU and Transformer, the combinations MIR+LwF and MIR+LwF+HAT achieve high accuracy and F1 with near-zero or mildly negative backward transfer, indicating that the network can integrate new tasks without catastrophically overwriting old ones. In several cases, slightly positive BWT values suggest beneficial backward transfer, where learning new tasks indirectly helps refine earlier decision boundaries. The overall picture suggests that replaying past examples with MIR is the most crucial ingredient for plasticity, while LwF and HAT act as complementary mechanisms and help stabilize learning and prevent forgetting, leading to a more balanced stability–plasticity trade-off. Using these methods in isolation either leaves too much forgetting or overly restricts learning, whereas carefully chosen combinations can approximate the performance of joint training while respecting the sequential constraint. The three architectures exhibit distinct behaviours under continual learning. In general, the Transformer achieves the highest absolute performance when equipped with strong CL methods (e.g., MIR+HAT), reflecting its greater capacity and ability to model long-range dependencies. However, the relative gains from CL are largest for the simpler ANN. Moving from individual methods to MIR+HAT transforms the ANN from a highly forgetful model into one that yields a superior result on joint-training. This suggests that even lightweight architectures can become competitive continual learners when equipped with an appropriate combination of replay and parameter isolation. The GRU occupies an intermediate regime. Without CL, recurrent models already capture useful sequential structure but still suffer severe forgetting. With MIR+LwF+HAT, the GRU attains both high final accuracy and relatively stable backward transfer, indicating that recurrent architectures can particularly benefit from the combined effects of replay, distillation, and masking. Across all architectures, the qualitative ranking of CL strategies is broadly consistent: replay-based methods and hybrids that include MIR clearly outperform naïve sequential fine-tuning and individual LwF or HAT runs. At the same time, the best-performing combination differs slightly by architecture (MIR+HAT for ANN and Transformer, MIR+LwF+HAT for GRU), showing that the interaction between CL mechanisms and model inductive biases is non-trivial. Practically, this implies that CL method selection should consider not only the task and data but also the backbone architecture. Furthermore, the GRU and Transformers are data-hungry models and may require more data or pretraining to fully leverage their capacity.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 17 of 19 Continual Learning in NLP and Catastrophic Forgetting
+
+## 6. Limitations 
+
+From a practical perspective, our findings suggest several guidelines for designing continual intent classification systems. First, replay should be considered a default choice. Methods without a replay component either perform poorly or require strong architectural constraints. Second, adding either distillation (LwF) or parameter isolation (HAT) on top of replay can significantly improve stability, but the best combination is architecture-dependent. The experiments demonstrate that continual learning for NLP is feasible with carefully designed combinations of replay, regularization, and parameter isolation, and that understanding the interaction between CL mechanisms and model architecture is crucial for achieving a favourable stability–plasticity trade-off. At the same time, several limitations of this study should be taken into account and acknowledged when interpreting the results. First of all, we only evaluated on a single dataset (CLINC150) and a specific task (intent classification) with a fixed 10-task label-disjoint split. Although this setup is useful for controlled analysis, it may not fully capture the diversity of real-world continual learning scenarios, such as domain shifts, evolving label spaces with overlaps, or truly open-ended streams of user queries. Future work therefore should assess the generality of these findings across multiple datasets (e.g., other intent benchmarks, sentiment analysis, or topic classification), tasks, including partially overlapping label sets and domain-incremental settings. Secondly, our analysis is limited to three backbone architectures: a feed-forward ANN, a GRU, and a lightweight Transformer encoder. While these models represent common text-classification paradigms, they do not cover the full spectrum of modern NLP architectures, particularly large pretrained language models and parameter-efficient fine-tuning techniques. Investigating how MIR, LwF, HAT, and their combinations interact with large-scale Transformers, adapters, or prompt-tuning methods is an important direction for future work, especially in resource-constrained continual learning settings. Finally, although we tune hyperparameters using Bayesian optimization, our study does not explore the sensitivity of each method to memory size, replay frequency, regularization strength, or mask sparsity. We also do not perform formal statistical significance testing across random seeds. A more detailed study of hyperparameters, memory size, and computational cost would make our conclusions more reliable and give clearer guidelines for using continual learning in real-world intent classification systems. 
+
+## 7. Conclusion 
+
+In this work, we studied catastrophic forgetting in a continual intent classification setting based on the CLINC150 dataset. We constructed a 10-task label-disjoint scenario and compared three neural architectures: a feed-forward ANN, a GRU, and a Transformer encoder under three continual learning families: replay (MIR), regularization (LwF), and parameter isolation (HAT), both individually and in combination. Using accuracy, macro F1, and backward transfer as evaluation metrics, we analyzed how different strategies balance stability (retaining old tasks) and plasticity (learning new ones). Our results show that naive sequential fine-tuning suffers from severe forgetting across all architectures, while no single CL method completely solves the problem. Replay-based MIR is the most reliable individual strategy, but it still leaves noticeable negative backward transfer, especially for simpler models. The strongest performance is obtained by combining methods: MIR+HAT almost eliminates forgetting and approaches joint-training performance for the ANN and Transformer, whereas the triple combination MIR+LwF+HAT yields the best overall results for the GRU. These findings highlight that replay is a crucial component for plasticity, while regularization and parameter isolation act as complementary mechanisms that improve stability when used alongside replay. Architectural differences also play a clear role. The Transformer achieves the highest absolute performance with strong CL methods, but the relative gains from CL are largest for the ANN, which transforms from highly forgetful to almost perfectly stable when equipped with MIR+HAT. The GRU benefits most from the full MIR+LwF+HAT combination, indicating that recurrent models can particularly exploit the synergy between replay, distillation, and masking. Overall, the qualitative ranking of CL strategies is consistent across architectures, but the best-performing combination is architecture-dependent. Taken together, our experiments suggest that effective continual learning for intent classification requires both an appropriate backbone and a carefully chosen combination of replay, regularization, and parameter isolation. We hope that this analysis, and the concrete configurations identified as strong baselines, can serve as a reference point for future work on continual learning in NLP and for practitioners interested in deploying continual intent classifiers in real-world systems.   
+
+> First Author et al.: Preprint submitted to Elsevier Page 18 of 19
+
+Continual Learning in NLP and Catastrophic Forgetting 
+
+## References 
+
+[1] De Lange, M., Aljundi, R., Masana, M., Parisot, S., Jia, X., Leonardis, A., Slabaugh, G. and Tuytelaars, T., 2021. A continual learning survey: Defying forgetting in classification tasks. IEEE transactions on pattern analysis and machine intelligence, 44(7), pp.3366-3385. [2] Aljundi, R., Belilovsky, E., Tuytelaars, T., Charlin, L., Caccia, M., Lin, M. and Page-Caccia, L., 2019. Online continual learning with maximal interfered retrieval. Advances in neural information processing systems, 32. [3] Lopez-Paz, D. and Ranzato, M.A., 2017. Gradient episodic memory for continual learning. Advances in neural information processing systems, 30. [4] Kirkpatrick, J., Pascanu, R., Rabinowitz, N., Veness, J., Desjardins, G., Rusu, A.A., Milan, K., Quan, J., Ramalho, T., Grabska-Barwinska, A. and Hassabis, D., 2017. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences, 114(13), pp.3521-3526. [5] Li, Z. and Hoiem, D., 2017. Learning without forgetting. IEEE transactions on pattern analysis and machine intelligence, 40(12), pp.2935-2947. [6] Rusu, A.A., Rabinowitz, N.C., Desjardins, G., Soyer, H., Kirkpatrick, J., Kavukcuoglu, K., Pascanu, R. and Hadsell, R., 2016. Progressive neural networks. arXiv preprint arXiv:1606.04671. [7] Mallya, A. and Lazebnik, S., 2018. Packnet: Adding multiple tasks to a single network by iterative pruning. In Proceedings of the IEEE conference on Computer Vision and Pattern Recognition (pp. 7765-7773). [8] Serra, J., Suris, D., Miron, M. and Karatzoglou, A., 2018, July. Overcoming catastrophic forgetting with hard attention to the task. In International conference on machine learning (pp. 4548-4557). PMLR. [9] Parisi, G. I., Kemker, R., Part, J. L., Kanan, C., & Wermter, S. (2019). Continual lifelong learning with neural networks: A review. Neural Networks, 113, 54-71. https://doi.org/10.1016/j.neunet.2019.01.012 [10] Zhou, D., Sun, H., Ning, J., Ye, H., & Zhan, D. (2024b). Continual Learning with Pre-Trained Models: A Survey. arXiv (Cornell University). https://doi.org/10.48550/arxiv.2401.16386 [11] Biesialska, M., Biesialska, K., & Costa-Jussà, M. R. (2020). Continual Lifelong Learning in Natural Language Processing: A Survey. ACL Anthology. https://doi.org/10.18653/v1/2020.coling-main.574 [12] Ke, Z., & Liu, B. (2022). Continual Learning of Natural Language Processing Tasks: a survey. arXiv (Cornell University). https://doi.org/10.48550/arxiv.2211.12701 [13] De Masson D’Autume, C., Ruder, S., Kong, L., & Yogatama, D. (2019). Episodic memory in lifelong language learning. arXiv (Cornell University). https://doi.org/10.48550/arxiv.1906.01076 [14] Sun, F., Ho, C., & Lee, H. (2019b). LAMOL: LAnguage MOdeling for Lifelong Language Learning. arXiv (Cornell University). https://doi.org/10.48550/arxiv.1909.03329 [15] Huang, Y., Zhang, Y., Chen, J., Wang, X., & Yang, D. (2021b). Continual Learning for Text Classification with Information Disentanglement Based Regularization. ACL Anthology. https://doi.org/10.18653/v1/2021.naacl-main.218 [16] Paul, D., Sorokin, D., & Gaspers, J. (2022). Class Incremental Learning for Intent Classification with Limited or No Old Data. ACL Anthology, 16-25. https://doi.org/10.18653/v1/2022.evonlp-1.4 [17] Luoyiching, C., Li, Y., Li, Y., Li, R., Zheng, H., Zhou, N., & Su, H. (2023). Prompt learning with knowledge memorizing prototypes for generalized Few-Shot intent detection. arXiv (Cornell University). https://doi.org/10.48550/arxiv.2309.04971 [18] Zhang, X., Jiang, M., Chen, H., Zheng, J., & Pan, Z. (2022). Incorporating geometry knowledge into an incremental learning structure for few-shot intent recognition. Knowledge-Based Systems, 251, 109296. https://doi.org/10.1016/j.knosys.2022.109296 [19] Song, X., Mou, Y., He, K., Qiu, Y., Zhao, J., Wang, P., & Xu, W. (2023). Continual Generalized Intent Discovery: Marching Towards Dynamic and Open-world Intent Recognition. ACL Anthology. https://doi.org/10.18653/v1/2023.findings-emnlp.289 [20] CLINC150. 2020. UCI Machine Learning Repository. https://doi.org/10.24432/C5MP58. 
+
+First Author et al.: Preprint submitted to Elsevier Page 19 of 19 Continual Learning in NLP and Catastrophic Forgetting Token IDs ⟶ Embedding Layer ⟶ Mean Pooling ⟶
+
+Fully Connected Hidden Layer 
+
+⟶
+
+ReLU Activation +Dropout 
+
+⟶ Output Layer Token IDs ⟶ Embedding Layer ⟶ GRU Layer ⟶ Output Layer Token IDs ⟶ Embedding Layer ⟶ Transformer Encoder ⟶ Mean Pooling ⟶ Output Layer 
+
+Figure 3: Schematic diagram of ANN, GRU, and Transformer encoder First Author et al.: Preprint submitted to Elsevier Page 20 of 19

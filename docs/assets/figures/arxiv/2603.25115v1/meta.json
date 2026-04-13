@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-001.webp",
+      "caption": "Figure 3 Photographs show example materials from LMT108. HapTex groups materials into coarse categories (e.g., velvet, leather, chiffon, wool, nylon, polyester, linen, and silk). LMT108 defines nine coarse categories, including meshes, stones, blank glossy surfaces, wood types, rubbers, fibers, foams, foils and papers, and textiles and fabrics. We apply dataset-specific normalization for numerical stability and ease of use. Context-dependent variations persist after this preprocessing, motivating CaT-FSCIL.",
+      "page": 6,
+      "index": 1,
+      "width": 454,
+      "height": 425
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-002.webp",
+      "caption": "Table 6 Ablation study on LMT108 dataset.",
+      "page": 11,
+      "index": 2,
+      "width": 902,
+      "height": 215
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-003.webp",
+      "caption": "Figure 1 Acquisition context degrades FSCIL through two coupled failure modes. (a) Context overfitting makes prototypes encode context-dependent cues and yields unstable target representations. Context variation failure occurs when a novel acquisition context is interpreted as the closest previously observed one. (b) CaT-FSCIL applies a learned context transform to canonicalize the context-target feature into a more compact target representation, while handling the residual via context uncertainty to calibrate decision boundaries and mitigate misclassification.",
+      "page": 2,
+      "index": 3,
+      "width": 504,
+      "height": 475
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-004.webp",
+      "caption": "Table 3 Comparison on the LMT108 dataset.",
+      "page": 7,
+      "index": 4,
+      "width": 890,
+      "height": 242
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-005.webp",
+      "caption": "Figure 4 Performance comparison and ablation results. (a) HapTex, (b) LMT108, and (c) ablation on HapTex. CaT-FSCIL achieves the strongest overall performance across both datasets and remains robust to tactile-specific context–material entanglement, which can otherwise distort representations and impair FSCIL baselines.",
+      "page": 7,
+      "index": 5,
+      "width": 1044,
+      "height": 314
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-006.webp",
+      "caption": "Table 2 Comparison on the HapTex dataset. Red and blue denote the best and second-best results, respectively.",
+      "page": 7,
+      "index": 6,
+      "width": 890,
+      "height": 240
+    },
+    {
+      "url": "assets/figures/arxiv/2603.25115v1/fig-007.webp",
+      "caption": "Figure 2 The context transform is the core operation of Context-as-Transform (CaT), which uses low-dimensional context parameters to modulate acquisition-context effects and is shared across all modules in CaT-FSCIL. (i) At inference, the estimated context c is used to canonicalize the observed spectrogram My,c into a material-centric representation My , which is fed to the embedding learner and UCPC. (ii) During training, pseudo-contexts c̃p are injected to optimize the context estimator via pseudo-context consistency. (iii) In UCPC, nucpc pseudo-contexts are sampled to estimate context uncertainty from canonicalization stability and calibrate the classifier.",
+      "page": 3,
+      "index": 7,
+      "width": 990,
+      "height": 348
+    }
+  ]
+}

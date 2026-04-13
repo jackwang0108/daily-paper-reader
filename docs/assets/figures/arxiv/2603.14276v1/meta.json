@@ -1,0 +1,230 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-001.webp",
+      "caption": "Table 14: The Analysis Results (SR/F-SR/SPL/F-SPL/OSR/F-OSR in %) of Third-order Tensors for Representation multi-hierarchical Knowledge.",
+      "page": 26,
+      "index": 1,
+      "width": 827,
+      "height": 418
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-002.webp",
+      "caption": "Table 21: Test Results (F-OSR ↓ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 30,
+      "index": 2,
+      "width": 827,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-003.webp",
+      "caption": "Table 19: Test Results (F-SPL ↓ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 30,
+      "index": 3,
+      "width": 827,
+      "height": 280
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-004.webp",
+      "caption": "Table 20: Test Results (OSR ↑ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 30,
+      "index": 4,
+      "width": 825,
+      "height": 297
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-005.webp",
+      "caption": "Table 22: Descriptions and dataset statistics of added Tasks T25–T30.",
+      "page": 30,
+      "index": 5,
+      "width": 764,
+      "height": 202
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-006.webp",
+      "caption": "Figure 6: Illustration of our all-day multi-scenes lifelong VLN Benchmark. Agents are required to perform continual learning across two dimensions: scene and environment. The order of tasks is randomized. Further details please refer to Appendix §E.",
+      "page": 7,
+      "index": 6,
+      "width": 531,
+      "height": 298
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-007.webp",
+      "caption": "Table 16: Statistics of the 10 Sequential Tasks for Verifying Fifth-order Tensor TuKA, and Some Comparison Results (SR/F-SR in %).",
+      "page": 29,
+      "index": 7,
+      "width": 825,
+      "height": 295
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-008.webp",
+      "caption": "Table 18: Test Results (SPL ↑ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 29,
+      "index": 8,
+      "width": 825,
+      "height": 298
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-009.webp",
+      "caption": "Table 17: Comparison of Baselines: Trainable Parameters and Averaged Metrics on the 24-task AML-VLN Benchmark Learning. Metrics (SR/F-SR in %) Are Averages across 24 Tasks, and Metrics (SPL/F-SPL/OSR/F-OSR in %) are Averages across First 20 Tasks Reported in the Paper.",
+      "page": 29,
+      "index": 9,
+      "width": 825,
+      "height": 252
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-010.webp",
+      "caption": "Table 7: Some Important Hyper-parameters in AlldayWalker.",
+      "page": 22,
+      "index": 10,
+      "width": 618,
+      "height": 379
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-011.webp",
+      "caption": "Table 5: Generalization performance SR (%) across unseen environments (G1–G6).",
+      "page": 10,
+      "index": 11,
+      "width": 824,
+      "height": 188
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-012.webp",
+      "caption": "Table 8: Some Important Degradation Imaging Model Parameters.",
+      "page": 23,
+      "index": 12,
+      "width": 618,
+      "height": 461
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-013.webp",
+      "caption": "Table 9: Statistics of the 24 Sequential Tasks in Allday-Habitat Benchmark. Each Task Corresponds to One Scene under One Environment Type.",
+      "page": 23,
+      "index": 13,
+      "width": 825,
+      "height": 569
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-014.webp",
+      "caption": "Figure 12: Illustration of the fifth-order tensor TuKA architecture.",
+      "page": 28,
+      "index": 14,
+      "width": 740,
+      "height": 281
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-015.webp",
+      "caption": "Table 1: Test Results (SR ↑ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 8,
+      "index": 15,
+      "width": 827,
+      "height": 246
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-016.webp",
+      "caption": "Table 2: Test Results (F-SR ↓ in %) of Comparison Experiments under the AML-VLN Settings.",
+      "page": 8,
+      "index": 16,
+      "width": 827,
+      "height": 204
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-017.webp",
+      "caption": "Figure 3: Illustration for comparison of existing LoRAs and our TuKA architecture. Different from the LoRA or MoE-LoRA variants, which represent simple knowledge within a two-hierarchical matrix, TuKA decoupling represents the multi-hierarchical knowledge within a high-order tensor.",
+      "page": 4,
+      "index": 17,
+      "width": 824,
+      "height": 258
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-018.webp",
+      "caption": "Table 6: Some Important Notations and Definitions Used in This Paper.",
+      "page": 19,
+      "index": 18,
+      "width": 827,
+      "height": 886
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-019.webp",
+      "caption": "Figure 15: Illustration of the visualization examples for G1-G4.",
+      "page": 32,
+      "index": 19,
+      "width": 826,
+      "height": 604
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-020.webp",
+      "caption": "Figure 16: Illustration of the visualization examples for G5-G6.",
+      "page": 32,
+      "index": 20,
+      "width": 826,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-021.webp",
+      "caption": "Table 15: The Comparison Results (SR/F-SR/SPL/F-SPL/OSR/F-OSR in %) of ABC-LoRA for Representation Multi-hierarchical Knowledge.",
+      "page": 27,
+      "index": 21,
+      "width": 827,
+      "height": 455
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-022.webp",
+      "caption": "Figure 11: The comparison results for ABC-LoRA with hierarchical architecture.",
+      "page": 27,
+      "index": 22,
+      "width": 829,
+      "height": 590
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-023.webp",
+      "caption": "Figure 9: Illustration of the proposed robotic navigation system.",
+      "page": 24,
+      "index": 23,
+      "width": 823,
+      "height": 197
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-024.webp",
+      "caption": "Figure 10: The analysis results for TuKA parameter growth for scaling of ranks.",
+      "page": 24,
+      "index": 24,
+      "width": 818,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-025.webp",
+      "caption": "Figure 7: Test results ((a) SPL ↑, (b) F-SPL ↓, (c) OSR ↑, (d) F-OSR ↓) of comparison experiment under the AML-VLN settings. For detailed quantitative results, please refer to our Appendix § K.",
+      "page": 9,
+      "index": 25,
+      "width": 826,
+      "height": 229
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-026.webp",
+      "caption": "Figure 14: Illustration of the visualization examples for T29-T30.",
+      "page": 31,
+      "index": 26,
+      "width": 826,
+      "height": 356
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-027.webp",
+      "caption": "Figure 13: Illustration of the visualization examples for T25-T28.",
+      "page": 31,
+      "index": 27,
+      "width": 829,
+      "height": 608
+    },
+    {
+      "url": "assets/figures/arxiv/2603.14276v1/fig-028.webp",
+      "caption": "Figure 4: Illustration of the proposed decoupled knowledge incremental learning. Our TuKA performs decoupled incremental learning for multi-hierarchical knowledge in a high-dimensional space.",
+      "page": 5,
+      "index": 28,
+      "width": 820,
+      "height": 250
+    }
+  ]
+}

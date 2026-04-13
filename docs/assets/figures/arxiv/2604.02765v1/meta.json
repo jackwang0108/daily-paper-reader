@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-001.webp",
+      "caption": "Fig. 2: The proposed strategies for FFCIL. Class-wise mean loss enforces classinvariant updates, mitigating instability caused by free-flow class exposure. Replay-only distillation excludes new-class samples, reducing sensitivity to free-flow class arrivals. Objectives whose magnitudes depend on the sample or the activated class space are scale-normalized. The dynamic weight alignment scheme regulates calibration strength by new class increments to prevent over-adjustment.",
+      "page": 6,
+      "index": 1,
+      "width": 650,
+      "height": 437
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-002.webp",
+      "caption": "Table 1: Final accuracy AT and forgetting Fgt comparison in CIFAR-100 and VTAB datasets under the same total classes and stages for FF and Equ.T.",
+      "page": 11,
+      "index": 2,
+      "width": 654,
+      "height": 325
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-003.webp",
+      "caption": "Fig. 3: BiC confusion matrices on CIFAR-100 for equal-split CIL, Free-Flow with original method, and Free-Flow with our framework.",
+      "page": 11,
+      "index": 3,
+      "width": 717,
+      "height": 208
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-004.webp",
+      "caption": "Fig. 1: Illustration of FFCIL. (a) Unlike equal-size tasks, FFCIL allows variable perstep class increments. (b) Existing CIL methods experience a substantial accuracy drop under FFCIL, even with the same number of classes and learning stages.",
+      "page": 2,
+      "index": 4,
+      "width": 590,
+      "height": 279
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-005.webp",
+      "caption": "Table 3: Ablation study of FFCIL components on the CIFAR-100 dataset. CWM indicates the proposed class-wise mean loss, and Replay-Dist denotes the replay-only distillation.",
+      "page": 14,
+      "index": 5,
+      "width": 664,
+      "height": 229
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-006.webp",
+      "caption": "Fig. 6: Training-time study of each component. (a) CWM loss on three baselines. (b) Other components (Replay.Dist: replay-only distillation on iCaRL; TagFex.CWM: TagFex with CWM). (c) Weight-alignment time with and w/o DIWA.",
+      "page": 14,
+      "index": 6,
+      "width": 605,
+      "height": 404
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-007.webp",
+      "caption": "Fig. 4: Impact of FFCIL step schedules on CIFAR-100: (a) iCaRL and (b) DER under ascending, descending, and highly fluctuating schedules.",
+      "page": 13,
+      "index": 7,
+      "width": 683,
+      "height": 205
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02765v1/fig-008.webp",
+      "caption": "Fig. 5: Step-wise accuracy on CIFAR-100 under an extreme FFCIL schedule, with 90 classes introduced initially, followed by 1–2 classes per step.",
+      "page": 13,
+      "index": 8,
+      "width": 603,
+      "height": 229
+    }
+  ]
+}
