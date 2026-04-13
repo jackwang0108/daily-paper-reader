@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.03833v1/fig-001.webp",
+      "caption": "Fig. 1: Comparison of detection accuracy and model efficiency on the UniversalFakeDetect benchmark. (a) Efficiency comparison in terms of number of parameters. (b) Mean accuracy across 19 generative models.",
+      "page": 3,
+      "index": 1,
+      "width": 725,
+      "height": 268
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03833v1/fig-002.webp",
+      "caption": "Fig. 4: t-SNE visualization of SPARK-IL RAG embedding distributions for real (green) and fake (red) samples across different generative models.",
+      "page": 9,
+      "index": 2,
+      "width": 725,
+      "height": 387
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03833v1/fig-003.webp",
+      "caption": "Fig. 2: SPARK-IL architecture. Dual spectral paths process ViT features and RGB pixels through multi-band KAN-FFT blocks. Cross-attention fuses the spectral embeddings, which are used for classification during training and stored in Milvus for retrieval-based inference.",
+      "page": 5,
+      "index": 3,
+      "width": 616,
+      "height": 473
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03833v1/fig-004.webp",
+      "caption": "Fig. 3: Multi-band KAN-FFT block. Input features are transformed via FFT, converted to log-magnitude spectrum, partitioned into four frequency bands, processed through dedicated KAN layers, and fused into a spectral embedding.",
+      "page": 5,
+      "index": 4,
+      "width": 652,
+      "height": 204
+    }
+  ]
+}

@@ -6,187 +6,94 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-03-15 ~ 2026-04-13
-- 运行时间：2026-04-13 15:18:45 UTC
+- 最新运行日期：2026-04-04 ~ 2026-04-13
+- 运行时间：2026-04-13 15:52:38 UTC
 - 运行状态：成功
-- 本次总论文数：55
-- 精读区：44
+- 本次总论文数：24
+- 精读区：13
 - 速读区：11
 
 ### 今日简报（AI）
-本期精选 55 篇前沿成果，深度聚焦自动驾驶终身学习与脉冲 Transformer 结合持续学习的突破性进展。
-重点推荐通过动态知识空间解决自动驾驶去混杂问题，以及利用动态阈值优化脉冲 Transformer 持续学习能力的满分方案。
-建议读者关注损失平面几何在长尾学习中的应用，并探索应对联邦学习异步数据漂移的防御机制。
-- 详情：[/20260315-20260413/README](/20260315-20260413/README)
+本期精选 24 篇论文深度剖析持续学习前沿，重点攻克在线任务处理与自动驾驶模型的遗忘难题。
+满分研究揭示了任务无关学习中提示词选择的冗余性，并针对驾驶模型微调中的“适应盲点”提出了量化缓解方案。
+建议关注几何基础模型在序列重建中的新突破，并探索如何利用结构对齐理论提升稀疏内存的微调效率。
+- 详情：[/20260404-20260413/README](/20260404-20260413/README)
 
 ### 精读区论文标签
-1. [Deconfounded Lifelong Learning for Autonomous Driving via Dynamic Knowledge Spaces](/20260315-20260413/2603.14354v1-deconfounded-lifelong-learning-for-autonomous-driving-via-dynamic-knowledge-spaces)  
+1. [Is Prompt Selection Necessary for Task-Free Online Continual Learning?](/20260404-20260413/2604.04420v1-is-prompt-selection-necessary-for-task-free-online-continual-learning)  
    标签：评分：10.0/10、query:cs-cv
-   evidence：解决灾难性遗忘的自动驾驶终身学习
-2. [CATFormer: When Continual Learning Meets Spiking Transformers With Dynamic Thresholds](/20260315-20260413/2603.15184v1-catformer-when-continual-learning-meets-spiking-transformers-with-dynamic-thresholds)  
+   evidence：动态环境下的无任务在线持续学习
+2. [The Blind Spot of Adaptation: Quantifying and Mitigating Forgetting in Fine-tuned Driving Models](/20260404-20260413/2604.04857v1-the-blind-spot-of-adaptation-quantifying-and-mitigating-forgetting-in-fine-tuned-driving-models)  
    标签：评分：10.0/10、query:cs-cv
-   evidence：解决脉冲神经网络在类增量学习中的灾难性遗忘问题
-3. [Continual Multimodal Egocentric Activity Recognition via Modality-Aware Novel Detection](/20260315-20260413/2603.16970v1-continual-multimodal-egocentric-activity-recognition-via-modality-aware-novel-detection)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：多模态第一视角开放世界持续学习
-4. [Elastic Weight Consolidation Done Right for Continual Learning](/20260315-20260413/2603.18596v1-elastic-weight-consolidation-done-right-for-continual-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：用于缓解灾难性遗忘的弹性权重整合
-5. [Elastic Weight Consolidation Done Right for Continual Learning](/20260315-20260413/2603.18596v3-elastic-weight-consolidation-done-right-for-continual-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：分析并改进弹性权重整合（EWC）以减轻持续学习中的灾难性遗忘
-6. [Enhancing Pretrained Model-based Continual Representation Learning via Guided Random Projection](/20260315-20260413/2603.19145v1-enhancing-pretrained-model-based-continual-representation-learning-via-guided-random-projection)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：基于预训练模型的计算机视觉持续表示学习
-7. [Continual Learning as Shared-Manifold Continuation Under Compatible Shift](/20260315-20260413/2603.20036v1-continual-learning-as-shared-manifold-continuation-under-compatible-shift)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：通过共享流形延续的几何方法进行持续学习
-8. [A Multihead Continual Learning Framework for Fine-Grained Fashion Image Retrieval with Contrastive Learning and Exponential Moving Average Distillation](/20260315-20260413/2603.20648v1-a-multihead-continual-learning-framework-for-fine-grained-fashion-image-retrieval-with-contrastive-learning-and-exponential-moving-average-distillation)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：探索细粒度时尚图像检索中的类增量学习。
-9. [Natural Gradient Descent for Online Continual Learning](/20260315-20260413/2603.20898v1-natural-gradient-descent-for-online-continual-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：用于图像分类在线持续学习的自然梯度下降法
-10. [Pruned Adaptation Modules: A Simple yet Strong Baseline for Continual Foundation Models](/20260315-20260413/2603.21170v1-pruned-adaptation-modules-a-simple-yet-strong-baseline-for-continual-foundation-models)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：基于基础模型的类增量学习 (CIL)
-11. [Compensating Visual Insufficiency with Stratified Language Guidance for Long-Tail Class Incremental Learning](/20260315-20260413/2603.21708v1-compensating-visual-insufficiency-with-stratified-language-guidance-for-long-tail-class-incremental-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：利用语言引导解决长尾类增量学习中的灾难性遗忘
-12. [Bi-CRCL: Bidirectional Conservative-Radical Complementary Learning with Pre-trained Foundation Models for Class-incremental Medical Image Analysis](/20260315-20260413/2603.23729v1-bi-crcl-bidirectional-conservative-radical-complementary-learning-with-pre-trained-foundation-models-for-class-incremental-medical-image-analysis)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：使用基础模型进行医学图像分析的类增量学习 (CIL)
-13. [Dual-Imbalance Continual Learning for Real-World Food Recognition](/20260315-20260413/2603.29133v1-dual-imbalance-continual-learning-for-real-world-food-recognition)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：持续食物识别，新类别随时间顺序引入
-14. [CL-VISTA: Benchmarking Continual Learning in Video Large Language Models](/20260315-20260413/2604.00677v1-cl-vista-benchmarking-continual-learning-in-video-large-language-models)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：在视频大语言模型中对持续学习进行基准测试，以揭示灾难性遗忘。
-15. [Continual Vision-Language Learning for Remote Sensing: Benchmarking and Analysis](/20260315-20260413/2604.00820v1-continual-vision-language-learning-for-remote-sensing-benchmarking-and-analysis)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：遥感领域持续视觉语言学习的基准测试
-16. [ProTPS: Prototype-Guided Text Prompt Selection for Continual Learning](/20260315-20260413/2604.01116v1-protps-prototype-guided-text-prompt-selection-for-continual-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：利用视觉原型针对序列到达类别的持续学习
-17. [Towards Realistic Class-Incremental Learning with Free-Flow Increments](/20260315-20260413/2604.02765v1-towards-realistic-class-incremental-learning-with-free-flow-increments)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：形式化了针对现实数据流的自由流类增量学习 (FFCIL)
-18. [Unlocking Positive Transfer in Incrementally Learning Surgical Instruments: A Self-reflection Hierarchical Prompt Framework](/20260315-20260413/2604.02877v1-unlocking-positive-transfer-in-incrementally-learning-surgical-instruments-a-self-reflection-hierarchical-prompt-framework)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：手术器械的类增量分割
-19. [ProtoFlow: Mitigating Forgetting in Class-Incremental Remote Sensing Segmentation via Low-Curvature Prototype Flow](/20260315-20260413/2604.03212v1-protoflow-mitigating-forgetting-in-class-incremental-remote-sensing-segmentation-via-low-curvature-prototype-flow)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：通过原型流缓解遥感分割中的类增量遗忘
-20. [Is Prompt Selection Necessary for Task-Free Online Continual Learning?](/20260315-20260413/2604.04420v1-is-prompt-selection-necessary-for-task-free-online-continual-learning)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：针对非平稳数据流的无任务在线持续学习
-21. [Continual Visual Anomaly Detection on the Edge: Benchmark and Efficient Solutions](/20260315-20260413/2604.06435v1-continual-visual-anomaly-detection-on-the-edge-benchmark-and-efficient-solutions)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：视觉异常检测持续学习的基准测试
-22. [Few-Shot Incremental 3D Object Detection in Dynamic Indoor Environments](/20260315-20260413/2604.07997v1-few-shot-incremental-3d-object-detection-in-dynamic-indoor-environments)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：动态环境下的少样本增量3D目标检测
-23. [Leveraging Complementary Embeddings for Replay Selection in Continual Learning with Small Buffers](/20260315-20260413/2604.08336v1-leveraging-complementary-embeddings-for-replay-selection-in-continual-learning-with-small-buffers)  
-   标签：评分：10.0/10、query:cs-cv
-   evidence：利用互补嵌入解决基于重放的持续学习中的灾难性遗忘问题。
-24. [All-day Multi-scenes Lifelong Vision-and-Language Navigation with Tucker Adaptation](/20260315-20260413/2603.14276v1-all-day-multi-scenes-lifelong-vision-and-language-navigation-with-tucker-adaptation)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：终身视觉语言导航，解决跨场景的灾难性遗忘问题
-25. [Fine-tuning MLLMs Without Forgetting Is Easier Than You Think](/20260315-20260413/2603.14493v1-fine-tuning-mllms-without-forgetting-is-easier-than-you-think)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：在微调过程中减轻多模态大语言模型的灾难性遗忘
-26. [Abstraction as a Memory-Efficient Inductive Bias for Continual Learning](/20260315-20260413/2603.17198v1-abstraction-as-a-memory-efficient-inductive-bias-for-continual-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：使用抽象增强训练在严格的在线数据流中稳定学习
-27. [Elastic Weight Consolidation Done Right for Continual Learning](/20260315-20260413/2603.18596v2-elastic-weight-consolidation-done-right-for-continual-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：分析弹性权重巩固（EWC）以缓解灾难性遗忘
-28. [Continual Learning for Food Category Classification Dataset: Enhancing Model Adaptability and Performance](/20260315-20260413/2603.19624v1-continual-learning-for-food-category-classification-dataset-enhancing-model-adaptability-and-performance)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：文本引导的食物类别分类持续学习框架
-29. [HSI Image Enhancement Classification Based on Knowledge Distillation: A Study on Forgetting](/20260315-20260413/2603.20292v1-hsi-image-enhancement-classification-based-on-knowledge-distillation-a-study-on-forgetting)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：高光谱图像的增量分类与灾难性遗忘
-30. [Similarity-Aware Mixture-of-Experts for Data-Efficient Continual Learning](/20260315-20260413/2603.23436v1-similarity-aware-mixture-of-experts-for-data-efficient-continual-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：用于模型持续适配的持续学习框架
-31. [When Sensing Varies with Contexts: Context-as-Transform for Tactile Few-Shot Class-Incremental Learning](/20260315-20260413/2603.25115v1-when-sensing-varies-with-contexts-context-as-transform-for-tactile-few-shot-class-incremental-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：触觉少样本类增量学习
-32. [Dual-Stage Invariant Continual Learning under Extreme Visual Sparsity](/20260315-20260413/2603.26190v1-dual-stage-invariant-continual-learning-under-extreme-visual-sparsity)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：极端视觉稀疏情况下的目标检测持续学习
-33. [HAD: Heterogeneity-Aware Distillation for Lifelong Heterogeneous Learning](/20260315-20260413/2603.26192v1-had-heterogeneity-aware-distillation-for-lifelong-heterogeneous-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：跨异构视觉任务（如密集预测）的终身学习
-34. [On Token's Dilemma: Dynamic MoE with Drift-Aware Token Assignment for Continual Learning of Large Vision Language Models](/20260315-20260413/2603.27481v1-on-tokens-dilemma-dynamic-moe-with-drift-aware-token-assignment-for-continual-learning-of-large-vision-language-models)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：使用动态专家混合（MoE）对大型视觉语言模型进行持续指令微调以防止遗忘
-35. [FeDMRA: Federated Incremental Learning with Dynamic Memory Replay Allocation](/20260315-20260413/2603.28455v1-fedmra-federated-incremental-learning-with-dynamic-memory-replay-allocation)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：具有动态内存重放分配的联邦类增量学习
-36. [LACE: Loss-Adaptive Capacity Expansion for Continual Learning](/20260315-20260413/2603.28611v1-lace-loss-adaptive-capacity-expansion-for-continual-learning)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：在训练期间扩展表示能力的在线机制
-37. [Detecting Unknown Objects via Energy-based Separation for Open World Object Detection](/20260315-20260413/2603.29954v1-detecting-unknown-objects-via-energy-based-separation-for-open-world-object-detection)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：开放世界目标检测中的增量学习与防遗忘
-38. [Robust Embodied Perception in Dynamic Environments via Disentangled Weight Fusion](/20260315-20260413/2604.01669v1-robust-embodied-perception-in-dynamic-environments-via-disentangled-weight-fusion)  
-   标签：评分：9.0/10、query:cs-cv
-   evidence：具身感知的无域ID和无样本增量学习
-39. [The Blind Spot of Adaptation: Quantifying and Mitigating Forgetting in Fine-tuned Driving Models](/20260315-20260413/2604.04857v1-the-blind-spot-of-adaptation-quantifying-and-mitigating-forgetting-in-fine-tuned-driving-models)  
-   标签：评分：9.0/10、query:cs-cv
    evidence：缓解微调驾驶模型中的灾难性遗忘
-40. [Information as Structural Alignment: A Dynamical Theory of Continual Learning](/20260315-20260413/2604.07108v1-information-as-structural-alignment-a-dynamical-theory-of-continual-learning)  
+3. [Continual Visual Anomaly Detection on the Edge: Benchmark and Efficient Solutions](/20260404-20260413/2604.06435v1-continual-visual-anomaly-detection-on-the-edge-benchmark-and-efficient-solutions)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：在视觉异常检测数据集上对持续学习算法进行基准测试
+4. [Critical Patch-Aware Sparse Prompting with Decoupled Training for Continual Learning on the Edge](/20260404-20260413/2604.07399v1-critical-patch-aware-sparse-prompting-with-decoupled-training-for-continual-learning-on-the-edge)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：针对边缘设备提出基于提示的计算机视觉持续学习框架
+5. [Face-D(^2)CL: Multi-Domain Synergistic Representation with Dual Continual Learning for Facial DeepFake Detection](/20260404-20260413/2604.08159v1-face-d2cl-multi-domain-synergistic-representation-with-dual-continual-learning-for-facial-deepfake-detection)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：用于人脸伪造检测的持续学习并解决灾难性遗忘问题
+6. [Leveraging Complementary Embeddings for Replay Selection in Continual Learning with Small Buffers](/20260404-20260413/2604.08336v1-leveraging-complementary-embeddings-for-replay-selection-in-continual-learning-with-small-buffers)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：提出一种结合监督和自监督嵌入的持续学习重放选择方法
+7. [From Selection to Scheduling: Federated Geometry-Aware Correction Makes Exemplar Replay Work Better under Continual Dynamic Heterogeneity](/20260404-20260413/2604.08617v1-from-selection-to-scheduling-federated-geometry-aware-correction-makes-exemplar-replay-work-better-under-continual-dynamic-heterogeneity)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：利用样本回放缓解联邦持续学习中的灾难性遗忘
+8. [Towards Lifelong Aerial Autonomy: Geometric Memory Management for Continual Visual Place Recognition in Dynamic Environments](/20260404-20260413/2604.09038v1-towards-lifelong-aerial-autonomy-geometric-memory-management-for-continual-visual-place-recognition-in-dynamic-environments)  
+   标签：评分：10.0/10、query:cs-cv
+   evidence：用于空中自主导航的持续视觉地点识别和域增量学习
+9. [SPARK-IL: Spectral Retrieval-Augmented RAG for Knowledge-driven Deepfake Detection via Incremental Learning](/20260404-20260413/2604.03833v1-spark-il-spectral-retrieval-augmented-rag-for-knowledge-driven-deepfake-detection-via-incremental-learning)  
    标签：评分：9.0/10、query:cs-cv
-   evidence：持续学习和灾难性遗忘的理论框架
-41. [Critical Patch-Aware Sparse Prompting with Decoupled Training for Continual Learning on the Edge](/20260315-20260413/2604.07399v1-critical-patch-aware-sparse-prompting-with-decoupled-training-for-continual-learning-on-the-edge)  
+   evidence：通过增量学习进行深度伪造检测
+10. [Non-Equilibrium Stochastic Dynamics as a Unified Framework for Insight and Repetitive Learning: A Kramers Escape Approach to Continual Learning](/20260404-20260413/2604.04154v1-non-equilibrium-stochastic-dynamics-as-a-unified-framework-for-insight-and-repetitive-learning-a-kramers-escape-approach-to-continual-learning)  
    标签：评分：9.0/10、query:cs-cv
-   evidence：边缘设备上视觉任务的提示词持续学习
-42. [DSCA: Dynamic Subspace Concept Alignment for Lifelong VLM Editing](/20260315-20260413/2604.07965v1-dsca-dynamic-subspace-concept-alignment-for-lifelong-vlm-editing)  
+   evidence：稳定性-塑性困境和灾难性遗忘的理论框架
+11. [Symbiotic-MoE: Unlocking the Synergy between Generation and Understanding](/20260404-20260413/2604.07753v1-symbiotic-moe-unlocking-the-synergy-between-generation-and-understanding)  
    标签：评分：9.0/10、query:cs-cv
-   evidence：针对视觉语言模型的终身编辑，解决顺序更新过程中的灾难性遗忘
-43. [Face-D(^2)CL: Multi-Domain Synergistic Representation with Dual Continual Learning for Facial DeepFake Detection](/20260315-20260413/2604.08159v1-face-d2cl-multi-domain-synergistic-representation-with-dual-continual-learning-for-facial-deepfake-detection)  
+   evidence：解决多模态视觉模型中的灾难性遗忘问题
+12. [DSCA: Dynamic Subspace Concept Alignment for Lifelong VLM Editing](/20260404-20260413/2604.07965v1-dsca-dynamic-subspace-concept-alignment-for-lifelong-vlm-editing)  
    标签：评分：9.0/10、query:cs-cv
-   evidence：使用双重持续学习使人脸伪造检测模型适应不断演变的伪造模式
-44. [Towards Lifelong Aerial Autonomy: Geometric Memory Management for Continual Visual Place Recognition in Dynamic Environments](/20260315-20260413/2604.09038v1-towards-lifelong-aerial-autonomy-geometric-memory-management-for-continual-visual-place-recognition-in-dynamic-environments)  
+   evidence：解决终身视觉语言模型编辑中的灾难性遗忘
+13. [Few-Shot Incremental 3D Object Detection in Dynamic Indoor Environments](/20260404-20260413/2604.07997v1-few-shot-incremental-3d-object-detection-in-dynamic-indoor-environments)  
    标签：评分：9.0/10、query:cs-cv
-   evidence：将航空视觉地点识别建模为基于任务的域增量学习问题
+   evidence：针对新类别的少样本增量3D目标检测
 
 ### 速读区论文标签
-1. [Unlearning-based sliding window for continual learning under concept drift](/20260315-20260413/2603.14484v1-unlearning-based-sliding-window-for-continual-learning-under-concept-drift)  
+1. [Improving Sparse Memory Finetuning](/20260404-20260413/2604.05248v1-improving-sparse-memory-finetuning)  
    标签：评分：8.0/10、query:cs-cv
-   evidence：流数据概念漂移下的无任务持续学习
-2. [DriftGuard: Mitigating Asynchronous Data Drift in Federated Learning](/20260315-20260413/2603.18872v1-driftguard-mitigating-asynchronous-data-drift-in-federated-learning)  
+   evidence：通过稀疏内存微调缓解神经网络中的灾难性遗忘
+2. [Information as Structural Alignment: A Dynamical Theory of Continual Learning](/20260404-20260413/2604.07108v1-information-as-structural-alignment-a-dynamical-theory-of-continual-learning)  
    标签：评分：8.0/10、query:cs-cv
-   evidence：针对演化数据分布的联邦持续学习框架
-3. [Reframing Long-Tailed Learning via Loss Landscape Geometry](/20260315-20260413/2603.21217v1-reframing-long-tailed-learning-via-loss-landscape-geometry)  
+   evidence：缓解神经网络灾难性遗忘的理论框架
+3. [Online3R: Online Learning for Consistent Sequential Reconstruction Based on Geometry Foundation Model](/20260404-20260413/2604.09480v1-online3r-online-learning-for-consistent-sequential-reconstruction-based-on-geometry-foundation-model)  
    标签：评分：8.0/10、query:cs-cv
-   evidence：受持续学习启发的框架，防止长尾学习中遗忘尾部类别
-4. [The Golden Subspace: Where Efficiency Meets Generalization in Continual Test-Time Adaptation](/20260315-20260413/2603.21928v1-the-golden-subspace-where-efficiency-meets-generalization-in-continual-test-time-adaptation)  
-   标签：评分：8.0/10、query:cs-cv
-   evidence：使模型能够在分布偏移下在线适应未标记的数据流
-5. [CLeAN: Continual Learning Adaptive Normalization in Dynamic Environments](/20260315-20260413/2603.17548v1-clean-continual-learning-adaptive-normalization-in-dynamic-environments)  
+   evidence：用于序列重建的在线学习，适应新场景
+4. [ELC: Evidential Lifelong Classifier for Uncertainty Aware Radar Pulse Classification](/20260404-20260413/2604.06958v1-elc-evidential-lifelong-classifier-for-uncertainty-aware-radar-pulse-classification)  
    标签：评分：7.0/10、query:cs-cv
-   evidence：动态环境下持续学习的自适应归一化
-6. [A Comparative Empirical Study of Catastrophic Forgetting Mitigation in Sequential Task Adaptation for Continual Natural Language Processing Systems](/20260315-20260413/2603.18641v1-a-comparative-empirical-study-of-catastrophic-forgetting-mitigation-in-sequential-task-adaptation-for-continual-natural-language-processing-systems)  
+   evidence：终身学习以高效学习新脉冲
+5. [Fast Spatial Memory with Elastic Test-Time Training](/20260404-20260413/2604.07350v1-fast-spatial-memory-with-elastic-test-time-training)  
    标签：评分：7.0/10、query:cs-cv
-   evidence：缓解灾难性遗忘的比较性实证研究
-7. [Hierarchical Latent Structure Learning through Online Inference](/20260315-20260413/2603.19139v1-hierarchical-latent-structure-learning-through-online-inference)  
+   evidence：使用弹性权重整合（EWC）来稳定更新并缓解3D重建中的灾难性遗忘
+6. [Efficient Dataset Selection for Continual Adaptation of Generative Recommenders](/20260404-20260413/2604.07739v1-efficient-dataset-selection-for-continual-adaptation-of-generative-recommenders)  
    标签：评分：7.0/10、query:cs-cv
-   evidence：通过在线推理进行分层潜在结构学习，支持增量学习
-8. [A Federated Many-to-One Hopfield model for associative Neural Networks](/20260315-20260413/2603.19902v1-a-federated-many-to-one-hopfield-model-for-associative-neural-networks)  
+   evidence：在流式环境中对不断演变的用户行为进行持续自适应
+7. [Incremental Residual Reinforcement Learning Toward Real-World Learning for Social Navigation](/20260404-20260413/2604.07945v1-incremental-residual-reinforcement-learning-toward-real-world-learning-for-social-navigation)  
    标签：评分：7.0/10、query:cs-cv
-   evidence：联邦关联记忆以减轻流式分布偏移中的遗忘
-9. [T-QPM: Enabling Temporal Out-Of-Distribution Detection and Domain Generalization for Vision-Language Models in Open-World](/20260315-20260413/2603.18481v1-t-qpm-enabling-temporal-out-of-distribution-detection-and-domain-generalization-for-vision-language-models-in-open-world)  
+   evidence：社交导航任务的增量学习方法
+8. [Robust by Design: A Continuous Monitoring and Data Integration Framework for Medical AI](/20260404-20260413/2604.09009v1-robust-by-design-a-continuous-monitoring-and-data-integration-framework-for-medical-ai)  
+   标签：评分：7.0/10、query:cs-cv
+   evidence：医学图像分类的增量重新训练
+9. [Adapting Neural Robot Dynamics on the Fly for Predictive Control](/20260404-20260413/2604.04039v1-adapting-neural-robot-dynamics-on-the-fly-for-predictive-control)  
    标签：评分：6.0/10、query:cs-cv
-   evidence：开放世界学习及对演化数据分布的适应
-10. [High-dimensional online learning via asynchronous decomposition: Non-divergent results, dynamic regularization, and beyond](/20260315-20260413/2603.20696v1-high-dimensional-online-learning-via-asynchronous-decomposition-non-divergent-results-dynamic-regularization-and-beyond)  
+   evidence：神经机器人动力学的快速适应和在线更新
+10. [Learning to Query History: Nonstationary Classification via Learned Retrieval](/20260404-20260413/2604.07027v1-learning-to-query-history-nonstationary-classification-via-learned-retrieval)  
    标签：评分：6.0/10、query:cs-cv
-   evidence：流式数据的高维在线学习
-11. [Restoring Neural Network Plasticity for Faster Transfer Learning](/20260315-20260413/2603.20860v1-restoring-neural-network-plasticity-for-faster-transfer-learning)  
+   evidence：通过学习历史检索进行非平稳分类
+11. [Self-Improving 4D Perception via Self-Distillation](/20260404-20260413/2604.08532v1-self-improving-4d-perception-via-self-distillation)  
    标签：评分：6.0/10、query:cs-cv
-   evidence：探讨了在持续学习中广泛研究的神经可塑性丧失问题在迁移学习中的应用。
+   evidence：利用无标签视频持续改进预训练模型
 
 
 <div class="dpr-home-promo-card">
