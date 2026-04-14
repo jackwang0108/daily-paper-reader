@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.11112v1/fig-001.webp",
+      "caption": "Figure 2. Performance curve of various methods under different settings. The relative improvement of QKD over the second-best method at the final incremental stage is highlighted with numerical annotations.",
+      "page": 7,
+      "index": 1,
+      "width": 1036,
+      "height": 544
+    },
+    {
+      "url": "assets/figures/arxiv/2604.11112v1/fig-002.webp",
+      "caption": "Table 1. Average and final accuracy comparison across five datasets. Bold numbers indicate the best performance, while underlined values represent the second-best. All methods are evaluated under the exemplar-free setting.",
+      "page": 6,
+      "index": 2,
+      "width": 1031,
+      "height": 319
+    },
+    {
+      "url": "assets/figures/arxiv/2604.11112v1/fig-003.webp",
+      "caption": "Figure 1. Illustration of QKD. Left: The current task sample is encoded by the frozen PTM and the first adapter, while old adapters generate task representations forming a task pool. These representations are mapped into the quantum space to compute task correlations. Right: The task correlations produce task scores, which weight the feature-level knowledge distillation to guide new adapter training.",
+      "page": 5,
+      "index": 3,
+      "width": 1036,
+      "height": 413
+    }
+  ]
+}

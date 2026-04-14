@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-001.webp",
+      "caption": "Table 1: Performance comparison across methods under standard evaluation setting.",
+      "page": 6,
+      "index": 1,
+      "width": 832,
+      "height": 456
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-002.webp",
+      "caption": "Figure 1: Overview of SEA: At each round t, the policy model observes a patient case xt and may invoke memory operations before emitting the final output ot (diagnosis and reasoning). The agent controls a short-term memory cluster that stores recent patient cases with a bounded capacity K (list/append/pop) and a long-term memory cluster that consolidates experience into abstracted diagnosis rules (list/consolidate). For each round, we sample a group of candidate outputs, score them with round-wise rewards, compute group-wise advantages, and update the policy.",
+      "page": 3,
+      "index": 2,
+      "width": 816,
+      "height": 446
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-003.webp",
+      "caption": "Figure 3: Task setup: At each round t, the environment provides a patient case xt together with a candidate diagnosis set Yt. The agent outputs an action at consisting of a structured reasoning trace and a final prediction ŷt ∈ Yt. The environment then returns feedback ft (e.g., correct/incorrect or graded), which the agent can leverage as experience for subsequent rounds. This interaction repeats for T rounds, modeling continual on-the-job improvement in a streaming setting.",
+      "page": 13,
+      "index": 3,
+      "width": 414,
+      "height": 310
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-004.webp",
+      "caption": "Table 2: Final accuracy and improvement across different methods at 50 and 100 rounds.",
+      "page": 8,
+      "index": 4,
+      "width": 810,
+      "height": 334
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-005.webp",
+      "caption": "Figure 2: Accuracy trajectories from 10 to 100 rounds for representative methods.",
+      "page": 8,
+      "index": 5,
+      "width": 829,
+      "height": 233
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07269v1/fig-006.webp",
+      "caption": "Table 3: Ablation study on MedCaseReasoning. ∆ denotes performance change relative to the full model. Darker color indicates larger performance drop.",
+      "page": 9,
+      "index": 6,
+      "width": 806,
+      "height": 188
+    }
+  ]
+}
