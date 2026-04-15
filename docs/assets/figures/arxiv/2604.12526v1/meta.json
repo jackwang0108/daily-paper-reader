@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.12526v1/fig-001.webp",
+      "caption": "Fig. 1. High-level architecture comparision of the related works (top) and the proposed approach (bottom).",
+      "page": 2,
+      "index": 1,
+      "width": 876,
+      "height": 398
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12526v1/fig-002.webp",
+      "caption": "Fig. 3. Correlation between available orthogonal subspace dimensions and continual unlearning performance on CIFAR-100 (ResNet-20) for λ = 2.0.",
+      "page": 4,
+      "index": 2,
+      "width": 474,
+      "height": 283
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12526v1/fig-003.webp",
+      "caption": "TABLE I CONTINUAL UNLEARNING PERFORMANCE ON RESNET-20 (CIFAR-100). COLORS INDICATE: BLUE (EXCELLENT RETAIN PRESERVATION), RED (CATASTROPHIC RETAIN COLLAPSE), GREEN (SUCCESSFUL UNLEARNING), AND ORANGE (LIMITED UNLEARNING EFFICACY).",
+      "page": 4,
+      "index": 3,
+      "width": 1076,
+      "height": 393
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12526v1/fig-004.webp",
+      "caption": "Fig. 2. Operational trade-off trajectories for continual unlearning by sequentially forgetting 3 classes 9, 5 and 3 (N = 3) on the MNIST dataset.",
+      "page": 4,
+      "index": 4,
+      "width": 968,
+      "height": 362
+    }
+  ]
+}

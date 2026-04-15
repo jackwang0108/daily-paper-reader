@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-001.webp",
+      "caption": "Fig. 1. Overview of CLU. The CLU system removes unwanted knowledge (red), retains prior knowledge (green), and integrates new knowledge (blue).",
+      "page": 1,
+      "index": 1,
+      "width": 540,
+      "height": 229
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-002.webp",
+      "caption": "TABLE I PERFORMANCE COMPARISON ACROSS ALL CONTINUAL LEARNING-UNLEARNING TASKS ON CIFAR-100.",
+      "page": 6,
+      "index": 2,
+      "width": 1076,
+      "height": 639
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-003.webp",
+      "caption": "TABLE II PERFORMANCE COMPARISON ACROSS ALL CONTINUAL LEARNING-UNLEARNING TASKS ON FACE RECOGNISTION TASKS ON CASIA-FACE100",
+      "page": 6,
+      "index": 3,
+      "width": 1076,
+      "height": 640
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-004.webp",
+      "caption": "Fig. 2. LoRA placement in BID-LoRA at Attention Modules",
+      "page": 4,
+      "index": 4,
+      "width": 540,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-005.webp",
+      "caption": "Fig. 6. Geometric verification of unlearning. Top row: t-SNE visualization showing forget classes migrating toward escape point d∗. Bottom row: 3D hypersphere visualization with dashed antipodal axis from c̄r to d∗",
+      "page": 9,
+      "index": 5,
+      "width": 539,
+      "height": 237
+    },
+    {
+      "url": "assets/figures/arxiv/2604.12686v1/fig-006.webp",
+      "caption": "Fig. 3. Pathway separation for BID-LoRA.",
+      "page": 5,
+      "index": 6,
+      "width": 526,
+      "height": 272
+    }
+  ]
+}
