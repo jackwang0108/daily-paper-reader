@@ -1,0 +1,142 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-001.webp",
+      "caption": "Figure 19: The principal angles between representations of base and finetuned models as a function of pretraining step, Same as Figure 7, but for all models.",
+      "page": 21,
+      "index": 1,
+      "width": 826,
+      "height": 1261
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-002.webp",
+      "caption": "Figure 4: Finetuning with Diagonal Networks. We train a diagonal network with d = 100 using mini-batch SGD (10 runs) and plot the final distribution of absolute value of coordinates of weights. Here (a, b, c, d) = (0, 23, 45, 66). In (a), when initialized without pretraining features, the model recovers the finetuning features, while larger step sizes lead to greater forgetting of pretraining features, as seen in the region SFT△SPreT. In (b,c), two runs with different initial sharpness and with same LR. Sharpness is measured as Tr(∇2L). We observe that the more time the model spends in sharper regions, the greater the forgetting.",
+      "page": 7,
+      "index": 2,
+      "width": 824,
+      "height": 196
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-003.webp",
+      "caption": "Figure 20: Same as Figures 7 and 19, but for the models finetuned on Tülu 3.",
+      "page": 22,
+      "index": 3,
+      "width": 826,
+      "height": 1272
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-004.webp",
+      "caption": "Figure 1: SFT training loss vs OOD performance for different models and LRs. Checkpoints taken throughout finetuning are shown by dots and connected within each run. The horizontal red line represents the performance of a base model pre-finetuning (without the chat template). All models lose a part of capabilities due to catastrophic forgetting. The curves for higher LRs lie below the ones for low LRs, indicating stronger forgetting.",
+      "page": 3,
+      "index": 4,
+      "width": 826,
+      "height": 275
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-005.webp",
+      "caption": "Figure 12: MPA vs SFT train loss during supervised finetuning (same as Figure 2) for Gemma 3 and Hubble.",
+      "page": 18,
+      "index": 5,
+      "width": 826,
+      "height": 479
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-006.webp",
+      "caption": "Figure 13: MPA vs SFT train loss during supervised finetuning (same as Figures 2 and 12) but for finetuning on the Tülu 3 dataset.",
+      "page": 18,
+      "index": 6,
+      "width": 821,
+      "height": 772
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-007.webp",
+      "caption": "Figure 5: Evolution of model sharpness throughout pretraining (x-axis reflects pretraining progress). Sharpness grows as LR is decayed; for two models trained with WSD schedule, a rapid increase in sharpness coincides with the LR cooldown phase.",
+      "page": 8,
+      "index": 7,
+      "width": 821,
+      "height": 181
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-008.webp",
+      "caption": "Figure 6: The dynamic of accuracy drop (the difference between the OOD score between the pretrained and finetuned models) throughout pretraining (x-axis shows the pretraining progress). Forgetting increases in later checkpoints.",
+      "page": 8,
+      "index": 8,
+      "width": 819,
+      "height": 221
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-009.webp",
+      "caption": "Figure 15: MPA as a function of stepsize with variable learning rates (analogous to Figures 3d, 14d) for different layers of OLMo 1 (top row) and OLMo 2 (bottom row).",
+      "page": 19,
+      "index": 9,
+      "width": 824,
+      "height": 423
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-010.webp",
+      "caption": "Figure 11: SFT train loss vs OOD score during supervised finetuning (same as Figure 1) for finetuning on the Tülu 3 dataset. The plots appear mostly horizontal, indicating that models go through a rapid forgetting phase in the beginning of finetuning and stay stable afterwards.",
+      "page": 17,
+      "index": 10,
+      "width": 821,
+      "height": 220
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-011.webp",
+      "caption": "Figure 10: Left: dynamics of estimated sharpness and true sharpness closely follow each other through pretraining. Right: same data, true vs estimated sharpness.",
+      "page": 17,
+      "index": 11,
+      "width": 678,
+      "height": 286
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-012.webp",
+      "caption": "Figure 7: The principal angles between representations of base and finetuned SmolLM3-3B as a function of pretraining steps. The representational dissimilarity stays constant until the pretraining LR is decreased, when it surges.",
+      "page": 9,
+      "index": 12,
+      "width": 826,
+      "height": 275
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-013.webp",
+      "caption": "Figure 18: Forgetting (the drop in OOD score between the base and finetuned models) increases throughout pretraining. Same as Figure 6, but for the models finetuned on the Tülu 3 dataset.",
+      "page": 20,
+      "index": 13,
+      "width": 819,
+      "height": 220
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-014.webp",
+      "caption": "Figure 16: MPA as a function of stepsize with variable checkpoints (analogous to Figure 3h) for different layers of OLMo 1.",
+      "page": 20,
+      "index": 14,
+      "width": 826,
+      "height": 328
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-015.webp",
+      "caption": "Figure 17: MPA as a function of stepsize with variable checkpoints (analogous to Figure 14h) for different layers of OLMo 2.",
+      "page": 20,
+      "index": 15,
+      "width": 824,
+      "height": 227
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-016.webp",
+      "caption": "Figure 8: L2 on SAE representations vs MPA for Gemma 3 1B.",
+      "page": 16,
+      "index": 16,
+      "width": 826,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2604.13627v1/fig-017.webp",
+      "caption": "Figure 9: L2 on SAE representations vs SFT train loss for Gemma 3 1B.",
+      "page": 16,
+      "index": 17,
+      "width": 821,
+      "height": 216
+    }
+  ]
+}
