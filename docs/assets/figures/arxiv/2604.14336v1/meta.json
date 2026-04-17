@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.14336v1/fig-001.webp",
+      "caption": "Figure 2: Visualization of mistake-gating on a simple 2D problem. Samples are colored according to how frequently they triggered an update and unused samples are transparent. Networks were trained for 50 epochs, with 500 samples using a small learning rate of 0.05. Pure-mistake gating concentrates updates on samples nearest the decision boundary; once a decision boundary is found, learning ceases. Memorized mistake-gating distributes updates over samples that were previously incorrect, resulting in a more robust decision boundary. Backprop uses all samples, yeilding a boundary similar to mistakegating but without the sparse updating.",
+      "page": 5,
+      "index": 1,
+      "width": 702,
+      "height": 237
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14336v1/fig-002.webp",
+      "caption": "Figure 3: Effect of dataset size on mistake gating. The data set size was varied by using a subset of the Extended MNIST dataset. Networks were trained until they reached 98% accuracy on the EMNIST test set. Top: The number of forward steps and number of updates. Mistake gated learning requires more forward steps than backprop (dashed green), but skips over most so that fewer update steps are needed (solid green). For backprop (black) the number of update and forward steps is identical. Bottom: Mistake gated learning uses far fewer unique samples than regular backprop. The dashed line shows a powerlaw fit. Inset: same data on a log-log scale.",
+      "page": 5,
+      "index": 2,
+      "width": 606,
+      "height": 425
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14336v1/fig-003.webp",
+      "caption": "Figure 5: Mistake gating in incremental learning. Performance on a CIFAR-10 network, pre-trained on 7 classes after which 3 additional classes are introduced. After the pre-training the network was frozen to different degrees. Light blue: nothing frozen; darkest blue: all but last block frozen. a) Test set accuracy on old classes. The most frozen networks maintain best performance on old classes. Mistake-gating (dashed) used a similar number of forward steps (epochs) as backprop (solid curves). b) Test set accuracy on new classes, the most frozen networks learned most quickly to incorporate the new classes. c) The number of updates on the new data required to a certain test accuracy. Mistake gating (dashed curves) approximately halved the number of required updates in partly frozen networks, compared to backprop. d) Plot of saving compared to backprop vs freezing level, showing most savings for largely frozen networks, and for augmented datasets. The saving was estimated as the ratio in number of updates at the highest accuracy levels. e) The number of unique samples (old and new) required to reach 85% accuracy scaled sub-linearly with dataset size when using mistake gating.",
+      "page": 9,
+      "index": 3,
+      "width": 810,
+      "height": 920
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14336v1/fig-004.webp",
+      "caption": "Figure 4: Mistake gating for dense, correlated datasets. The standard MNIST dataset was blurred with a 2D Gaussian filter, the blurring amount is parameterized as the standard deviation of the filter measured in pixels. a) The number of passes through the data set (measured in epochs) to reach 97% test accuracy increases strongly for blurred images. Note the log scale. The ratio of update steps of mistake gating learning compared to backprop is approximately constant. b) The L1 norm of the final weights (measured relative to the initial condition) pooled over the full network. Mistake-gating leads to smaller magnitude weights.",
+      "page": 7,
+      "index": 4,
+      "width": 607,
+      "height": 602
+    }
+  ]
+}
