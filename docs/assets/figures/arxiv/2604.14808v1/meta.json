@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.14808v1/fig-001.webp",
+      "caption": "Table 1: Experimental results on WMDP and RWKU benchmarks. For WMDP, lower forget performance (accuracy) is better, while higher MMLU (accuracy) reflects better retention. For RWKU, lower ROUGE-L on the Forget Set is better and higher ROUGE-L on the Neighbor Set reflects better retention. The top-performing results in each combination group are highlighted in bold to ease reference.",
+      "page": 6,
+      "index": 1,
+      "width": 883,
+      "height": 499
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14808v1/fig-002.webp",
+      "caption": "Figure 1: Visualization of loss dynamics in LLM unlearning and retention-prioritized frameworks. Panels (a) and (b) show retain and forget losses on the WMDP Biosecurity benchmark using GradDiff, PCGrad, and SAGO. SAGO outperforms in maintaining low retain loss while achieving high forget performance, indicating reduced gradient conflicts and improved retention. Panel (c) shows that while GradDiff (Original) struggles with retention, PCGrad and SAGO dynamically refine gradients, achieving effective unlearning with stable retention.",
+      "page": 2,
+      "index": 2,
+      "width": 836,
+      "height": 454
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14808v1/fig-003.webp",
+      "caption": "Figure 4: Performance comparison across different methods on RWKU benchmark. The plot provides a visualization of the trade-offs between forget and retain performance on RWKU. A smaller forgetting ROUGE-L indicates better forgetting effectiveness, while a larger retention ROUGE-L reflects better retention performance. The reported results highlight that SAGO produces a better frontier than baselines and PCGrad.",
+      "page": 7,
+      "index": 3,
+      "width": 457,
+      "height": 369
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14808v1/fig-004.webp",
+      "caption": "Figure 3: Performance comparison across different methods on WMDP benchmark. The plot provides a visualization of the trade-offs between forget and retain performance on WMDP Bio (left) and Cyber (right). A smaller forget metric indicates better forgetting effectiveness, while a larger MMLU value reflects better retention performance. Dashed lines connect base methods to their enhanced variants within the same family (same color). The horizontal grey dashed line represents the original model’s performance (Target). The reported results highlight that SAGO (stars) variants consistently push the Pareto frontier upward for comparable forgetting effectiveness.",
+      "page": 7,
+      "index": 4,
+      "width": 912,
+      "height": 325
+    }
+  ]
+}
