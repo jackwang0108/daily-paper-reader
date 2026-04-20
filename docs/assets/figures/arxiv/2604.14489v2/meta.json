@@ -1,0 +1,142 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-001.webp",
+      "caption": "Table 1: Lifelong topic modeling results on TweetNER. Best in bold, second-best underlined.",
+      "page": 6,
+      "index": 1,
+      "width": 615,
+      "height": 231
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-002.webp",
+      "caption": "Table 2: Lifelong topic modeling results on Stack Overflow Dataset. Best in bold, second-best underlined.",
+      "page": 6,
+      "index": 2,
+      "width": 615,
+      "height": 231
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-003.webp",
+      "caption": "Table 7: Final Cv by UMAP dimensionality on Spatiotemporal dataset.",
+      "page": 15,
+      "index": 3,
+      "width": 667,
+      "height": 260
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-004.webp",
+      "caption": "Figure 6: An ablation study to compare the lifelong results of using different embedding models for COBWEBTM.",
+      "page": 15,
+      "index": 4,
+      "width": 918,
+      "height": 336
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-005.webp",
+      "caption": "Figure 7: An ablation study to compare the lifelong results of COBWEBTM to other methods across all datasets with a reduced initial batch size of 500 documents.",
+      "page": 15,
+      "index": 5,
+      "width": 931,
+      "height": 308
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-006.webp",
+      "caption": "Figure 1: A visualization of three levels of the hierarchy induced by COBWEBTM. For each node, we display the top five representative words extracting using the c-tf-idf procedure described in Section 3.2.1. Words that appear in multiple nodes at the same level are underlined to highlight shared semantic content across sibling topics.",
+      "page": 2,
+      "index": 6,
+      "width": 937,
+      "height": 264
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-007.webp",
+      "caption": "Table 3: Lifelong topic modeling results on Spatiotemporal News Dataset. Best in bold, second-best underlined.",
+      "page": 7,
+      "index": 7,
+      "width": 928,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-008.webp",
+      "caption": "Table 5: Final Cv by UMAP dimensionality on StackExchange.",
+      "page": 14,
+      "index": 8,
+      "width": 667,
+      "height": 258
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-009.webp",
+      "caption": "Table 6: Final Cv by UMAP dimensionality on TweetNER.",
+      "page": 14,
+      "index": 9,
+      "width": 667,
+      "height": 259
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-010.webp",
+      "caption": "Figure 4: TCD comparison on the StackOverflow, Spatiotemporal News, and TweetNER dataset.",
+      "page": 8,
+      "index": 10,
+      "width": 929,
+      "height": 290
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-011.webp",
+      "caption": "Figure 3: ARI comparison on the StackOverflow, Spatiotemporal News, and TweetNER dataset.",
+      "page": 8,
+      "index": 11,
+      "width": 931,
+      "height": 290
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-012.webp",
+      "caption": "Figure 5: Intruder Similarity (ISIM) comparison on the StackOverflow, Spatiotemporal News, and TweetNER dataset.",
+      "page": 9,
+      "index": 12,
+      "width": 935,
+      "height": 287
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-013.webp",
+      "caption": "Table 4: Comparison of hierarchical topic-modeling metrics across datasets.",
+      "page": 9,
+      "index": 13,
+      "width": 969,
+      "height": 204
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-014.webp",
+      "caption": "Table 11: Coherence Cv comparison on 20k and 50k StackExchange datasets.",
+      "page": 16,
+      "index": 14,
+      "width": 729,
+      "height": 261
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-015.webp",
+      "caption": "Table 9: Holdout topic injection experiment on TweetNER dataset.",
+      "page": 16,
+      "index": 15,
+      "width": 713,
+      "height": 260
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-016.webp",
+      "caption": "Table 10: Runtime comparison on StackExchange dataset.",
+      "page": 16,
+      "index": 16,
+      "width": 635,
+      "height": 260
+    },
+    {
+      "url": "assets/figures/arxiv/2604.14489v2/fig-017.webp",
+      "caption": "Figure 8: An ablation study to compare the amount of each Cobweb operation per-batch for all three datasets in COBWEBTM.",
+      "page": 16,
+      "index": 17,
+      "width": 925,
+      "height": 338
+    }
+  ]
+}

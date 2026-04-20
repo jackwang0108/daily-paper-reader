@@ -1,0 +1,126 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-001.webp",
+      "caption": "Table 2. Performance under High-Scale Domain Imbalanced. Average and Last accuracy (%) across 8 domains, comparing parametric and parameter-free methods. Results are averaged over 4 seeds with 95% confidence intervals in subscripts. Domain names are abbreviated.",
+      "page": 6,
+      "index": 1,
+      "width": 1010,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-002.webp",
+      "caption": "Figure 5. Task-per accuracy across incremental steps under the (a) Balanced-in-class domain and (b) Cross-scale imbalance settings.",
+      "page": 6,
+      "index": 2,
+      "width": 1014,
+      "height": 408
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-003.webp",
+      "caption": "Figure 1. Overview of continual learning paradigms. (a) CIL: Class-incremental learning without domain shift. (b) FSCIL: Fixed shots per class within a single domain. (c) Cross-domain FSCIL: Multiple domains with fixed shots and uniform class/sample sizes. (d) XD-VSCIL (ours): Realistic setting with sequential tasks from diverse domains, varying class counts, and data imbalance.",
+      "page": 2,
+      "index": 3,
+      "width": 986,
+      "height": 318
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-004.webp",
+      "caption": "Table 3. Performance on SCDE across XD-VSCIL settings.",
+      "page": 7,
+      "index": 4,
+      "width": 396,
+      "height": 427
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-005.webp",
+      "caption": "Table 7. Comparison of fusion strategies under three domain conditions.",
+      "page": 14,
+      "index": 5,
+      "width": 483,
+      "height": 294
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-006.webp",
+      "caption": "Figure 8. Hyperparameter sensitivity analysis for α and β. Each curve shows the performance variation when sweeping one parameter while keeping the other fixed.",
+      "page": 14,
+      "index": 6,
+      "width": 492,
+      "height": 725
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-007.webp",
+      "caption": "Figure 2. t-SNE visualization showing prototype embeddings. Prototypes for Dmed are de-",
+      "page": 3,
+      "index": 7,
+      "width": 647,
+      "height": 372
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-008.webp",
+      "caption": "Table 10. Per-class sample counts (Kc) for the XD-VSCIL setting on the Aircraft, ArtBench, DTD, and EuroSAT datasets, with random seed=42. Classes are sorted alphabetically.",
+      "page": 18,
+      "index": 8,
+      "width": 1010,
+      "height": 1245
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-009.webp",
+      "caption": "Figure 6. Cosine–Mahalanobis: (a) Relationship and (b) Ranking where cosine-correct (green) and Mahalanobis-correct (red) samples only partially overlap (yellow).",
+      "page": 13,
+      "index": 9,
+      "width": 932,
+      "height": 247
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-010.webp",
+      "caption": "Figure 7. Qualitative comparison of distance metrics. Pink points show samples only correctly classified by dynamic summation.",
+      "page": 13,
+      "index": 10,
+      "width": 829,
+      "height": 279
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-011.webp",
+      "caption": "Table 5. Performance of individual distance metrics and their combinations across varying imbalance settings.",
+      "page": 8,
+      "index": 11,
+      "width": 394,
+      "height": 338
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-012.webp",
+      "caption": "Table 9. Performance across random domain orders (I–IV) under the High-scale domain imbalanced setting. Results are averaged over 4 seeds with 95% confidence intervals in subscripts. Domain names are abbreviated.",
+      "page": 17,
+      "index": 12,
+      "width": 1010,
+      "height": 1332
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-013.webp",
+      "caption": "Table 13. Performance under Cross-scale imbalance setting. Average and Last accuracy (%) across 8 domains. Results are averaged over 4 seeds with 95% confidence intervals in subscripts. Domain names are abbreviated.",
+      "page": 20,
+      "index": 13,
+      "width": 1010,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-014.webp",
+      "caption": "Table 12. Performance under Balanced-in-class domain setting. Average and Last accuracy (%) across 8 domains. Results are averaged over 4 seeds with 95% confidence intervals in subscripts. Domain names are abbreviated.",
+      "page": 20,
+      "index": 14,
+      "width": 1010,
+      "height": 340
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15678v1/fig-015.webp",
+      "caption": "Figure 4. Overview of HYCAL, our training-free prototype calibration method. For each XD-VSCIL task, class prototypes are constructed from frozen CLIP embeddings using a few sample images during training. At inference, HYCAL combines cosine similarity and Mahalanobis distance to compute test-to-prototype scores, enabling robust classification under domain shift and data imbalance.",
+      "page": 5,
+      "index": 15,
+      "width": 986,
+      "height": 445
+    }
+  ]
+}

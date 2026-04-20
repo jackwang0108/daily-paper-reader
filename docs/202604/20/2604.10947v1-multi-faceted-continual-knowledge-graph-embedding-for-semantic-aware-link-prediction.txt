@@ -1,0 +1,883 @@
+Title: Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction
+
+URL Source: https://arxiv.org/pdf/2604.10947v1
+
+Published Time: Tue, 14 Apr 2026 01:39:38 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction 
+
+## Jing Qi 
+
+Hangzhou Dianzi University Hangzhou, China jingqi@hdu.edu.cn 
+
+## Yuxiang Wang ∗
+
+Hangzhou Dianzi University Hangzhou, China lsswyx@hdu.edu.cn 
+
+## Zhiyuan Yu 
+
+Hangzhou Dianzi University Hangzhou, China zy_yu@hdu.edu.cn 
+
+## Xiaoliang Xu 
+
+Hangzhou Dianzi University Hangzhou, China xxl@hdu.edu.cn 
+
+## Yuanshi Zheng 
+
+Xidian University Xi’an, China zhengyuanshi2005@163.com 
+
+## Tianxing Wu ∗
+
+Southeast University Nanjing, China tianxingwu@seu.edu.cn 
+
+## Abstract 
+
+Continual Knowledge Graph Embedding (CKGE) aims to contin-ually learn embeddings for new knowledge, i.e., entities and re-lations, while retaining previously acquired knowledge. Most ex-isting CKGE methods mitigate catastrophic forgetting via regu-larization or replaying old knowledge. They conflate new and old knowledge of an entity within the same embedding space to seek a balance between them. However, entities inherently ex-hibit multi-faceted semantics that evolve dynamically as their re-lational contexts change over time. A shared embedding fails to capture and distinguish these temporal semantic variations, degrad-ing lifelong link prediction accuracy across snapshots. To address this, we propose a M ulti- Faceted CKGE framework (MF-CKGE) for semantic-aware link prediction. During offline learning, MF-CKGE separates temporal old and new knowledge into distinct em-bedding spaces to prevent knowledge entanglement and employs semantic decoupling to reduce semantic redundancy, thereby im-proving space efficiency. During online inference, MF-CKGE adap-tively identifies semantically query-relevant entity embeddings by quantifying their semantic importance, reducing interference from query-irrelevant noise. Experiments on eight datasets show that MF-CKGE achieves an average (maximum) improvement of 1.7% (2.7%) and 1.4% (3.8%) in MRR and Hits@10, respectively, over the best baseline. Our source code and datasets are available at: https://anonymous.4open.science/r/MF-CKGE-04E5. 
+
+## CCS Concepts 
+
+• Computing methodologies → Knowledge representation and reasoning .
+
+## Keywords 
+
+Continual Knowledge Graph Embedding, Link Prediction  
+
+> ∗Corresponding authors.
+> This work is licensed under a Creative Commons Attribution 4.0 International License.
+> SIGIR ’26, Melbourne, VIC, Australia.
+> ©2026 Copyright held by the owner/author(s). ACM ISBN 979-8-4007-2599-9/2026/07 https://doi.org/10.1145/XXXXXXX.XXXXXXX
+
+ACM Reference Format: 
+
+Jing Qi, Yuxiang Wang, Zhiyuan Yu, Xiaoliang Xu, Yuanshi Zheng, and Tianx-ing Wu. 2026. Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction. In Proceedings of the 49th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR ’26), July 20–24, 2026,Melbourne, VIC, Australia. ACM, New York, NY, USA, 11 pages. https://doi.org/10.1145/XXXXXXX.XXXXXXX 
+
+## 1 Introduction 
+
+Knowledge Graph Embedding (KGE) aims to preserve structural semantics within knowledge graphs (KGs) by projecting entities and relations into a low-dimensional vector space [ 9]. The result-ing embeddings are widely used in downstream tasks, including knowledge-enhanced RAG systems [ 10 , 13 , 16 ], recommendation systems [ 38 ], question answering [ 5, 23 ], explainable argumentation [ 26 ], and link prediction [ 22 , 24 , 39 ]. Among these, link prediction, which predicts the tail (head) entity given a head (tail) entity and a relation, is often considered a fundamental task for evaluating the quality of KG embeddings. Only by obtaining high-quality KG embeddings can we further support advanced applications, such as recommendation systems [ 11 , 28 , 36 ] and graph query [ 32 , 33 ]. Con-ventional KGE methods [ 4, 27 , 30 ] operate under the assumption that the KG remains static during training. However, real-world KGs evolve dynamically, with new entities and relations continually emerging. Consequently, static embeddings demonstrate limited effectiveness in link prediction on evolving KGs. To cope with the growing nature, KGE methods typically resort to a retraining-from-scratch strategy. When updates are frequent and voluminous, this approach incurs substantial computational overhead. This moti-vates the research on continual learning methods over knowledge graphs [ 6 ], such as Continual Knowledge Graph Embedding (CKGE), which has attracted increasing attention in recent years. 
+
+Continual knowledge graph embedding. Unlike KGE, CKGE continuously learns embeddings for new entities and relations while retaining the semantics of previously acquired knowledge, thereby improving lifelong link prediction performance across evolving KG snapshots [ 8 ]. Existing CKGE methods mainly focus on mitigat-ing catastrophic forgetting, a phenomenon where models tend to overwrite or lose previously learned knowledge when adapting to new knowledge. Common strategies include replaying important triples [ 15 , 20 , 31 ], applying regularization mechanisms [ 7, 17 , 37 ], and designing dynamic architecture [ 18 , 19 , 25 ]. Despite differences in implementation, these methods typically unify the semantics of  
+
+> arXiv:2604.10947v1 [cs.IR] 13 Apr 2026 SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. Jing Qi et al.
+
+Figure 1: Distribution of knowledge domains for entities across evolving snapshots on the HYBRID dataset 
+
+both new and old knowledge per entity into a shared embedding space for balanced representation. Although this strategy offers simplicity and practicality, it suffers from several limitations. 
+
+Limitations. In evolving KGs, entities often exhibit multi-faceted semantics depending on their contextual relations across different domains. For instance, a Person -type entity often embodies se-mantics from diverse domains such as family, career, and personal hobbies. As new knowledge (i.e., relations and entities) is incre-mentally added from heterogeneous sources, an entity’s context continually shifts, dynamically altering its semantics. We analyze the distribution of knowledge domains per entity across snapshots of evolving KGs. Figure 1 illustrates the results on the HYBRID dataset [ 7 ]. The 𝑋 -axis represents the number of distinct knowl-edge domains per entity, and the 𝑌 -axis shows the number of such entities. Note that most entities are enriched with multi-faceted knowledge. The average number of knowledge domains per entity rises steadily from 2.7 at snapshot 𝑆 1 to 5.4 at 𝑆 5. Thus, maintaining a shared embedding for both new and old knowledge of an entity fails to capture these temporal semantic variations adequately, degrading link prediction accuracy across snapshots. Figure 2 illustrates three snapshots of an evolving KG. In snap-shot 1, the context of David Beckham is composed of knowledge from his family-domain, reflecting the family-aspect semantics via a dedicated embedding vector (with each dimension in blue). As the KG evolves, new knowledge from his career-domain is added, mak-ing the single vector to encode two distinct semantics (in blue and yellow). In snapshot 3, hobby-domain knowledge further expands this vector to represent three diverse semantics (in blue, yellow, and green). Clearly, using a fixed vector to represent David Beckham ’s multi-faceted semantics across snapshots not only weakens the representational capacity as fewer dimensions are available per facet, but also causes semantic entanglement, which hinders link prediction. For example, when predicting David Beckham ’s family-related tail entity at snapshot 3, only the family-related dimensions (blue region) are query-relevant. The remaining dimensions, which encode unrelated facets such as career or hobbies, introduce query-irrelevant noise and degrade prediction accuracy. 
+
+Our solution . We propose a Multi- F aceted CKGE (MF-CKGE) framework for semantic-aware link prediction, with two modules: (1) an offline entity embeddings decoupling module (§4.2) that sep-arates old and new knowledge in distinct embedding spaces to prevent knowledge entanglement, and (2) an online semantic-aware link prediction module (§4.3) that adaptively adjusts the importance of each query-relevant embedding at inference time, suppressing irrelevant ones and improving prediction accuracy. For offline learn-ing, we first distinguish between old and new knowledge via tempo-ral decoupling , that is, a dedicated embedding space is allocated for David               
+
+> Beckham
+> Victoria
+> Beckham
+> is  married to
+> has sister
+> Lynne
+> Beckham
+> has sister
+> Footballer
+> is a
+> played for
+> New knowledge Old knowledge Embeddings considering
+> different semantic aspects
+> David
+> Beckham
+> Victoria
+> Beckham
+> Lynne
+> Beckham
+> +Family -domain +Career -domain +Hobby -domain
+> Snapshot 1Snapshot 2Snapshot 3
+> is  married to
+> Manchester
+> United
+> has sister
+> Footballer
+> is a
+> played for
+> David
+> Beckham
+> Victoria
+> Beckham
+> Lynne
+> Beckham
+> is  married to
+> Manchester
+> United
+> Modeling
+> has hobby
+
+Figure 2: An evolving KG with three snapshots: each contains multi-faceted knowledge updates about David Beckham 
+
+new knowledge, while retaining the existing space for old knowl-edge. Knowledge from different snapshots may originate from the same semantic domain, leading to semantic redundancy. We then employ a semantic decoupling to identify and consolidate redun-dantly similar embeddings for the same entity across snapshots, while preserving only the most informative ones, thereby improving the space efficiency. During online inference, MF-CKGE quantifies the semantic relevance between the embeddings of each snapshot and the prediction query. These relevance scores then serve as runtime adaptive weights reflecting how important each snapshot embedding is for the query, to aggregate predictions derived from all snapshot embeddings, yielding the final result. To sum up, the contributions of this paper are as follows: 
+
+• We propose the MF-CKGE framework, which captures multi-faceted semantics of entities and enables semantic-aware link prediction based on these diverse semantic aspects. 
+
+• We propose an entity embeddings decoupling module in MF-CKGE that encodes new knowledge into distinct spaces to better differentiate it from old knowledge and reduce the semantic redundancy for space efficiency purposes. 
+
+• We employ a semantic-aware link prediction module in MF-CKGE to automatically select semantically relevant entity embeddings to a specific query and adaptively adjust their importance in prediction, thereby enhancing the accuracy. 
+
+• We conduct extensive experiments on eight datasets with diverse knowledge evolving patterns. The results show that MF-CKGE outperforms all baselines with an average 1.7% and 1.4% improvement in MRR and Hits@10, respectively. 
+
+## 2 Related Work 
+
+Embedding learning for evolving KGs generally falls into two cate-gories: Dynamic Knowledge Graph Embedding (DKGE) and Con-tinual Knowledge Graph Embedding (CKGE). 
+
+DKGE . DKGE prioritizes efficiently synchronizing the embedding space with the current graph topology. It relies on partial retrain-ing of global data to faithfully capture structural semantics in dy-namic scenarios. puTransE [ 29 ] trains several models and performs non-parametric estimation of triplet scores to adapt to dynamic KGs; DKGE [ 35 ] learns contextual embeddings for entities and re-lations to enhance the semantic accuracy of embeddings during incremental updates; iTransA [ 12 ] supports the online optimization of entity-specific and relation-specific margins to incrementally Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. 
+
+update representations for graph growth. However, they still re-quire partial retraining on historical data, making it difficult to adapt to scenarios with significant knowledge growth. Therefore, to maintain the efficiency of incremental learning, it is necessary to eliminate the need for extensive retraining on historical data. 
+
+CKGE . CKGE aims to enable models to learn new knowledge from streaming updates while effectively preserving previously acquired information. Existing CKGE methods can be categorized into three main groups [ 7 ]. (1) Dynamic-architecture-based methods [ 19 , 25 ]dynamically adapt their architecture to accommodate new knowl-edge without overwriting previously learned information. For in-stance, FastKGE [ 18 ] handles updates through an incremental low-rank adapter (IncLoRA), which captures new knowledge while reducing update costs. (2) Replay-based methods [ 15 , 20 , 31 ] replay a subset of old data when learning new knowledge, ensuring that the model retains previously learned knowledge. Notably, DiCGRL [15 ] disentangles embeddings and handles updates by replaying rel-evant historical facts. (3) Regularization-based methods [7, 14, 37] introduce regularization to constrain updates to critical parameters, ensuring stability. Specifically, IncDE [ 17 ] employs incremental distillation as a regularization constraint to preserve structural knowledge. All of these methods are designed to balance the acqui-sition of new knowledge with the retention of old knowledge within a single shared embedding space. However, this trade-off weakens the quality of representations for both new and previously learned knowledge, and these methods fail to suppress irrelevant informa-tion during link prediction. This motivates our study, which aims at eliminating knowledge entanglement and reducing the noise from query-irrelevant knowledge on link prediction. 
+
+## 3 Preliminaries 
+
+Similar to prior studies [ 7, 17 , 18 ], we follow the standard CKGE settings, where the KG evolves through a sequence of incremental additions of entities and relations, defined as a growing KG. 
+
+Definition 1 (Growing Knowledge Graph). We define the growing KG as a sequence of snapshots 𝐺 = {𝑆 1, 𝑆 2, . . . , 𝑆 𝑛 }. Each snapshot is a static KG denoted as a triplet 𝑆 𝑖 = (𝐸 𝑖 , 𝑅 𝑖 ,𝑇 𝑖 ) at a specific time 𝑡 𝑖 , where 𝐸 𝑖 , 𝑅 𝑖 , and 𝑇 𝑖 denote the entity, relation, and fact sets, respectively. Each fact is a triplet (ℎ, 𝑟, 𝑡 ) ∈ 𝑇 𝑖 , where ℎ, 𝑡 ∈ 𝐸 𝑖 
+
+represent the head and tail entities, and 𝑟 ∈ 𝑅 𝑖 is their relation. We use 
+
+Δ𝐸 𝑖 = 𝐸 𝑖 \ 𝐸 𝑖 −1, Δ𝑅 𝑖 = 𝑅 𝑖 \ 𝑅 𝑖 −1, Δ𝑇 𝑖 = 𝑇 𝑖 \ 𝑇 𝑖 −1 to denote the newly added entities, relations, and facts during each update, respectively. 
+
+In this paper, we focus on designing a CKGE model for repre-sentation learning in growing KGs and validating its effectiveness through the lifelong link prediction task [ 7 ]. This task is a variant of classical link prediction, designed to measure the model’s ability to learn new knowledge while retaining old knowledge. 
+
+Problem 1 (Lifelong Link Prediction on Growing KGs). 
+
+Given a growing KG 𝐺 = {𝑆 1, 𝑆 2, . . . , 𝑆 𝑛 }, for each new fact set Δ𝑇 𝑖 in the snapshot 𝑆 𝑖 ∈ 𝐺 , it is divided into a training set 𝐷 𝑖 , a validation set 𝑉 𝑖 , and a test set 𝑄 𝑖 . In the lifelong setting, it requires (1) using the ⟨𝐷 1, 𝑉 1⟩, . . . , ⟨𝐷 𝑛 , 𝑉 𝑛 ⟩ in turn to train a CKGE model at each time 
+
+𝑡 𝑖 (𝑖 ∈ ( 1, 𝑛 ]) to update the embeddings of existing entities 𝐸 𝑖 −1 and relations 𝑅 𝑖 −1, while obtaining the embeddings of new entities Δ𝐸 𝑖 
+
+and relations Δ𝑅 𝑖 , and (2) evaluating the effectiveness of the CKGE model after finishing the learning on ⟨𝐷 𝑖 , 𝑉 𝑖 ⟩ via link prediction on the accumulated test data ∪𝑖 𝑗 =1𝑄 𝑗 , that is to predict missing head or tail entities given (ℎ, 𝑟, ?) or (?, 𝑟, 𝑡 ) from ∪𝑖 𝑗 =1𝑄 𝑗 as queries. 
+
+Notably, once ⟨𝐷 𝑖 , 𝑉 𝑖 ⟩ is learned at time 𝑡 𝑖 , it is no longer available for subsequent learning. This design ensures that the CKGE model only learns new knowledge at time 𝑡 𝑖 . Besides, evaluating the model on the accumulated test data assesses both its degree of forgetting old knowledge and its capacity to learn new knowledge. 
+
+## 4 The Proposed MF-CKGE 4.1 Framework Overview 
+
+The proposed MF-CKGE framework is illustrated in Figure 3. It con-sists of two main modules: entity embeddings decoupling (§4.2) and 
+
+semantic-aware link prediction (§4.3). To alleviate the knowledge entanglement issue, the first module decouples entity embeddings from both the temporal and semantic perspectives: it separates old and new knowledge—arising as the KG evolves—through tempo-ral decoupling, and mitigates semantic redundancy via semantic decoupling, thereby improving the model’s space efficiency. Sub-sequently, the second module adaptively adjusts the importance of query-relevant entity embeddings at runtime for on-the-fly link prediction queries, thereby improving link prediction accuracy by reducing the query-irrelevant noise with lower importance and enhancing query-relevant supportive facts with higher importance. 
+
+## 4.2 Entity Embeddings Decoupling 
+
+We decouple entity embeddings in two steps. The first step, called 
+
+temporal decoupling , operates from a temporal perspective: knowl-edge across different snapshots is categorized as either early-stage or recently arrived and is separated into distinct embedding spaces representing temporal old and new knowledge. The second step, termed semantic decoupling , further decouples the entity embed-dings from a semantic perspective. It identifies entities—spanning both temporal groups—whose embeddings exhibit highly similar semantics, merging these embeddings to eliminate semantic redun-dancy and retaining only the most informative representations. 
+
+Temporal decoupling. Our primary objective is to capture the en-tity features specific to the current snapshot without being unduly constrained by historical data. To achieve this, a straightforward method is to freeze all embeddings learned in previous snapshots 
+
+{𝑆 1, . . . , 𝑆 𝑖 −1 }, treating them as immutable temporal old knowledge. Subsequently, we focus on addressing the newly introduced knowl-edge within the current snapshot 𝑆 𝑖 in two cases. 
+
+• Case 1 : Totally new knowledge in 𝑆 𝑖 . We say a piece of knowl-edge is completely new if all three elements (head ℎ, tail 𝑡 , and relation 𝑟 ) of its factual triple (ℎ, 𝑟, 𝑡 ) are newly emerging in 𝑆 𝑖 .
+
+• Case 2 : Partially new knowledge in 𝑆 𝑖 . A piece of knowledge is partially new if its triple involves at least one new entity or relation, or is a novel triple formed among existing entities and relations. In all cases, our goal is to obtain embeddings of new knowledge through representation learning of entities and relations (described in detail below). The key difference lies in how the initial embed-dings of entities and relations are constructed under the two cases. For totally new knowledge , we apply random initialization for new entities and the relation in (ℎ, 𝑟, 𝑡 ), ensuring explicit isola-tion from historical representations. In contrast, for partially new SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. Jing Qi et al. Sec -4.3  Semantic -aware  link  prediction                    
+
+> e5e6
+> e7
+> e8
+> e9
+> S1S2S3
+> e1
+> e4e2
+> e3
+> r1r3
+> r2
+> r4
+> r5
+> r6
+> r7
+> r8
+> r9
+> (e1,r1,e2)
+> (e2,r2,e3)
+> (e1,r3,e4)
+> (e1,r1,e2)
+> (e1,r1,e2)
+> (e1,r1,e2)
+> (e1,r1,e2)
+> 𝜟 𝑻 𝟏
+> 𝜟 𝑻 𝟏 𝜟 𝑻 𝟏
+
+① Temporal  decoupling             
+
+> (e1,r1,e2)(e1,r1,e2)
+> Partial new knowledge Totally new knowledge
+> Randomly initialization Inherited embeddings
+
+② Semantic  decoupling              
+
+> Knowledge representation
+> ht
+> r
+> Relation align KG learning
+> ri
+> ri-1Align
+> || h+r-t|| 2|| ri-ri-1|| 2
+> Masked autoencoder RA
+
+LMAE LKGE Lfinal L
+
+> e3,1
+> e3,4
+> e3,7
+> e3,8
+> e3,9
+
+E1 E2 E3    
+
+> e2,1
+> e2,3
+> e2,4
+> e2,5
+> e2,6
+> e1,1
+> e1,2
+> e1,3
+> e1,4
+> e3,1
+> e3,7
+> e3,8
+> e3,9
+> e2,4
+> e2,5
+> e2,6
+> e1,1
+> e1,2
+> e1,3
+> e1,4
+> similar ✗(drop)
+> ✓(retain)
+> dissimilar
+> e2,1 e1,1 e3,1
+
+③ Semantic -aware  importance 
+
+④ Link  prediction  with  semantic  importance                                                  
+
+> Query :(Beckham ,has_son ,?)
+> David Beckham
+> Relations of at each snapshot e1
+> is_married_to
+> has_sister
+> played_for
+> is_a
+> 0.8
+> Semantic similarity to query relation “has_son ”
+> has_hobby
+> 0.1 0.1
+> HL
+> Candidates ranking with prediction score
+> Max Aggregate score:
+> e3e41. 2. 3.
+> e4e51. 2. 3. e64. ……
+> e4e71. 2. 3. e64. ……
+> 0.8
+> 0.1
+> 0.1
+> X
+> X
+> X
+> e2
+> e2
+> e21232220.8 ()0.1 ()0.1 ()eee
+> ++
+
+Sec -4.2  Entity  Embeddings  Decoupling                
+
+> Growing KG
+> ei,j is the j-th embedding in snapshot Si
+> empty for e2empty for e2
+> empty for e3
+> empty for e5
+> empty for e6
+
+Figure 3: An overview of the proposed MF-CKGE framework knowledge , we initialize the existing entity or relation in (ℎ, 𝑟, 𝑡 )
+
+by inheriting its embedding from the previous snapshot, while the newly introduced entity or relation remains randomly initialized. Notably, to minimize the training overhead, we restrict the input to the following representation learning to only those knowledge facts 
+
+Δ𝐷 𝑖 satisfying the above two cases, and exclude static knowledge, i.e., triples remaining unchanged in 𝑆 𝑖 , from being re-trained. That is to say, if an existing entity does not appear in any of the new triples within Δ𝐷 𝑖 , it is completely excluded from the current snap-shot’s training process. Consequently, we neither perform inherited initialization nor allocate new embedding space for such entities. Entity and relation representation learning. We design the loss func-tion from three aspects to enable effective representation learning. 
+
+(1) Knowledge expressiveness . This aspect focuses on encour-aging the learned entity and relation embeddings to better cap-ture the factual knowledge conveyed by a triple (ℎ, 𝑟, 𝑡 ). (2) Cross-snapshot relation alignment . Given that relation semantics in KGs are typically unique and stable [ 2 , 34 ], this aspect aims to maintain semantic consistency for embeddings of the same re-lation across different snapshots. (3) Neighborhood semantic coherency . This aspect requires semantic coherence between an entity’s (or relation’s) embedding and the one reconstructed from its neighborhood, ensuring that the semantics of the entity or relation remain logically aligned with its local context. 
+
+(1) Knowledge expressiveness . We adopt the lightweight TransE [ 4]—a representative of the Trans-family KGE models—as the de-fault implementation to strike a balance between efficiency and effectiveness. Alternatives such as widely used ComplEx [ 30 ] and RotatE [ 27 ] can also be deployed in our MF-CKGE. In our exper-iments, we evaluate their performance: MF-CKGE with TransE incurs the lowest time cost, while the others achieve higher ef-fectiveness at the cost of longer training time. Regardless of the KGE model used, MF-CKGE consistently outperforms all baselines. Given the new knowledge Δ𝑇 𝑖 , the KGE loss is shown as Eq. 1: 
+
+LKGE =∑︁  
+
+> (ℎ,𝑟,𝑡 ) ∈ Δ𝑇 𝑖
+
+𝑚𝑎𝑥 (0, 𝑓 (h, r, t) − 𝑓 (h′, r, t′) + 𝛾 ) , (1) where (ℎ′, 𝑟, 𝑡 ′) is a negative triple of (ℎ, 𝑟, 𝑡 ) ∈ Δ𝑇 𝑖 , and 𝑓 (ℎ, 𝑟, 𝑡 ) =
+
+∥h + r − t∥𝑝 (𝑝 = 1 or 2, representing 𝐿 1 and 𝐿 2 norm) is the score function of TransE, with h, t, and r denoting the embeddings of head entity, tail entity, and relation, from the learned entity and relation embedding spaces E𝑖 and R𝑖 . Here, we use 𝐿 1 norm in 𝑓 (·) .
+
+(2) Cross-snapshot relation alignment . Unlike entities that exhibit multi-faceted semantics, a relation typically describes consistent semantics across snapshots. In order to reflect this, we employ a single embedding for each relation. Specifically, we apply a regu-larization term LRA during the training of snapshot 𝑆 𝑖 to explicitly ensure the stability of existing relation embeddings as shown in Eq. 2, where r𝑖 and r𝑖 −1 are embeddings of a relation 𝑟 ∈ 𝑅 𝑖 ∩ 𝑅 𝑖 −1
+
+that appears simultaneously in both the current snapshot 𝑆 𝑖 and the previous snapshot 𝑆 𝑖 −1. Consequently, only the most recent embedding r𝑖 is retained and used in training for the next snapshot. 
+
+LRA =∑︁    
+
+> 𝑟 ∈𝑅 𝑖 ∩𝑅 𝑖 −1
+
+∥r𝑖 − r𝑖 −1 ∥22 (2) 
+
+(3) Neighborhood semantic coherency . In addition, to ensure semantic coherency between entities (or relations) and their local contexts, we adopt the masked autoencoder (MAE) for self-supervised learn-ing. Specifically, MAE utilizes a reconstruction-based strategy: for an entity 𝑒 (or relation 𝑟 ), it treats its first-order neighbors (or end-entities) as a masked local context; by aggregating the semantic features from local context following [ 7 ], it reconstructs the em-beddings ¯e (or ¯r). Then, the loss LMAE is defined as the distance between the original and reconstructed embeddings as follows. 
+
+LMAE =∑︁  
+
+> 𝑒 ∈𝐸 𝑖
+
+∥e − ¯e∥22 +∑︁  
+
+> 𝑟 ∈𝑅 𝑖
+
+∥r − ¯r∥22 (3) Finally, we combine all the aforementioned losses into the final loss Lfinal , where 𝛼 , 𝜂 are hyperparameters for balancing purposes. 
+
+Lfinal = LKGE + 𝛼 LRA + 𝜂 LMAE (4) 
+
+Semantic decoupling. After temporal decoupling, we obtain a set of entity embeddings E𝑖 for each Δ𝑇 𝑖 (𝑖 ∈ [ 1, 𝑛 ]). To distinguish em-beddings of the same entity across different snapshots, we denote Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. 
+
+the embedding of the 𝑗 -th entity in the 𝑖 -th snapshot as e𝑖,𝑗 . It is evident that the same entity may have similar semantics across var-ious snapshots, and retaining all such embeddings would introduce semantic redundancy. For instance, a KG may incrementally add new facts about the same entity within the same domain at two snapshots, resulting in only minor changes to its embedding. To im-prove the spatial efficiency of embeddings, we introduce semantic decoupling. The key is to identify and consolidate the redundantly similar embeddings for the same entity across snapshots, while preserving only the most informative representations. Specifically, we examine all previous explicitly instantiated embeddings e𝑥,𝑗 at each snapshot 𝑆 𝑥 (𝑥 ∈ [ 1, 𝑖 − 1]) and determine the one e∗ 
+
+> 𝑥,𝑗
+
+with the greatest semantic similarity to e𝑖,𝑗 at the current snapshot 𝑆 𝑖 ,where sim( ·, ·) denotes the cosine similarity between two vectors. 
+
+e∗ 
+
+> 𝑥,𝑗
+
+= 𝑎𝑟𝑔𝑚𝑎𝑥 
+
+> e𝑥,𝑗
+
+𝑠𝑖𝑚 (e𝑥,𝑗 , e𝑖,𝑗 ), ∀𝑥 ∈ [ 1, 𝑖 − 1] (5) Intuitively, if the semantic similarity between e∗ 
+
+> 𝑥,𝑗
+
+and e𝑖,𝑗 ex-ceeds a large enough threshold 𝜃 , we consider them to be seman-tically redundant. To consolidate them, we adopt a lightweight yet effective strategy (Eq. 6): for e𝑖,𝑗 with 𝑠𝑖𝑚 (e∗ 
+
+> 𝑥,𝑗
+
+, e𝑖,𝑗 ) ≥ 𝜃 , we directly drop e𝑖,𝑗 and retain only a pointer to e∗ 
+
+> 𝑥,𝑗
+
+. The pri-mary motivation for discarding the new embedding e𝑖,𝑗 rather than the historical e∗ 
+
+> 𝑥,𝑗
+
+is to maximize the retention of robust historical knowledge. During link prediction, this preserved pointer allows us to retrieve the most similar historical embedding e∗ 
+
+> 𝑥,𝑗
+
+and di-rectly substitute it into the triple scoring function for inference. Conversely, e𝑖,𝑗 with similarity < 𝜃 is retained in E𝑖 , as such a divergence indicates that the entity has evolved a fundamentally new semantic facet; preserving it allows the model to expand its representational capacity to capture new knowledge domains. 
+
+𝑠𝑖𝑚 (e∗ 
+
+> 𝑥,𝑗
+
+, e𝑖,𝑗 ) ≥ 𝜃 ? drop e𝑖,𝑗 : retain e𝑖,𝑗 in E𝑖 (6) Here, 𝜃 serves as a semantic sensitivity parameter to regulate the degree of embedding consolidation. In our experiments, we evalu-ate its impact and show that it can effectively eliminate redundant embeddings while maintaining a good link prediction accuracy. Furthermore, this pointer-based substitution naturally extends to the existing entities that are absent from the current incremental updates Δ𝐷 𝑖 . Since their semantics remain completely unchanged, we treat them as perfectly static. Given that no new embedding 
+
+e𝑖,𝑗 is generated for them during temporal decoupling, we directly assign a pointer referencing their most recent historical embed-ding. This strategy ensures evaluation consistency during inference without incurring any additional spatial overhead. 
+
+Remark. While various consolidation strategies exist, such as mean, max, and sum pooling, they all replace snapshot-specific entity features with aggregated global information from multiple historical snapshots. Such aggregation operations again fuse em-beddings from different snapshots, thereby reintroducing semantic entanglement to some extent, and resulting in performance degra-dation on downstream tasks. We have evaluated various embedding consolidation methods on link prediction tasks and demonstrated that our lightweight method effectively improves the space effi-ciency of embeddings while preserving model effectiveness. This suggests that retaining the integrity of robust historical embeddings is more beneficial than fusing them via aggregation. 
+
+## 4.3 Semantic-Aware Link Prediction 
+
+Given the decoupled entity embeddings {E1, . . . , E𝑛 } for snapshots 
+
+{𝑆 1, . . . , 𝑆 𝑛 }, we now discuss how to leverage them for link pre-diction. For a specific prediction query (ℎ, 𝑟, ?), a key insight is that not all historical embeddings of an entity are equally rele-vant to the query–each may capture a different semantic facet, and only parts of them align with the query. For instance, consider the query (David Beckham , has_son , ?), which seeks to identify family-related entities. In this case, embeddings that encode knowl-edge regarding “family life” (e.g., facts incorporating relations like 
+
+is_married_to or has_sister ) evidently offer critical clues for the query. Conversely, embeddings emphasizing “career trajectory” (e.g., facts involving relations such as played_for or teammate )or other domains provide less contribution or may even introduce noise by suggesting completely irrelevant entities. With this in mind, we introduce a semantic-aware link prediction 
+
+method consisting of two steps: (1) Semantic-aware importance computation , which quantifies the semantic alignment between the embeddings E𝑖 of each snapshot and the current query (ℎ, 𝑟, ?),and (2) Link prediction with importance , which aggregates the predictions from different snapshot embeddings using the com-puted importance to enhance the overall prediction accuracy. 
+
+Semantic-aware importance computation. The primary chal-lenge lies in quantifying the relevance between the embeddings E𝑖 
+
+of each snapshot and the query (ℎ, 𝑟, ?). Drawing on the intuition that “an entity’s semantics are reflected by its associated relations” [ 21 ], we utilize the relations appearing in the new facts Δ𝐷 𝑖 of 𝑆 𝑖 
+
+as a proxy for the semantic focus of E𝑖 . The underlying rationale is straightforward: the more semantically similar the relations in 
+
+Δ𝐷 𝑖 are to the relation 𝑟 , the more likely E𝑖 encodes knowledge relevant to the query (ℎ, 𝑟, ?). Revisiting the example query with 
+
+𝑟 = has_son , relations such as is_married_to and has_sister 
+
+that are from the family domain exhibit strong similarity to 𝑟 . Con-sequently, the entities informed by those relations are of higher importance. Conversely, relations from unrelated domains (e.g., 
+
+played_for or has_hobby ) show clear semantic mismatch with the query, leading to lower importance for their associated entities. Given a query (ℎ, 𝑟, ?), we first extract the relations associated with the head entity ℎ from the incremental training facts Δ𝐷 𝑖 ,denoting them as the candidate relations 𝑅 𝑖 ℎ . Since a head prediction query (?, 𝑟, 𝑡 ) operates in the reverse direction, we analogously extract the relations associated with the tail entity 𝑡 to form its corresponding candidate set 𝑅 𝑖 𝑡 . To ensure the strict independence of the evaluation sets, we derive these candidate relations exclu-sively from the training subset. This entirely blinds the importance computation to any validation or test triples, guaranteeing that the model relies solely on explicitly observed knowledge during inference. We then compute the cosine similarity between each relation 𝑟 𝑗 ∈ 𝑅 𝑖 ℎ and the query relation 𝑟 , forming the similarity set 
+
+Sim (𝑅 𝑖 ℎ, 𝑟 ), which is defined as follows: 
+
+Sim (𝑅 𝑖 ℎ, 𝑟 ) = {𝑠𝑖𝑚 (r𝑗 , r)| 𝑟 𝑗 ∈ 𝑅 𝑖 ℎ } . (7) Since a single snapshot often encompasses a mixture of relations, including generic or weakly relevant ones that act as noise, con-sidering all of them would dilute the truly relevant high-scoring signals. Conversely, selecting only the highest association fails to SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. Jing Qi et al. 
+
+Table 1: Dataset statistics: |𝐸 𝑖 |, |𝑅 𝑖 |, and |Δ𝑇 𝑖 | are the number of entities, relations, and new facts in each snapshot 𝑆 𝑖                                                                                                                                                           
+
+> Datasets Snapshot 1 Snapshot 2 Snapshot 3 Snapshot 4 Snapshot 5
+> |𝐸 1||𝑅 1||Δ𝑇 1||𝐸 2||𝑅 2||Δ𝑇 2||𝐸 3||𝑅 3||Δ𝑇 3||𝐸 4||𝑅 4||Δ𝑇 4||𝐸 5||𝑅 5||Δ𝑇 5|
+> ENTITY 2,909 223 46,388 5,817 236 72,111 8,275 236 73,785 11,633 237 70,506 14,541 237 47,326 RELATION 11,560 48 98,819 13,343 96 93,535 13,754 143 66,136 14,387 190 30,032 14,541 237 21,594 HYBRID 8,628 86 57,561 10,040 102 20,873 12,779 151 88,017 14,393 209 103,339 14,541 237 40,326 FB-CKGE 7,505 237 186,070 11,258 237 31,012 13,134 237 31,012 14,072 237 31,012 14,541 237 31,010 GraphEqual 2,908 226 57,636 5,816 235 62,023 8,724 237 62,023 11,632 237 62,023 14,541 237 66,411 GraphHigher 900 197 10,000 1,838 221 20,000 3,714 234 40,000 7,467 237 80,000 14,541 237 160,116 GraphLower 7,505 237 160,000 11,258 237 80,000 13,134 237 40,000 14,072 237 20,000 14,541 237 10,116 DB-CKGE 49,453 174 118,518 64,296 350 118,518 71,077 526 118,518 74,915 704 118,518 75,672 882 118,518
+
+adequately capture the varying degrees of relevance across differ-ent snapshots. Therefore, we employ a Top-𝑘 filtering strategy to assess the importance of E𝑖 by averaging only the top-𝑘 highest similarities, denoted by 𝛿 𝑖 ℎ :
+
+𝛿 𝑖 ℎ = 1
+
+𝑘 ∑︁ Top 𝑘 (Sim (𝑅 𝑖 ℎ, 𝑟 )) . (8) This strategy ensures that the importance of E𝑖 is driven by the most relevant semantics encoded within it. We further explore the impact of the parameter 𝑘 in the parameter sensitivity analysis of our experiments. Notably, if the candidate relation set is empty (i.e., 
+
+𝑅 𝑖 ℎ = ∅), we directly set the aggregated similarity 𝛿 𝑖 ℎ to 0. Finally, we employ the Softmax function to normalize the importance, denoted by 𝛽 𝑖 ℎ , which represents the contribution of E𝑖 to the given query: 
+
+𝛽 𝑖 ℎ = 𝑒𝑥𝑝 (𝛿 𝑖 ℎ )
+
+Í𝑛 𝑗 =1 𝑒𝑥𝑝 (𝛿 𝑗 ℎ ) . (9) 
+
+Link prediction with importance. Given a query (ℎ, 𝑟, ?) and a growing KG 𝐺 = {𝑆 1, . . . , 𝑆 𝑛 }, we perform link prediction with importance as follows. For each visible entity 𝑒 ∈ 𝐸 𝑖 in a snapshot 𝑆 𝑖 ,we form a candidate triple (ℎ, 𝑟, 𝑒 ) and compute the prediction score as 𝜓 𝑖   
+
+> (ℎ,𝑟,𝑒 )
+
+, where 𝑝 = 1 or 2 represents the 𝐿 1 or 𝐿 2 norm. Notably, if the head ℎ or candidate entity 𝑒 lacks an explicit embedding in the current snapshot 𝐸 𝑖 due to our Semantic Decoupling strategy for redundancy consolidation, we employ a pointer redirection strategy. Specifically, we retrieve the most similar historical embedding (e.g., 
+
+e∗ 
+
+> 𝑥,𝑗
+
+) via the pointer and directly substitute it into the equation to compute 𝜓 𝑖   
+
+> (ℎ,𝑟,𝑒 )
+
+.
+
+𝜓 𝑖   
+
+> (ℎ,𝑟,𝑒 )
+
+= −∥ h + r − e∥𝑝 (10) Since an entity 𝑒 can appear in multiple snapshots, there may be multiple prediction scores for candidate triples involving this entity—one from each snapshot. In such cases, we aggregate these predictions by weighting them according to the importance of each snapshot embedding E𝑖 w.r.t. the query (Eq. 11), and then derive the final prediction with the greatest aggregated prediction score. 
+
+𝜓 (ℎ,𝑟,𝑒 ) =
+
+> 𝑛
+
+∑︁ 
+
+> 𝑖 =1
+
+𝛽 𝑖 ℎ · 𝜓 𝑖   
+
+> (ℎ,𝑟,𝑒 )
+
+(11) 
+
+Example 1. As shown in Figure 3 (right part), suppose the impor-tance of snapshot embeddings {E1, . . . , E3 } w.r.t. the query relation 
+
+𝑟 = has_son is {0.8, 0.1, 0.1}, indicating that the semantic focus of 
+
+E1 lies primarily in the family-domain, while E2 and E3 emphasize other domains (just like the illustration in Figure 2). Consequently, the embeddings from the first snapshot significantly boost the pre-diction scores of family-related entities, contributing more to answer-ing the query (David Beckham , has_son , ?) and finally predicting 
+
+Brooklyn Beckham rather than other irrelevant entities. In contrast, the embeddings from the second snapshot substantially enhance the scores of football-career-related entities, thereby playing a stronger role in queries such as (David Beckham , teammate , ?).
+
+## 5 Experiments 
+
+We conducted experiments to answer the following questions. All experiments were conducted on a Linux server with a 2.4 GHz CPU, 128 GB memory, and an NVIDIA RTX A6000 GPU. Our code and datasets are available at the anonymous GitHub repository [1]. 
+
+Q1: How does the proposed MF-CKGE perform in terms of effec-tiveness on the link prediction task compared to baselines? ( §5.2 )
+
+Q2: How does MF-CKGE compare to baselines in terms of training time and GPU memory consumption? ( §5.3 )
+
+Q3: How sensitive is our MF-CKGE to parameter settings? ( §5.4 )
+
+Q4: What is the contribution of each component to MF-CKGE’s overall effectiveness (ablation study)? ( §5.5 )
+
+Q5: How does MF-CKGE suppress query-irrelevant noise to en-hance prediction accuracy (case study)? ( §5.6 )
+
+## 5.1 Experimental Setup 
+
+Datasets. Consistent with prior work in CKGE literature, we em-ploy seven widely used datasets, each featuring five snapshots and distinct evolutionary patterns. Table 1 summarizes the dataset sta-tistics. In the ENTITY, RELATION, and HYBRID datasets [ 7], the number of entities, relations, and the mixture of both increase uni-formly at each snapshot. Especially in RELATION and HYBRID, each incremental update introduces a substantial number of new facts from different domains. FB-CKGE [ 18 ] simulates real-world KG evolution by adding only a small portion of new facts to a foundational KG at each snapshot. In contrast, GraphEqual, Graph-Higher, and GraphLower [ 17 ] exhibit varying growth trends in the size of new facts: nearly constant in GraphEqual, increasing in GraphHigher, and decreasing in GraphLower. Despite these differ-ences in incremental scale, all datasets show monotonic growth in cumulative triples. Furthermore, to assess MF-CKGE on larger and more semantically diverse KGs, we construct DB-CKGE, a growing KG derived from DBpedia [ 3 ]. Compared to the above datasets, DB-CKGE has three distinguishing characteristics: (1) it has the largest KG at every snapshot, (2) the size of new facts at each snapshot remains at a consistently high level, and (3) the new facts cover a broader range of semantic domains. For all datasets, the training, validation, and test sets are allocated as 3:1:1 for each snapshot. 
+
+Baselines. We compare MF-CKGE with ten representative base-lines from three categories: (1) regularization-based, (2) dynamic Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. 
+
+Table 2: Main results on the first four datasets. The best and second best results are highlighted in bold and underlined                                                                                                                                                                
+
+> Methods ENTITY RELATION HYBRID FB-CKGE
+> MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 Retrain 0.264 0.160 0.460 0.246 0.151 0.429 0.251 0.155 0.437 0.24 0.142 0.432 PNN [25] 0.229 0.130 0.425 0.167 0.096 0.305 0.185 0.101 0.349 0.215 0.122 0.403 CWR [19] 0.088 0.028 0.202 0.021 0.010 0.043 0.037 0.015 0.077 0.075 0.011 0.192 FastKGE [18] 0.239 0.146 0.427 0.185 0.107 0.359 0.211 0.128 0.382 0.223 0.131 0.405 GEM [20] 0.165 0.085 0.321 0.093 0.040 0.196 0.136 0.070 0.263 0.188 0.103 0.359 EMR [31] 0.171 0.090 0.330 0.111 0.052 0.225 0.141 0.073 0.267 0.180 0.097 0.346 DiCGRL [15] 0.107 0.057 0.211 0.133 0.079 0.241 0.149 0.083 0.277 0.149 0.091 0.261 SI [37] 0.154 0.072 0.311 0.113 0.055 0.224 0.111 0.049 0.229 0.187 0.102 0.359 EWC [14] 0.229 0.130 0.423 0.165 0.093 0.306 0.186 0.102 0.350 0.218 0.124 0.410 LKGE [7] 0.234 0.136 0.425 0.192 0.106 0.366 0.207 0.121 0.379 0.208 0.113 0.403 IncDE [17] 0.253 0.151 0.448 0.199 0.111 0.370 0.224 0.131 0.401 0.232 0.135 0.423
+> MF-CKGE (Ours) 0.261 0.160 0.452 0.226 0.141 0.389 0.244 0.151 0.418 0.241 0.146 0.423
+
+Table 3: Main results on the last four datasets. The best and second best results are highlighted in bold and underlined                                                                                                                                                                
+
+> Methods GraphEqual GraphHigher GraphLower DB-CKGE
+> MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 Retrain 0.242 0.14 0.444 0.252 0.148 0.454 0.23 0.132 0.425 0.19 0.082 0.376 PNN [25] 0.212 0.118 0.405 0.153 0.055 0.333 0.213 0.119 0.407 0.062 0.024 0.128 CWR [19] 0.122 0.041 0.277 0.203 0.106 0.388 0.032 0.005 0.080 0.026 0.006 0.059 FastKGE [18] 0.213 0.124 0.387 0.187 0.109 0.339 0.215 0.124 0.396 0.043 0.014 0.095 GEM [20] 0.189 0.099 0.372 0.197 0.109 0.372 0.170 0.084 0.346 0.071 0.019 0.163 EMR [31] 0.185 0.099 0.359 0.202 0.113 0.379 0.188 0.101 0.362 0.083 0.026 0.185 DiCGRL [15] 0.104 0.040 0.226 0.116 0.041 0.242 0.102 0.039 0.222 0.048 0.011 0.112 SI [37] 0.179 0.092 0.353 0.190 0.099 0.371 0.186 0.099 0.366 0.075 0.02 0.172 EWC [14] 0.207 0.113 0.400 0.198 0.106 0.385 0.210 0.116 0.405 0.088 0.023 0.210 LKGE [7] 0.214 0.118 0.407 0.207 0.120 0.382 0.210 0.116 0.403 0.119 0.053 0.236 IncDE [17] 0.234 0.134 0.432 0.227 0.132 0.412 0.228 0.129 0.426 0.081 0.040 0.157
+> MF-CKGE (Ours) 0.247 0.146 0.441 0.254 0.152 0.450 0.233 0.136 0.423 0.125 0.044 0.266
+
+architecture-based, and (3) replay-based methods. We also imple-ment a fully retrained baseline Retrain . Although Retrain incurs prohibitive computational and memory overhead–making it imprac-tical in real-world scenarios– it provides a reference for expected performance under full-data access , allowing us to assess how closely other methods approach this desirable yet costly regime. (1) Regularization-based methods. We compare four methods from this category: IncDE [17], LKGE [7], SI [37], and EWC [14]. 
+
+• IncDE . It adapts to the evolving nature of KGs through hierarchi-cal processing and incremental distillation, ensuring that previous knowledge is effectively transferred to the current model. 
+
+• LKGE . It employs fact-frequency-based regularization to stabi-lize embeddings and mitigate forgetting, while utilizing a Masked Autoencoder and knowledge transfer to adapt to new knowledge. 
+
+• SI . It evaluates parameter importance by calculating the contri-bution to loss reduction, selectively restricting updates to these critical parameters to preserve prior knowledge. 
+
+• EWC . It uses regularization on the Fisher Information Matrix-based parameter importance updates to mitigate forgetting. (2) Dynamic architecture-based methods. We compare three repre-sentative methods: FastKGE [18], CWR [19], and PNN [25]. 
+
+• FastKGE . It handles KG growth through an incremental low-rank adapter (IncLoRA), which dynamically allocates rank resources to embed new knowledge with additional parameter overhead. 
+
+• CWR . It mitigates forgetting using a dual-weight mechanism to isolate new learning in temporary weights before consolidating them to preserve class-specific knowledge. 
+
+• PNN . It instantiates a new network for each task, transferring knowledge from the frozen features of previous networks. (3) Replay-based methods. We compare three representative meth-ods from this area: DiCGRL [15], EMR [31], and GEM [20]. 
+
+• DiCGRL . It disentangles node embeddings into independent com-ponents and prevents forgetting by dynamically replaying partial historical data to update only the relevant components. 
+
+• EMR . It preserves historical knowledge by augmenting the cur-rent training data with randomly sampled previously trained data. 
+
+• GEM . It stores past training data to detect knowledge conflicts and rotates the gradient to avoid forgetting the old knowledge. 
+
+Queries. We design experiments based on the lifelong link pre-diction task mentioned in §3. For each snapshot 𝑆 𝑖 (𝑖 ∈ [ 1, 𝑛 ]) of a dataset, we divide it into a training set ( 𝐷 𝑖 ), a validation set ( 𝑉 𝑖 ), and a test set ( 𝑄 𝑖 ) in a ratio of 3:1:1. We next form prediction queries on the accumulated test sets ∪𝑛 𝑗 =1𝑄 𝑗 . Specifically, for each test fact 
+
+(ℎ, 𝑟, 𝑡 ) in ∪𝑛 𝑗 =1𝑄 𝑗 , we generate two types of queries: (ℎ, 𝑟, ?) to predict the tail entity, and (?, 𝑟, 𝑡 ) to predict the head entity. 
+
+Metrics. Following standard evaluation protocols in CKGE [ 7 , 17 ], we evaluate the effectiveness using three typical metrics: Mean Re-ciprocal Rank (MRR), Hits@1, and Hits@10 under filtered setting. Specifically, during the evaluation at 𝑆 𝑖 , for a test query (ℎ, 𝑟, ?)
+
+(or (?, 𝑟, 𝑡 )), the candidate set for ranking consists of all entities observed up to 𝑆 𝑖 . Furthermore, before ranking these candidates, we filter out all other true triples that appear in the accumulated training, validation, and test sets up to 𝑆 𝑖 , ensuring that other gen-uine facts do not inappropriately penalize the rank of the target entity. Higher values indicate better link prediction performance. The main results are averaged over five runs of the model trained on the last snapshot on queries. Moreover, we evaluate the training overhead in terms of time consumption and GPU memory usage. SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. Jing Qi et al. ENTITY RELATION HYBRID FB-CKGE GraphEqual GraphHigher GraphLower DB-CKGE                
+
+> 0
+> 1
+> 2
+> 3
+> 10
+> 30
+> Train Time (s)
+> Our Our Our
+> Our
+> Our Our Our
+> Our
+> ×10 3
+> retrain PNN CWR FastKGE GEM EMR DiCGRL SI EWC IncDE LKGE ours
+
+Figure 4: Training time of all methods on eight datasets ENTITY RELATION HYBRID FB-CKGE GraphEqual GraphHigher GraphLower DB-CKGE                 
+
+> 0
+> 5
+> 10
+> 30
+> Memory (GB)
+> Our Our Our Our Our Our Our
+> Our
+> PNN CWR GEM EMR DiCGRL SI EWC FastKGE IncDE LKGE ours
+
+Figure 5: GPU memory usage of all methods on eight datasets 0.06               
+
+> 0.12
+> 0.25
+> MRR  RELATION
+> 0.06
+> 0.12
+> 0.25 FB-CKGE
+> Q1 Q2 Q3 Q4 Q5
+> 0.06
+> 0.12
+> 0.25
+> MRR  GraphLower
+> Q1 Q2 Q3 Q4 Q5
+> 0.06
+> 0.12
+> 0.25 DB-CKGE
+> S1S2S3S4S5
+
+Figure 6: Effectiveness of MF-CKGE for retaining old knowl-edge on RELATION, FB-CKGE, GraphLower and DB-CKGE 0.16              
+
+> 0.20
+> 0.24
+> 0.28
+> MRR
+> 0.20
+> 0.23
+> 0.25
+> 0.22
+> 0.24
+> 0.26
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 1234
+> RELATION
+> 0.20
+> 0.23
+> 0.25
+> 0.28
+> MRR
+> 1234
+> FB-CKGE
+> 0.22
+> 0.24
+> 0.26
+> 1234
+> GraphLower
+> 0.23
+> 0.23
+> 0.23
+> 1234
+> DB-CKGE
+> 0.09
+> 0.10
+> 0.12
+> 0.14
+> IncDE MF-CKGE (Ours)
+
+Figure 7: Effectiveness of learning new knowledge (top) and memorizing old knowledge (bottom) Settings. The learning rate is chosen from {0.0001, 0.0005, 0.001}, and the batch size from {512, 1024, 2048}. We employ the Adam optimizer throughout. To ensure fair comparison with baselines, we adopt TransE [ 4 ] as the default base KGE model. The hyperparam-eters 𝛼 and 𝜂 are selected from {0.01, 0.1, 1.0}, and the embedding dimensions for entities and relations are fixed at 200. 
+
+## 5.2 Effectiveness Analysis 
+
+Main results. We report the main results over eight datasets in Tables 2 and 3. Notably, MF-CKGE outperforms all competing baselines, achieving an average (maximum) improvement of 1.7% (2.7%) in MRR, 1.3% (3.0%) in Hits@1, and 1.4% (3.8%) in Hits@10 over the best baseline , demonstrating its general effectiveness. In detail, compared to dynamic architecture-based methods ( PNN , CWR , and FastKGE ), ours achieves improvements of 1.8% ∼20.7% in MRR, 1.2% ∼13.6% in Hits@1, and 1.6% ∼34.6% in Hits@10. Against replay-based methods ( GEM , EMR , and DiC-GRL ), ours gains 4.3% ∼15.4% in MRR, 3.5% ∼11.1% in Hits@1, and 6.1% ∼24.1% in Hits@10. While for regularization-based methods (SI , EWC , LKGE , and IncDE ), ours gains 0.8% ∼13.3%, 0.7% ∼10.2%, and 0.4% ∼18.9% in MRR, Hits@1, and Hits@10, respectively. Re-markably, MF-CKGE even surpasses Retrain on certain metrics over FB-CKGE and GraphHigher. This is attributed to its ability to capture multi-faceted entity semantics and amplify query-relevant entity embeddings through a semantic-aware importance weight-ing. Although Retrain typically achieves the best results, it incurs significantly higher training cost compared to all other methods. For instance, on FB-CKGE, Retrain takes 899s for training 𝑆 5, whereas ours completes in just 46 seconds (19 × faster) while maintain-ing competitive accuracy (MRR: 0.1% higher, Hits@1: 0.4% higher) . More results of training overhead are shown in §5.3. 
+
+Retention of old knowledge. We evaluate MF-CKGE trained on 𝑆 𝑖 using accumulated test data ∪𝑖 −1
+
+> 𝑗 =1
+
+𝑄 𝑗 to assess its ability to retain old knowledge. Each 𝑄 𝑗 is evaluated across 𝑛 − 𝑗 subsequent snapshots ( 𝑛 is the total number of snapshots). For example, 𝑄 1
+
+is tested on 𝑆 2 ∼ 𝑆 5, and the results reflect how well knowledge w.r.t. 𝑄 1 is retained over time. As shown in Figure 6, the results of each 𝑄 𝑗 remain stable across different 𝑆 𝑖 . Notably, on some datasets, evaluating earlier 𝑄 𝑗 on more recent snapshots even improves results. For instance, 𝑄 2 in DB-CKGE (from 𝑆 3 to 𝑆 5) and 𝑄 2 ∼ 𝑄 4 in FB-CKGE exhibit consistent upward trends. This suggests that MF-CKGE not only effectively retains old knowledge but also leverages new information to enhance predictions on old test sets. 
+
+Effect of Learning and Memorizing. To verify that MF-CKGE can learn new knowledge well and retain old knowledge, we compare its performance with the best baseline, IncDE , as shown in Figure 7. Regarding the learning of new knowledge (top row), MF-CKGE consistently outperforms IncDE across most snapshots. Notably, on the DB-CKGE dataset, MF-CKGE demonstrates a significant advan-tage, maintaining a high MRR while IncDE shows a sharp decline. This indicates that our decoupling strategy effectively allows the model to capture new knowledge accurately. In terms of retain-ing old knowledge (bottom row), MF-CKGE achieves consistently higher MRR scores than IncDE . Both demonstrate that MF-CKGE effectively mitigates the issue of catastrophic forgetting. 
+
+## 5.3 Training Overhead 
+
+Training time. Figure 4 shows the training time of all meth-ods across eight datasets. Our MF-CKGE incurs the lowest time cost, achieving an 8 × speedup compared to Retrain , which requires accessing the entire KG. Moreover, compared with the strongest baseline IncDE , ours requires less training time (a 1.4 × speedup) . This gain stems primarily from our design to focus training exclusively on new knowledge, avoiding the com-putational overhead arising from the complex trade-off between historical preservation and new knowledge acquisition. Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. 
+
+Table 4: Ablation results on ENTITY, RELATION, HYBRID, and FB-CKGE                                                    
+
+> Methods ENTITY RELATION HYBRID FB-CKGE
+> MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MF-CKGE 0.261 0.160 0.452 0.226 0.141 0.389 0.244 0.151 0.418 0.241 0.146 0.423 w/o decoupling 0.259 0.158 0.451 0.211 0.122 0.383 0.239 0.145 0.416 0.238 0.135 0.422 w/o importance 0.240 0.142 0.423 0.203 0.119 0.369 0.230 0.139 0.403 0.222 0.131 0.398
+
+Table 5: Ablation results on GraphEqual, GraphHigher, GraphLower, and DB-CKGE                                                                
+
+> Methods GraphEqual GraphHigher GraphLower DB-CKGE
+> MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MRR Hits@1 Hits@10 MF-CKGE 0.247 0.146 0.441 0.254 0.152 0.450 0.233 0.136 0.423 0.125 0.044 0.266 w/o decoupling 0.246 0.143 0.441 0.239 0.141 0.432 0.232 0.134 0.421 0.099 0.038 0.212 w/o importance 0.232 0.134 0.426 0.248 0.148 0.440 0.214 0.121 0.397 0.108 0.037 0.234 60
+> 70
+> 80
+> 90
+> 100
+> Compression Rate(%)
+> 70
+> 80
+> 90
+> 100
+> Compression Rate(%)
+> 60
+> 70
+> 80
+> 90
+> 100
+> Compression Rate(%)
+> 70
+> 80
+> 90
+> 100
+> Compression Rate(%)
+> 0.94 0.96 0.98 1.00
+> 0.17
+> 0.18
+> 0.19
+> 0.20
+> 0.21
+> 0.22
+> 0.23
+> 0.24
+> MRR
+> RELATION
+> 0.94 0.96 0.98 1.00
+> 0.19
+> 0.20
+> 0.21
+> 0.22
+> 0.23
+> 0.24
+> 0.25
+> 0.26
+> MRR
+> HYBRID
+> 0.94 0.96 0.98 1.00
+> Threshold
+> 0.19
+> 0.20
+> 0.21
+> 0.22
+> 0.23
+> 0.24
+> 0.25
+> 0.26
+> MRR
+> FB-CKGE
+> 0.94 0.96 0.98 1.00
+> Threshold
+> 0.19
+> 0.20
+> 0.21
+> 0.22
+> 0.23
+> 0.24
+> 0.25
+> 0.26
+> MRR
+> GraphEqual
+
+Figure 8: Effect of 𝜃 on space compression and effectiveness GPU memory consumption. We also present the runtime GPU memory usage of all methods across eight datasets in Figure 5. Except for DiCGRL and FastKGE , which exhibit higher memory demands than others, our MF-CKGE maintains a memory footprint comparable to most baselines, without introducing significant ad-ditional overhead. This is primarily because most methods require allocating embedding spaces for all entities and relations, as well as processing training samples with a fixed batch size. 
+
+## 5.4 Parameter Sensitivity 
+
+Effect of the threshold 𝜃 in semantic decoupling. Figure 8 shows the effect of 𝜃 on the model size (compression ratio, right 
+
+𝑌 -axis) and effectiveness (MRR, left 𝑌 -axis) across RELATION, HY-BRID, FB-CKGE and GraphEqual. The compression ratio is the post-compression model size relative to the original size. As 𝜃 de-creases, more space is reduced, resulting in a smaller compression ratio. Despite this notable reduction in model space, MRR remains largely stable. Even under the aggressive setting of 𝜃 = 0.94 on FB-CKGE, where about 30% of the space is removed, MF-CKGE maintains strong performance, with the MRR decreasing slightly from 24.1% to 23.6%, which still outperforms IncDE . This confirms that semantic decoupling can effectively reduce model size without sacrificing effectiveness, demonstrating its robustness. 
+
+Effect of Top-𝑘 selection in importance computation. Figure 9 shows that as 𝑘 increases from 1 to 4, the MRR and Hits@10 consistently improve. However, at 𝑘 = 4, the performance generally plateaus across most datasets, and in some cases even declines. For example, in FB-CKGE, MRR rises from 0.23 at 𝑘 = 1 to 0.24 at 𝑘 = 3,while remaining stable at 𝑘 = 4; Hits@10 on GraphLower even ex-hibits a decrease at 𝑘 = 4. These results underscore the importance 0.22       
+
+> 0.24
+> 0.26
+> MRR  0.40
+> 0.42
+> 0.44
+> Hits@10
+> 1234
+> k
+> 0.12
+> 1234
+> k
+> 0.26
+> ENTITY
+> RELATION
+> HYBRID
+> FB-CKGE
+> GraphEqual
+> GraphLower
+> GraphHigher
+> DB-CKGE
+
+Figure 9: Effect of 𝑘 on effectiveness 
+
+of choosing an appropriate 𝑘 (e.g., 𝑘 = 3): averaging the top-𝑘 simi-larities effectively aggregates strong semantic clues and filters out coincidental high-similarity noise; however, an overly large 𝑘 can dilute semantic perception and degrade prediction performance. 
+
+## 5.5 Ablation Study 
+
+Ablations results. Table 4 and Table 5 examine the effect of two modules, entity embeddings decoupling (M1) and semantic-aware importance computation (M2). Removing M1 (i.e., new knowledge is no longer separated from old one) degrades performance across most datasets. The most significant declines occur on DB-CKGE, RELATION, and GraphHigher, where the MRR drops by 2.6% (from 0.125 to 0.099), 1.5% (from 0.226 to 0.211), and 1.5% (from 0.254 to 0.239), respectively. This indicates that decoupling facilitates more effective encoding of both new and old knowledge, preventing semantic entanglement, especially in scenarios with significant updates. Removing M2 reduces performance across all datasets. Notably, without the semantic-aware importance weighting, the MRR and Hits@10 on ENTITY experience substantial drops of 2.1% (0.261 to 0.240) and 2.9% (0.452 to 0.423), respectively. A similar trend is observed on RELATION, with MRR dropping by 2.3% (0.226 to 0.203). This confirms its critical role in dynamically guiding the model to focus on the most query-relevant embeddings and suppressing semantic noise during prediction. 
+
+Effect of various KGE models. Since most baselines are built upon TransE and incompatible with other KGE models, we adopt TransE as the default for fair comparison. In contrast, MF-CKGE is exten-sible to other KGE models. So, we study the effect of KGE models using the bilinear-based ComplEx [ 30 ] and rotation-translation-based RotatE [ 27 ]. In Table 6 and Table 7, both KGE models consis-tently outperform that using TransE (e.g., average +3.2% in MRR). However, they also incur much higher training costs (e.g., average 
+
+2.4× longer time), making the lightweight TransE a more practical choice that offers a better trade-off in general-purpose settings. SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. Jing Qi et al. 
+
+Table 6: Effect of various KGE models over ENTITY, RELATION, HYBRID, and FB-CKGE                                                                    
+
+> Methods ENTITY RELATION HYBRID FB-CKGE
+> MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MF-CKGE w/ TransE 0.261 0.160 0.452 1,765 0.226 0.141 0.389 1,816 0.244 0.151 0.418 1,602 0.241 0.146 0.423 1,103 MF-CKGE w/ RotatE 0.372 0.256 0.595 4,022 0.281 0.176 0.490 4,236 0.320 0.209 0.536 5,553 0.309 0.204 0.514 3,019 MF-CKGE w/ ComplEx 0.317 0.218 0.519 4,676 0.306 0.215 0.491 3,368 0.278 0.181 0.478 6,530 0.321 0.216 0.536 1,147
+
+Table 7: Effect of various KGE models over GraphEqual, GraphHigher, GraphLower, and DB-CKGE                                                                    
+
+> Methods GraphEqual GraphHigher GraphLower DB-CKGE
+> MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MRR Hits@1 Hits@10 Time (s) MF-CKGE w/ TransE 0.247 0.146 0.441 1,822 0.254 0.152 0.450 1,422 0.233 0.136 0.423 1,227 0.125 0.044 0.266 5,464 MF-CKGE w/ RotatE 0.322 0.204 0.561 2,846 0.339 0.219 0.582 3,211 0.287 0.185 0.497 2,976 0.179 0.093 0.341 16,660 MF-CKGE w/ ComplEx 0.321 0.177 0.536 1,945 0.279 0.188 0.468 2,334 0.299 0.197 0.514 2,545 0.205 0.136 0.337 8,759
+
+Table 8: Case study on ENTITY Case 1: Query (Harvard School of Law, field_of_study, ?) Semantic facet Academic Fields School Symbols Graduates Importance 0.58 0.20 0.22 
+
+1: Traditional History (0.34) 1: Mathematics (0.28) 1: Life Science (0.26) Top-3 entities 2: Astronomy (0.30) 2: Medicine (0.22) 2: Law making (0.25) 3: Interpretation (0.29) 3: Astronomy (0.14) 3: Fine Arts (0.23) Result: Traditional History Table 9: Case study on RELATION Case 2: Query (The Lion King, release_region, ?) Semantic facet Thematic Genre Actors Market Importance 0.15 0.15 0.70 1: Army of Palau (-0.6) 1: Dutch Americans (0.68) 1: Argentina (0.63) Top-3 entities 2: Matahau, Tonga (-0.7) 2: Game industry (0.66) 2: Italy (0.55) 3: Name of Honduras (-0.78) 3: Artistic gymnast (0.64) 3: Denmark (0.54) Result: Argentina 
+
+## 5.6 Case Study 
+
+Detailed prediction results for two cases. We conduct a case study to show how MF-CKGE suppresses irrelevant noise and en-hances prediction. Table 8 shows a query (Harvard School of Law, field_of_study, ?) from 𝑄 1 of ENTITY after learning 𝑆 3. For the head entity Harvard School of Law , it accumulates three facets over time: Academic Fields (𝑆 1), School Symbols (𝑆 2), and Graduates (𝑆 3). MF-CKGE computes the semantic-aware importance for each facet w.r.t. the relation field_of_study . The Academic Fields facet–most relevant to the query–is assigned the highest importance of 0.58. As a result, the ground-truth entity Traditional History is returned as its highest aggregated prediction score. Similarly, Table 9 presents a query (The Lion King, release_region, ?) from 𝑄 2 of RELATION after learning snapshot 𝑆 3. The head entity The Lion King accumu-lates three facets over time: Thematic Genre (𝑆 1), Actors (𝑆 2), and 
+
+Market (𝑆 3). MF-CKGE assigns the dominant importance (0.7) to the most relevant Market facet. Consequently, the ground-truth entity Argentina is correctly returned as the final result. 
+
+Adaptive importance visualization. To understand why MF-CKGE correctly answers the above queries, we visualize the average importance assigned to each snapshot embedding 𝑬 𝑖 across all test sets 𝑄 𝑗 . A consistent observation across the heatmaps is that the diagonal entries are significantly higher than the off-diagonal ones. This reveals that MF-CKGE can accurately prioritize the most rele-vant embedding 𝑬 𝑖 when addressing queries from its corresponding test set 𝑄 𝑖 . Specifically, on the ENTITY and RELATION datasets, 
+
+𝑬 𝑖 strictly dominates on 𝑄 𝑖 . For instance, in ENTITY’s 𝑄 5 and RE-LATION’s 𝑄 2, 𝑬 5 and 𝑬 2 are assigned exceptionally high weights of 0.53 and 0.49 respectively, whereas the importance of irrelevant embeddings is effectively suppressed (mostly below 0.2). Similarly, both the FACT and HYBRID datasets follow this fundamental trend; Q1 Q2 Q3 Q4 Q5                                                                                             
+
+> E1
+> E2
+> E3
+> E4
+> E5
+> 0.30 0.07 0.09 0.10 0.12
+> 0.22 0.36 0.09 0.10 0.12
+> 0.18 0.23 0.42 0.10 0.12
+> 0.17 0.19 0.23 0.47 0.12
+> 0.13 0.15 0.18 0.23 0.53
+> ENTITY
+> Q1 Q2 Q3 Q4 Q5
+> E1
+> E2
+> E3
+> E4
+> E5
+> 0.36 0.12 0.15 0.11 0.13
+> 0.19 0.49 0.25 0.15 0.16
+> 0.18 0.17 0.37 0.15 0.14
+> 0.14 0.12 0.14 0.44 0.20
+> 0.13 0.10 0.10 0.15 0.36
+> RELATION
+> Q1 Q2 Q3 Q4 Q5
+> E1
+> E2
+> E3
+> E4
+> E5
+> 0.28 0.21 0.18 0.16 0.14
+> 0.23 0.24 0.22 0.20 0.17
+> 0.20 0.22 0.24 0.23 0.20
+> 0.17 0.18 0.21 0.25 0.23
+> 0.13 0.14 0.15 0.17 0.26
+> FACT
+> Q1 Q2 Q3 Q4 Q5
+> E1
+> E2
+> E3
+> E4
+> E5
+> 0.23 0.09 0.11 0.12 0.12
+> 0.15 0.21 0.10 0.11 0.11
+> 0.26 0.28 0.36 0.16 0.20
+> 0.23 0.28 0.29 0.42 0.29
+> 0.13 0.14 0.14 0.18 0.28
+> HYBRID
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+
+Figure 10: Importance for each snapshot embedding 
+
+whether exhibiting distinct local peaks (e.g., 0.42 in HYBRID’s 𝑄 4)or a relatively smoother attention distribution (as in FACT), their diagonal entries consistently remain the highest within their re-spective columns. Because 𝑄 𝑖 is inherently intended to evaluate the knowledge specific to snapshot 𝑆 𝑖 , these results strongly confirm the model’s semantic-aware capability. It adaptively identifies the relevance of each embedding to the given query, leveraging criti-cal historical knowledge while filtering out noise from irrelevant snapshots to preserve prediction accuracy. 
+
+## 6 Conclusion and Future Work 
+
+This paper proposes an MF-CKGE framework for semantic-aware link prediction. It achieves the separation of new and old knowl-edge by temporal entity embeddings decoupling, enabling effective learning of new knowledge and retention of old knowledge, and further reduces semantic redundancy via semantic decoupling. We also introduce a semantic-aware importance mechanism that adap-tively weights query-relevant snapshot embeddings to improve prediction accuracy. In future work, we plan to build upon this approach to develop a CKGE-enhanced LLM-based RAG system capable of perceiving and adapting to dynamic knowledge changes. 
+
+## Acknowledgments 
+
+This work was supported by the NSFC (62572162 and 62376058), the Primary R&D Plan of Zhejiang (2023C03198), the "Pioneer" and "Leading Goose" R&D Program of Zhejiang (No. 2024C01020), and the National Key R&D Program of China (SQ2025YFE0203954). Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction SIGIR ’26, July 20–24, 2026, Melbourne, VIC, Australia. 
+
+## References 
+
+[1] 2026. Project Code and Datasets. https://anonymous.4open.science/r/MF-CKGE-04E5. Accessed: 2026-09-20. [2] Tu Ao, Yanhua Yu, Yuling Wang, Yang Deng, Zirui Guo, Liang Pang, Pinghui Wang, Tat-Seng Chua, Xiao Zhang, and Zhen Cai. 2025. Lightprof: A light-weight reasoning framework for large language model on knowledge graph. In 
+
+Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 39. 23424–23432. [3] Sören Auer, Christian Bizer, Georgi Kobilarov, Jens Lehmann, Richard Cyganiak, and Zachary Ives. 2007. Dbpedia: A nucleus for a web of open data. In The semantic web . Springer, 722–735. [4] Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, and Ok-sana Yakhnenko. 2013. Translating embeddings for modeling multi-relational data. Advances in neural information processing systems 26 (2013). [5] Antoine Bordes, Jason Weston, and Nicolas Usunier. 2014. Open question an-swering with weakly supervised embedding models. In Machine Learning and Knowledge Discovery in Databases: European Conference, ECML PKDD 2014, Nancy, France, September 15-19, 2014. Proceedings, Part I 14 . Springer, 165–180. [6] Xiang Chen, Jintian Zhang, Xiaohan Wang, Ningyu Zhang, Tongtong Wu, Yux-iang Wang, Yongheng Wang, and Huajun Chen. 2024. Continual Multimodal Knowledge Graph Construction. arXiv:2305.08698 [cs.CL] https://arxiv.org/abs/ 2305.08698 [7] Yuanning Cui, Yuxin Wang, Zequn Sun, Wenqiang Liu, Yiqiao Jiang, Kexin Han, and Wei Hu. 2023. Lifelong embedding learning and transfer for growing knowl-edge graphs. In Proceedings of the AAAI Conference on Artificial Intelligence ,Vol. 37. 4217–4224. [8] Angel Daruna, Mehul Gupta, Mohan Sridharan, and Sonia Chernova. 2021. Con-tinual learning of knowledge graph embeddings. IEEE Robotics and Automation Letters 6, 2 (2021), 1128–1135. [9] Xin Dong, Evgeniy Gabrilovich, Geremy Heitz, Wilko Horn, Ni Lao, Kevin Mur-phy, Thomas Strohmann, Shaohua Sun, and Wei Zhang. 2014. Knowledge vault: A web-scale approach to probabilistic knowledge fusion. In Proceedings of the 20th ACM SIGKDD international conference on Knowledge discovery and data mining .601–610. [10] Darren Edge, Ha Trinh, Newman Cheng, Joshua Bradley, Alex Chao, Apurva Mody, Steven Truitt, Dasha Metropolitansky, Robert Osazuwa Ness, and Jonathan Larson. 2024. From local to global: A graph rag approach to query-focused summarization. arXiv preprint arXiv:2404.16130 (2024). [11] Xingyue Huang, Miguel Romero, Ismail Ceylan, and Pablo Barceló. 2023. Atheory of link prediction via relational weisfeiler-leman on knowledge graphs. 
+
+Advances in Neural Information Processing Systems 36 (2023), 19714–19748. [12] Yantao Jia, Yuanzhuo Wang, Xiaolong Jin, Hailun Lin, and Xueqi Cheng. 2017. Knowledge graph embedding: A locally and temporally adaptive translation-based approach. ACM Transactions on the Web (TWEB) 12, 2 (2017), 1–33. [13] Bernal Jimenez Gutierrez, Yiheng Shu, Yu Gu, Michihiro Yasunaga, and Yu Su. 2024. Hipporag: Neurobiologically inspired long-term memory for large language models. Advances in Neural Information Processing Systems 37 (2024), 59532– 59569. [14] James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al . 2017. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences 114, 13 (2017), 3521– 3526. [15] Xiaoyu Kou, Yankai Lin, Shaobo Liu, Peng Li, Jie Zhou, and Yan Zhang. 2020. Disentangle-based continual graph representation learning. arXiv preprint arXiv:2010.02565 (2020). [16] Mufei Li, Siqi Miao, and Pan Li. 2024. Simple is effective: The roles of graphs and large language models in knowledge-graph-based retrieval-augmented genera-tion. arXiv preprint arXiv:2410.20724 (2024). [17] Jiajun Liu, Wenjun Ke, Peng Wang, Ziyu Shang, Jinhua Gao, Guozheng Li, Ke Ji, and Yanhe Liu. 2024. Towards continual knowledge graph embedding via incre-mental distillation. In Proceedings of the AAAI Conference on Artificial Intelligence ,Vol. 38. 8759–8768. [18] Jiajun Liu, Wenjun Ke, Peng Wang, Jiahao Wang, Jinhua Gao, Ziyu Shang, Guozheng Li, Zijie Xu, Ke Ji, and Yining Li. 2024. Fast and continual knowledge graph embedding via incremental lora. arXiv preprint arXiv:2407.05705 (2024). [19] Vincenzo Lomonaco and Davide Maltoni. 2017. Core50: a new dataset and benchmark for continuous object recognition. In Conference on robot learning .PMLR, 17–26. [20] David Lopez-Paz and Marc’Aurelio Ranzato. 2017. Gradient episodic memory for continual learning. Advances in neural information processing systems 30 (2017). [21] Guanglin Niu. 2024. Knowledge Graph Embeddings: A Comprehensive Survey on Capturing Relation Properties. arXiv preprint arXiv:2410.14733 (2024). [22] Farimah Poursafaei, Shenyang Huang, Kellin Pelrine, and Reihaneh Rabbany. 2022. Towards better evaluation for dynamic link prediction. Advances in Neural Information Processing Systems 35 (2022), 32928–32941. [23] Sabbir M. Rashid and Deborah L. Mcguinness. 2025. Designing and Evaluat-ing an Ensemble Reasoning-based Clinical Decision Support System. DATA INTELLIGENCE 7, 1 (2025). doi:10.3724/2096-7004.di.2025.0001 [24] Andrea Rossi, Denilson Barbosa, Donatella Firmani, Antonio Matinata, and Paolo Merialdo. 2021. Knowledge graph embedding for link prediction: A comparative analysis. ACM Transactions on Knowledge Discovery from Data (TKDD) 15, 2 (2021), 1–49. [25] Andrei A Rusu, Neil C Rabinowitz, Guillaume Desjardins, Hubert Soyer, James Kirkpatrick, Koray Kavukcuoglu, Razvan Pascanu, and Raia Hadsell. 2016. Pro-gressive neural networks. arXiv preprint arXiv:1606.04671 (2016). [26] Evangelos A. Stathopoulos, Alexandros Vassiliades, Sotiris Diplaris, Stefanos Vrochidis, and Ioannis Kompatsiaris. 2024. Applied logic and semantics on indoor and urban adaptive design through knowledge graphs, reasoning and explainable argumentation. The Knowledge Engineering Review 39 (2024), e4. doi:10.1017/S0269888924000043 [27] Zhiqing Sun, Zhi-Hong Deng, Jian-Yun Nie, and Jian Tang. 2019. Rotate: Knowl-edge graph embedding by relational rotation in complex space. arXiv preprint arXiv:1902.10197 (2019). [28] Gu Tang, Xiaoying Gan, Jinghe Wang, Bin Lu, Lyuwen Wu, Luoyi Fu, and Chenghu Zhou. 2024. Editkg: Editing knowledge graph for recommendation. In Proceedings of the 47th International ACM SIGIR Conference on Research and Development in Information Retrieval . 112–122. [29] Yi Tay, Anh Luu, and Siu Cheung Hui. 2017. Non-parametric estimation of multi-ple embeddings for link prediction on dynamic knowledge graphs. In Proceedings of the AAAI Conference on Artificial Intelligence , Vol. 31. [30] Théo Trouillon, Johannes Welbl, Sebastian Riedel, Éric Gaussier, and Guillaume Bouchard. 2016. Complex embeddings for simple link prediction. In International conference on machine learning . PMLR, 2071–2080. [31] Hong Wang, Wenhan Xiong, Mo Yu, Xiaoxiao Guo, Shiyu Chang, and William Yang Wang. 2019. Sentence embedding alignment for lifelong relation extraction. arXiv preprint arXiv:1903.02588 (2019). [32] Yuxiang Wang, Arijit Khan, Tianxing Wu, Jiahui Jin, and Haijiang Yan. 2020. Semantic Guided and Response Times Bounded Top-k Similarity Search over Knowledge Graphs. In 2020 IEEE 36th International Conference on Data Engineering (ICDE) . 445–456. doi:10.1109/ICDE48307.2020.00045 [33] Yuxiang Wang, Arijit Khan, Xiaoliang Xu, Jiahui Jin, Qifan Hong, and Tao Fu. 2022. Aggregate Queries on Knowledge Graphs: Fast Approximation with Semantic-aware Sampling. In 2022 IEEE 38th International Conference on Data Engineering (ICDE) . 2914–2927. doi:10.1109/ICDE53745.2022.00263 [34] Zhen Wang, Jianwen Zhang, Jianlin Feng, and Zheng Chen. 2014. Knowledge graph embedding by translating on hyperplanes. In Proceedings of the AAAI conference on artificial intelligence , Vol. 28. [35] Tianxing Wu, Arijit Khan, Melvin Yong, Guilin Qi, and Meng Wang. 2022. Effi-ciently embedding dynamic knowledge graphs. Knowledge-based systems 250 (2022), 109124. [36] Jian Xu, Sichun Luo, Xiangyu Chen, Haoming Huang, Hanxu Hou, and Linqi Song. 2025. RALLRec: Improving Retrieval Augmented Large Language Model Recommendation with Representation Learning. In Companion Proceedings of the ACM on Web Conference 2025 . 1436–1440. [37] Friedemann Zenke, Ben Poole, and Surya Ganguli. 2017. Continual learning through synaptic intelligence. In International conference on machine learning .PMLR, 3987–3995. [38] Fuzheng Zhang, Nicholas Jing Yuan, Defu Lian, Xing Xie, and Wei-Ying Ma. 2016. Collaborative knowledge base embedding for recommender systems. In 
+
+Proceedings of the 22nd ACM SIGKDD international conference on knowledge discovery and data mining . 353–362. [39] Muhan Zhang and Yixin Chen. 2018. Link prediction based on graph neural networks. Advances in neural information processing systems 31 (2018).
