@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-001.webp",
+      "caption": "Table 1: Dataset statistics: |𝐸𝑖 |, |𝑅𝑖 |, and |Δ𝑇𝑖 | are the number of entities, relations, and new facts in each snapshot 𝑆𝑖",
+      "page": 6,
+      "index": 1,
+      "width": 1048,
+      "height": 185
+    },
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-002.webp",
+      "caption": "Figure 2: An evolving KGwith three snapshots: each contains multi-faceted knowledge updates about David Beckham",
+      "page": 2,
+      "index": 2,
+      "width": 472,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-003.webp",
+      "caption": "Table 3: Main results on the last four datasets. The best and second best results are highlighted in bold and underlined",
+      "page": 7,
+      "index": 3,
+      "width": 962,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-004.webp",
+      "caption": "Table 2: Main results on the first four datasets. The best and second best results are highlighted in bold and underlined",
+      "page": 7,
+      "index": 4,
+      "width": 964,
+      "height": 273
+    },
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-005.webp",
+      "caption": "Figure 10: Importance for each snapshot embedding whether exhibiting distinct local peaks (e.g., 0.42 in HYBRID’s 𝑄4) or a relatively smoother attention distribution (as in FACT), their diagonal entries consistently remain the highest within their respective columns. Because𝑄𝑖 is inherently intended to evaluate the knowledge specific to snapshot 𝑆𝑖 , these results strongly confirm the model’s semantic-aware capability. It adaptively identifies the relevance of each embedding to the given query, leveraging critical historical knowledge while filtering out noise from irrelevant snapshots to preserve prediction accuracy.",
+      "page": 10,
+      "index": 5,
+      "width": 470,
+      "height": 407
+    },
+    {
+      "url": "assets/figures/arxiv/2604.10947v2/fig-006.webp",
+      "caption": "Figure 3: An overview of the proposed MF-CKGE framework",
+      "page": 4,
+      "index": 6,
+      "width": 994,
+      "height": 422
+    }
+  ]
+}

@@ -1,0 +1,1290 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-04-21T20:02:47.699916+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 29,
+    "deep_cap": 6,
+    "deep_selected": 26,
+    "quick_candidates": 7,
+    "quick_skim_target": 11,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2604.11112v1",
+      "source": "arxiv",
+      "title": "Quantum-Gated Task-interaction Knowledge Distillation for Pre-trained Model-based Class-Incremental Learning",
+      "abstract": "Class-incremental learning (CIL) aims to continuously accumulate knowledge from a stream of tasks and construct a unified classifier over all seen classes. Although pretrained models (PTMs) have shown promising performance in CIL, they still struggle with the entanglement of multi-task subspaces, leading to catastrophic forgetting when task routing parameters are poorly calibrated or task-level representations are rigidly fixed. To address this issue, we propose a novel Quantum-Gated Task-interaction Knowledge Distillation (QKD) framework that leverages quantum gating to guide inter-task knowledge transfer. Specifically, we introduce a quantum-gated task modulation gating mechanism to model the relational dependencies among task embedding, dynamically capturing the sample-to-task relevance for both joint training and inference across streaming tasks. Guided by the quantum gating outputs, we perform task-interaction knowledge distillation guided by these task-embedding-level correlation weights from old to new adapters, enabling the model to bridge the representation gaps between independent task subspaces. Extensive experiments demonstrate that QKD effectively mitigates forgetting and achieves state-of-the-art performance.",
+      "authors": [
+        "Linjie Li",
+        "Huiyu Xiao",
+        "Jiarui Cao",
+        "Zhenyu Wu",
+        "Yang Ji"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-04-13T07:28:44+00:00",
+      "link": "https://arxiv.org/pdf/2604.11112v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Proposes a quantum-gated knowledge distillation framework for pre-trained model-based class-incremental learning.",
+      "llm_evidence_cn": "提出了一种基于预训练模型的类增量学习量子门控知识蒸馏框架。",
+      "llm_evidence": "提出了一种基于预训练模型的类增量学习量子门控知识蒸馏框架。",
+      "canonical_evidence": "提出了一种基于预训练模型的类增量学习量子门控知识蒸馏框架。",
+      "llm_tldr_en": "Uses quantum gating to guide inter-task knowledge transfer and mitigate forgetting in class-incremental learning.",
+      "llm_tldr_cn": "利用量子门控引导任务间知识迁移，缓解类增量学习中的遗忘问题。",
+      "llm_tldr": "利用量子门控引导任务间知识迁移，缓解类增量学习中的遗忘问题。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "challenges in class-incremental learning scenarios",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14016v1",
+      "source": "arxiv",
+      "title": "MAny: Merge Anything for Multimodal Continual Instruction Tuning",
+      "abstract": "Multimodal Continual Instruction Tuning (MCIT) is essential for sequential task adaptation of Multimodal Large Language Models (MLLMs) but is severely restricted by catastrophic forgetting. While existing literature focuses on the reasoning language backbone, in this work, we expose a critical yet neglected dual-forgetting phenomenon across both perception drift in Cross-modal Projection Space and reasoning collapse in Low-rank Parameter Space. To resolve this, we present \\textbf{MAny} (\\textbf{M}erge \\textbf{Any}thing), a framework that merges task-specific knowledge through \\textbf{C}ross-modal \\textbf{P}rojection \\textbf{M}erging (\\textbf{CPM}) and \\textbf{L}ow-rank \\textbf{P}arameter \\textbf{M}erging (\\textbf{LPM}). Specifically, CPM recovers perceptual alignment by adaptively merging cross-modal visual representations via visual-prototype guidance, ensuring accurate feature recovery during inference. Simultaneously, LPM eliminates mutual interference among task-specific low-rank modules by recursively merging low-rank weight matrices. By leveraging recursive least squares, LPM provides a closed-form solution that mathematically guarantees an optimal fusion trajectory for reasoning stability. Notably, MAny operates as a training-free paradigm that achieves knowledge merging via efficient CPU-based algebraic operations, eliminating additional gradient-based optimization beyond initial tuning. Our extensive evaluations confirm the superior performance and robustness of MAny across multiple MLLMs and benchmarks. Specifically, on the UCIT benchmark, MAny achieves significant leads of up to 8.57\\% and 2.85\\% in final average accuracy over state-of-the-art methods across two different MLLMs, respectively.",
+      "authors": [
+        "Zijian Gao",
+        "Wangwang Jia",
+        "Xingxing Zhang",
+        "Pengfei Qian",
+        "Tao Sun",
+        "Bo Ding",
+        "Yong Dou",
+        "Huaimin Wang",
+        "Kele Xu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-15T15:57:23+00:00",
+      "link": "https://arxiv.org/pdf/2604.14016v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Framework for multimodal continual instruction tuning to resolve dual-forgetting",
+      "llm_evidence_cn": "解决双重遗忘问题的多模态持续指令微调框架",
+      "llm_evidence": "解决双重遗忘问题的多模态持续指令微调框架",
+      "canonical_evidence": "解决双重遗忘问题的多模态持续指令微调框架",
+      "llm_tldr_en": "MAny addresses dual-forgetting in multimodal continual learning by merging task-specific projection and LoRA weights.",
+      "llm_tldr_cn": "MAny框架通过合并任务特定的投影和LoRA权重，解决了多模态持续学习中的双重遗忘问题。",
+      "llm_tldr": "MAny框架通过合并任务特定的投影和LoRA权重，解决了多模态持续学习中的双重遗忘问题。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "state of the art methods in continual learning",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14519v1",
+      "source": "arxiv",
+      "title": "CI-CBM: Class-Incremental Concept Bottleneck Model for Interpretable Continual Learning",
+      "abstract": "Catastrophic forgetting remains a fundamental challenge in continual learning, in which models often forget previous knowledge when fine-tuned on a new task. This issue is especially pronounced in class incremental learning (CIL), which is the most challenging setting in continual learning. Existing methods to address catastrophic forgetting often sacrifice either model interpretability or accuracy. To address this challenge, we introduce ClassIncremental Concept Bottleneck Model (CI-CBM), which leverage effective techniques, including concept regularization and pseudo-concept generation to maintain interpretable decision processes throughout incremental learning phases. Through extensive evaluation on seven datasets, CI-CBM achieves comparable performance to black-box models and outperforms previous interpretable approaches in CIL, with an average 36% accuracy gain. CICBM provides interpretable decisions on individual inputs and understandable global decision rules, as shown in our experiments, thereby demonstrating that human understandable concepts can be maintained during incremental learning without compromising model performance. Our approach is effective in both pretrained and non-pretrained scenarios; in the latter, the backbone is trained from scratch during the first learning phase. Code is publicly available at github.com/importAmir/CI-CBM.",
+      "authors": [
+        "Amirhosein Javadi",
+        "Tuomas Oikarinen",
+        "Tara Javidi",
+        "Tsui-Wei Weng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-04-16T01:20:33+00:00",
+      "link": "https://arxiv.org/pdf/2604.14519v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Introduces a class-incremental concept bottleneck model to maintain interpretability and accuracy in CIL scenarios.",
+      "llm_evidence_cn": "引入了类增量概念瓶颈模型，以在类增量学习场景中保持可解释性和准确性。",
+      "llm_evidence": "引入了类增量概念瓶颈模型，以在类增量学习场景中保持可解释性和准确性。",
+      "canonical_evidence": "引入了类增量概念瓶颈模型，以在类增量学习场景中保持可解释性和准确性。",
+      "llm_tldr_en": "A class-incremental learning model that uses concept regularization for interpretable and accurate updates.",
+      "llm_tldr_cn": "一种类增量学习模型，利用概念正则化实现可解释且准确的模型更新。",
+      "llm_tldr": "一种类增量学习模型，利用概念正则化实现可解释且准确的模型更新。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "challenges in class-incremental learning scenarios",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.16171v1",
+      "source": "arxiv",
+      "title": "JumpLoRA: Sparse Adapters for Continual Learning in Large Language Models",
+      "abstract": "Adapter-based methods have become a cost-effective approach to continual learning (CL) for Large Language Models (LLMs), by sequentially learning a low-rank update matrix for each task. To mitigate catastrophic forgetting, state-of-the-art approaches impose constraints on new adapters with respect to the previous ones, by targeting either subspace or coordinate-wise interference. In this paper, we propose JumpLoRA, a novel framework to adaptively induce sparsity in the Low-Rank Adaptation (LoRA) blocks through the use of JumpReLU gating. The method achieves dynamic parameter isolation, which helps prevent task interference. We demonstrate that our method is highly modular and compatible with LoRA-based CL approaches. Specifically, it significantly boosts the performance of IncLoRA and outperforms the leading state-of-the-art CL method, ELLA.",
+      "authors": [
+        "Alexandra Dragomir",
+        "Ioana Pintilie",
+        "Antonio Barbalau",
+        "Marius Dragoi",
+        "Florin Brad",
+        "Cristian Daniel Paduraru",
+        "Alexandru Tifrea",
+        "Elena Burceanu",
+        "Radu Tudor Ionescu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-04-17T15:38:37+00:00",
+      "link": "https://arxiv.org/pdf/2604.16171v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Sparse adapters for continual learning in LLMs to mitigate catastrophic forgetting",
+      "llm_evidence_cn": "大语言模型持续学习中的稀疏适配器，旨在减轻灾难性遗忘",
+      "llm_evidence": "大语言模型持续学习中的稀疏适配器，旨在减轻灾难性遗忘",
+      "canonical_evidence": "大语言模型持续学习中的稀疏适配器，旨在减轻灾难性遗忘",
+      "llm_tldr_en": "JumpLoRA uses sparse adapters and dynamic parameter isolation to prevent task interference in LLM continual learning.",
+      "llm_tldr_cn": "JumpLoRA通过稀疏适配器和动态参数隔离，有效防止大语言模型持续学习中的任务干扰。",
+      "llm_tldr": "JumpLoRA通过稀疏适配器和动态参数隔离，有效防止大语言模型持续学习中的任务干扰。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.17578v1",
+      "source": "arxiv",
+      "title": "Recovery Guarantees for Continual Learning of Dependent Tasks: Memory, Data-Dependent Regularization, and Data-Dependent Weights",
+      "abstract": "Continual learning (CL) is concerned with learning multiple tasks sequentially without forgetting previously learned tasks. Despite substantial empirical advances over recent years, the theoretical development of CL remains in its infancy. At the heart of developing CL theory lies the challenge that the data distribution varies across tasks, and we argue that properly addressing this challenge requires understanding this variation--dependency among tasks. To explicitly model task dependency, we consider nonlinear regression tasks and propose the assumption that these tasks are dependent in such a way that the data of the current task is a nonlinear transformation of previous data. With this model and under natural assumptions, we prove statistical recovery guarantees (more specifically, bounds on estimation errors) for several CL paradigms in practical use, including experience replay with data-independent regularization and data-independent weights that balance the losses of tasks, replay with data-dependent weights, and continual learning with data-dependent regularization (e.g., knowledge distillation). To the best of our knowledge, our bounds are informative in cases where prior work gives vacuous bounds.",
+      "authors": [
+        "Liangzu Peng",
+        "Uday Kiran Reddy Tadipatri",
+        "Ziqing Xu",
+        "Eric Eaton",
+        "René Vidal"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "math.ST"
+      ],
+      "published": "2026-04-19T18:55:22+00:00",
+      "link": "https://arxiv.org/pdf/2604.17578v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "provides theoretical recovery guarantees for continual learning of dependent tasks",
+      "llm_evidence_cn": "为相关任务的持续学习提供理论恢复保证",
+      "llm_evidence": "为相关任务的持续学习提供理论恢复保证",
+      "canonical_evidence": "为相关任务的持续学习提供理论恢复保证",
+      "llm_tldr_en": "Develops a theoretical framework for continual learning by modeling task dependency and providing recovery guarantees.",
+      "llm_tldr_cn": "通过建模任务依赖关系并提供恢复保证，建立了持续学习的理论框架。",
+      "llm_tldr": "通过建模任务依赖关系并提供恢复保证，建立了持续学习的理论框架。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.17822v1",
+      "source": "arxiv",
+      "title": "GR4CIL: Gap-compensated Routing for CLIP-based Class Incremental Learning",
+      "abstract": "Class-Incremental Learning (CIL) aims to continuously acquire new categories while preserving previously learned knowledge. Recently, Contrastive Language-Image Pre-trained (CLIP) models have shown strong potential for CIL due to their powerful generalization ability. However, existing methods still face two key challenges: shared-parameter adaptation tends to cause old-knowledge drift, and task-specific knowledge organization often leads to poorly calibrated cross-task responses, making reliable routing difficult. To address these issues, we propose GR4CIL, a framework combining task discrimination and knowledge routing for CLIP-based CIL. GR4CIL preserves task-specific visual knowledge while maintaining an incrementally stable shared textual semantic space, thereby reducing interference across tasks. Moreover, we introduce an orthogonal compensation mechanism to mitigate modality-gap-induced bias, enhance within-task discrimination, and enlarge the score margin between the ground-truth task and competing tasks. As a result, GR4CIL enables more reliable task-aware routing over learned knowledge while retaining the zero-shot generalization capability. Experiments on multiple benchmarks show that GR4CIL consistently outperforms strong baselines.",
+      "authors": [
+        "Tianqi Wang",
+        "Jingcai Guo"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-20T05:20:39+00:00",
+      "link": "https://arxiv.org/pdf/2604.17822v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "addresses challenges in CLIP-based class incremental learning",
+      "llm_evidence_cn": "解决基于 CLIP 的类增量学习中的挑战",
+      "llm_evidence": "解决基于 CLIP 的类增量学习中的挑战",
+      "canonical_evidence": "解决基于 CLIP 的类增量学习中的挑战",
+      "llm_tldr_en": "Proposes GR4CIL to handle old-knowledge drift and cross-task routing in class-incremental learning.",
+      "llm_tldr_cn": "提出 GR4CIL 框架，解决类增量学习中的旧知识漂移和跨任务路由问题。",
+      "llm_tldr": "提出 GR4CIL 框架，解决类增量学习中的旧知识漂移和跨任务路由问题。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "challenges in class-incremental learning scenarios",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.10947v1",
+      "source": "arxiv",
+      "title": "Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction",
+      "abstract": "Continual Knowledge Graph Embedding (CKGE) aims to continually learn embeddings for new knowledge, i.e., entities and relations, while retaining previously acquired knowledge. Most existing CKGE methods mitigate catastrophic forgetting via regularization or replaying old knowledge. They conflate new and old knowledge of an entity within the same embedding space to seek a balance between them. However, entities inherently exhibit multi-faceted semantics that evolve dynamically as their relational contexts change over time. A shared embedding fails to capture and distinguish these temporal semantic variations, degrading lifelong link prediction accuracy across snapshots. To address this, we propose a Multi-Faceted CKGE framework (MF-CKGE) for semantic-aware link prediction. During offline learning, MF-CKGE separates temporal old and new knowledge into distinct embedding spaces to prevent knowledge entanglement and employs semantic decoupling to reduce semantic redundancy, thereby improving space efficiency. During online inference, MF-CKGE adaptively identifies semantically query-relevant entity embeddings by quantifying their semantic importance, reducing interference from query-irrelevant noise. Experiments on eight datasets show that MF-CKGE achieves an average (maximum) improvement of 1.7% (2.7%) and 1.4% (3.8%) in MRR and Hits@10, respectively, over the best baseline. Our source code and datasets are available at: https://anonymous.4open.science/r/MF-CKGE-04E5.",
+      "authors": [
+        "Jing Qi",
+        "Yuxiang Wang",
+        "Zhiyuan Yu",
+        "Xiaoliang Xu",
+        "Yuanshi Zheng",
+        "Tianxing Wu"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-04-13T03:41:01+00:00",
+      "link": "https://arxiv.org/pdf/2604.10947v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Mitigates catastrophic forgetting in continual knowledge graph embedding",
+      "llm_evidence_cn": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "llm_evidence": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "canonical_evidence": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "llm_tldr_en": "Proposes MF-CKGE to capture evolving multi-faceted semantics in continual knowledge graph embedding.",
+      "llm_tldr_cn": "提出 MF-CKGE 框架，通过多面语义建模解决知识图谱持续学习中的遗忘问题。",
+      "llm_tldr": "提出 MF-CKGE 框架，通过多面语义建模解决知识图谱持续学习中的遗忘问题。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.10947v2",
+      "source": "arxiv",
+      "title": "Multi-Faceted Continual Knowledge Graph Embedding for Semantic-Aware Link Prediction",
+      "abstract": "Continual Knowledge Graph Embedding (CKGE) aims to continually learn embeddings for new knowledge, i.e., entities and relations, while retaining previously acquired knowledge. Most existing CKGE methods mitigate catastrophic forgetting via regularization or replaying old knowledge. They conflate new and old knowledge of an entity within the same embedding space to seek a balance between them. However, entities inherently exhibit multi-faceted semantics that evolve dynamically as their relational contexts change over time. A shared embedding fails to capture and distinguish these temporal semantic variations, degrading lifelong link prediction accuracy across snapshots. To address this, we propose a Multi-Faceted CKGE framework (MF-CKGE) for semantic-aware link prediction. During offline learning, MF-CKGE separates temporal old and new knowledge into distinct embedding spaces to prevent knowledge entanglement and employs semantic decoupling to reduce semantic redundancy, thereby improving space efficiency. During online inference, MF-CKGE adaptively identifies semantically query-relevant entity embeddings by quantifying their semantic importance, reducing interference from query-irrelevant noise. Experiments on eight datasets show that MF-CKGE achieves an average (maximum) improvement of 1.7% (2.7%) and 1.4% (3.8%) in MRR and Hits@10, respectively, over the best baseline. Our source code and datasets are available at: https://anonymous.4open.science/r/MF-CKGE-04E5.",
+      "authors": [
+        "Jing Qi",
+        "Yuxiang Wang",
+        "Zhiyuan Yu",
+        "Xiaoliang Xu",
+        "Yuanshi Zheng",
+        "Tianxing Wu"
+      ],
+      "primary_category": "cs.IR",
+      "categories": [
+        "cs.IR"
+      ],
+      "published": "2026-04-13T03:41:01+00:00",
+      "link": "https://arxiv.org/pdf/2604.10947v2",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Mitigates catastrophic forgetting in continual knowledge graph embedding",
+      "llm_evidence_cn": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "llm_evidence": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "canonical_evidence": "缓解持续知识图谱嵌入中的灾难性遗忘",
+      "llm_tldr_en": "Proposes MF-CKGE to capture evolving multi-faceted semantics in continual knowledge graph embedding.",
+      "llm_tldr_cn": "提出 MF-CKGE 框架，通过多面语义建模解决知识图谱持续学习中的遗忘问题。",
+      "llm_tldr": "提出 MF-CKGE 框架，通过多面语义建模解决知识图谱持续学习中的遗忘问题。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.11064v1",
+      "source": "arxiv",
+      "title": "A Faster Path to Continual Learning",
+      "abstract": "Continual Learning (CL) aims to train neural networks on a dynamic stream of tasks without forgetting previously learned knowledge. Among optimization-based approaches, C-Flat has emerged as a promising solution due to its plug-and-play nature and its ability to encourage uniformly low-loss regions for both new and old tasks. However, C-Flat requires three additional gradient computations per iteration, imposing substantial overhead on the optimization process. In this work, we propose C-Flat Turbo, a faster yet stronger optimizer that significantly reduces the training cost. We show that the gradients associated with first-order flatness contain direction-invariant components relative to the proxy-model gradients, enabling us to skip redundant gradient computations in the perturbed ascent steps. Moreover, we observe that these flatness-promoting gradients progressively stabilize across tasks, which motivates a linear scheduling strategy with an adaptive trigger to allocate larger turbo steps for later tasks. Experiments show that C-Flat Turbo is 1.0$\\times$ to 1.25$\\times$ faster than C-Flat across a wide range of CL methods, while achieving comparable or even improved accuracy.",
+      "authors": [
+        "Wei Li",
+        "Hangjie Yuan",
+        "Zixiang Zhao",
+        "Borui Kang",
+        "Ziwei Liu",
+        "Tao Feng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-04-13T06:45:25+00:00",
+      "link": "https://arxiv.org/pdf/2604.11064v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Optimization-based approach for training neural networks on dynamic task streams",
+      "llm_evidence_cn": "在动态任务流上训练神经网络的优化方法",
+      "llm_evidence": "在动态任务流上训练神经网络的优化方法",
+      "canonical_evidence": "在动态任务流上训练神经网络的优化方法",
+      "llm_tldr_en": "Introduces C-Flat Turbo, a faster optimizer for continual learning that encourages low-loss regions.",
+      "llm_tldr_cn": "提出 C-Flat Turbo 优化器，通过寻找平坦损失区域显著降低持续学习的训练成本。",
+      "llm_tldr": "提出 C-Flat Turbo 优化器，通过寻找平坦损失区域显著降低持续学习的训练成本。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "state of the art methods in continual learning",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.11064v2",
+      "source": "arxiv",
+      "title": "A Faster Path to Continual Learning",
+      "abstract": "Continual Learning (CL) aims to train neural networks on a dynamic stream of tasks without forgetting previously learned knowledge. Among optimization-based approaches, C-Flat has emerged as a promising solution due to its plug-and-play nature and its ability to encourage uniformly low-loss regions for both new and old tasks. However, C-Flat requires three additional gradient computations per iteration, imposing substantial overhead on the optimization process. In this work, we propose C-Flat Turbo, a faster yet stronger optimizer that significantly reduces the training cost. We show that the gradients associated with first-order flatness contain direction-invariant components relative to the proxy-model gradients, enabling us to skip redundant gradient computations in the perturbed ascent steps. Moreover, we observe that these flatness-promoting gradients progressively stabilize across tasks, which motivates a linear scheduling strategy with an adaptive trigger to allocate larger turbo steps for later tasks. Experiments show that C-Flat Turbo is 1.0$\\times$ to 1.25$\\times$ faster than C-Flat across a wide range of CL methods, while achieving comparable or even improved accuracy.",
+      "authors": [
+        "Wei Li",
+        "Hangjie Yuan",
+        "Zixiang Zhao",
+        "Borui Kang",
+        "Ziwei Liu",
+        "Tao Feng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-04-13T06:45:25+00:00",
+      "link": "https://arxiv.org/pdf/2604.11064v2",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Optimization-based approach for training neural networks on dynamic task streams",
+      "llm_evidence_cn": "在动态任务流上训练神经网络的优化方法",
+      "llm_evidence": "在动态任务流上训练神经网络的优化方法",
+      "canonical_evidence": "在动态任务流上训练神经网络的优化方法",
+      "llm_tldr_en": "Introduces C-Flat Turbo, a faster optimizer for continual learning that encourages low-loss regions.",
+      "llm_tldr_cn": "提出 C-Flat Turbo 优化器，通过寻找平坦损失区域显著降低持续学习的训练成本。",
+      "llm_tldr": "提出 C-Flat Turbo 优化器，通过寻找平坦损失区域显著降低持续学习的训练成本。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "state of the art methods in continual learning",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.12686v1",
+      "source": "arxiv",
+      "title": "BID-LoRA: A Parameter-Efficient Framework for Continual Learning and Unlearning",
+      "abstract": "Recent advances in deep learning underscore the need for systems that can not only acquire new knowledge through Continual Learning (CL) but also remove outdated, sensitive, or private information through Machine Unlearning (MU). However, while CL methods are well-developed, MU techniques remain in early stages, creating a critical gap for unified frameworks that depend on both capabilities. We find that naively combining existing CL and MU approaches results in knowledge leakage a gradual degradation of foundational knowledge across repeated adaptation cycles. To address this, we formalize Continual Learning Unlearning (CLU) as a unified paradigm with three key goals: (i) precise deletion of unwanted knowledge, (ii) efficient integration of new knowledge while preserving prior information, and (iii) minimizing knowledge leakage across cycles. We propose Bi-Directional Low-Rank Adaptation (BID-LoRA), a novel framework featuring three dedicated adapter pathways-retain, new, and unlearn applied to attention layers, combined with escape unlearning that pushes forget-class embeddings to positions maximally distant from retained knowledge, updating only 5% of parameters. Experiments on CIFAR-100 show that BID-LoRA outperforms CLU baselines across multiple adaptation cycles. We further evaluate on CASIA-Face100, a curated face recognition subset, demonstrating practical applicability to real-world identity management systems where new users must be enrolled and withdrawn users removed.",
+      "authors": [
+        "Jagadeesh Rachapudi",
+        "Ritali Vatsi",
+        "Praful Hambarde",
+        "Amit Shukla"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-14T12:57:56+00:00",
+      "link": "https://arxiv.org/pdf/2604.12686v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Formalizes a unified paradigm for continual learning and machine unlearning to prevent knowledge leakage.",
+      "llm_evidence_cn": "形式化了持续学习与机器遗忘的统一范式，以防止知识泄露。",
+      "llm_evidence": "形式化了持续学习与机器遗忘的统一范式，以防止知识泄露。",
+      "canonical_evidence": "形式化了持续学习与机器遗忘的统一范式，以防止知识泄露。",
+      "llm_tldr_en": "A parameter-efficient framework that unifies continual learning and unlearning to manage knowledge acquisition.",
+      "llm_tldr_cn": "一个统一持续学习与机器遗忘的高效参数框架，用于管理知识获取与删除。",
+      "llm_tldr": "一个统一持续学习与机器遗忘的高效参数框架，用于管理知识获取与删除。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.12909v1",
+      "source": "arxiv",
+      "title": "Tree Learning: A Multi-Skill Continual Learning Framework for Humanoid Robots",
+      "abstract": "As reinforcement learning for humanoid robots evolves from single-task to multi-skill paradigms, efficiently expanding new skills while avoiding catastrophic forgetting has become a key challenge in embodied intelligence. Existing approaches either rely on complex topology adjustments in Mixture-of-Experts (MoE) models or require training extremely large-scale models, making lightweight deployment difficult. To address this, we propose Tree Learning, a multi-skill continual learning framework for humanoid robots. The framework adopts a root-branch hierarchical parameter inheritance mechanism, providing motion priors for branch skills through parameter reuse to fundamentally prevent catastrophic forgetting. A multi-modal feedforward adaptation mechanism combining phase modulation and interpolation is designed to support both periodic and aperiodic motions. A task-level reward shaping strategy is also proposed to accelerate skill convergence. Unity-based simulation experiments show that, in contrast to simultaneous multi-task training, Tree Learning achieves higher rewards across various representative locomotion skills while maintaining a 100% skill retention rate, enabling seamless multi-skill switching and real-time interactive control. We further validate the performance and generalization capability of Tree Learning on two distinct Unity-simulated tasks: a Super Mario-inspired interactive scenario and autonomous navigation in a classical Chinese garden environment.",
+      "authors": [
+        "Yifei Yan",
+        "Linqi Ye"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-04-14T15:57:27+00:00",
+      "link": "https://arxiv.org/pdf/2604.12909v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Proposes a hierarchical parameter inheritance mechanism to fundamentally prevent catastrophic forgetting in multi-skill robot learning.",
+      "llm_evidence_cn": "提出了一种分层参数继承机制，从根本上防止多技能机器人学习中的灾难性遗忘。",
+      "llm_evidence": "提出了一种分层参数继承机制，从根本上防止多技能机器人学习中的灾难性遗忘。",
+      "canonical_evidence": "提出了一种分层参数继承机制，从根本上防止多技能机器人学习中的灾难性遗忘。",
+      "llm_tldr_en": "A multi-skill continual learning framework for robots using parameter inheritance to prevent forgetting.",
+      "llm_tldr_cn": "一种用于机器人多技能持续学习的框架，通过参数继承机制防止遗忘。",
+      "llm_tldr": "一种用于机器人多技能持续学习的框架，通过参数继承机制防止遗忘。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.12941v1",
+      "source": "arxiv",
+      "title": "Direct Discrepancy Replay: Distribution-Discrepancy Condensation and Manifold-Consistent Replay for Continual Face Forgery Detection",
+      "abstract": "Continual face forgery detection (CFFD) requires detectors to learn emerging forgery paradigms without forgetting previously seen manipulations. Existing CFFD methods commonly rely on replaying a small amount of past data to mitigate forgetting. Such replay is typically implemented either by storing a few historical samples or by synthesizing pseudo-forgeries from detector-dependent perturbations. Under strict memory budgets, the former cannot adequately cover diverse forgery cues and may expose facial identities, while the latter remains strongly tied to past decision boundaries. We argue that the core role of replay in CFFD is to reinstate the distributions of previous forgery tasks during subsequent training. To this end, we directly condense the discrepancy between real and fake distributions and leverage real faces from the current stage to perform distribution-level replay. Specifically, we introduce Distribution-Discrepancy Condensation (DDC), which models the real-to-fake discrepancy via a surrogate factorization in characteristic-function space and condenses it into a tiny bank of distribution discrepancy maps. We further propose Manifold-Consistent Replay (MCR), which synthesizes replay samples through variance-preserving composition of these maps with current-stage real faces, yielding samples that reflect previous-task forgery cues while remaining compatible with current real-face statistics. Operating under an extremely small memory budget and without directly storing raw historical face images, our framework consistently outperforms prior CFFD baselines and significantly mitigates catastrophic forgetting. Replay-level privacy analysis further suggests reduced identity leakage risk relative to selection-based replay.",
+      "authors": [
+        "Tianshuo Zhang",
+        "Haoyuan Zhang",
+        "Siran Peng",
+        "Weisong Zhao",
+        "Xiangyu Zhu",
+        "Zhen Lei"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-14T16:35:04+00:00",
+      "link": "https://arxiv.org/pdf/2604.12941v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Uses distribution-discrepancy condensation and manifold-consistent replay to mitigate forgetting in face forgery detection.",
+      "llm_evidence_cn": "利用分布差异压缩和流形一致回放来缓解人脸伪造检测中的遗忘。",
+      "llm_evidence": "利用分布差异压缩和流形一致回放来缓解人脸伪造检测中的遗忘。",
+      "canonical_evidence": "利用分布差异压缩和流形一致回放来缓解人脸伪造检测中的遗忘。",
+      "llm_tldr_en": "A replay-based continual learning method for face forgery detection that reinstates past task distributions.",
+      "llm_tldr_cn": "一种基于回放的人脸伪造检测持续学习方法，通过恢复过去任务的分布来减少遗忘。",
+      "llm_tldr": "一种基于回放的人脸伪造检测持续学习方法，通过恢复过去任务的分布来减少遗忘。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.13460v1",
+      "source": "arxiv",
+      "title": "From Order to Distribution: A Spectral Characterization of Forgetting in Continual Learning",
+      "abstract": "A central challenge in continual learning is forgetting, the loss of performance on previously learned tasks induced by sequential adaptation to new ones. While forgetting has been extensively studied empirically, rigorous theoretical characterizations remain limited. A notable step in this direction is \\citet{evron2022catastrophic}, which analyzes forgetting under random orderings of a fixed task collection in overparameterized linear regression. We shift the perspective from order to distribution. Rather than asking how a fixed task collection behaves under random orderings, we study an exact-fit linear regime in which tasks are sampled i.i.d.\\ from a task distribution~$Π$, and ask how the generating distribution itself governs forgetting. In this setting, we derive an exact operator identity for the forgetting quantity, revealing a recursive spectral structure. Building on this identity, we establish an unconditional upper bound, identify the leading asymptotic term, and, in generic nondegenerate cases, characterize the convergence rate up to constants. We further relate this rate to geometric properties of the task distribution, clarifying what drives slow or fast forgetting in this model.",
+      "authors": [
+        "Zonghuan Xu",
+        "Xingjun Ma"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-15T04:29:00+00:00",
+      "link": "https://arxiv.org/pdf/2604.13460v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Theoretical characterization of forgetting in continual learning",
+      "llm_evidence_cn": "持续学习中遗忘现象的理论表征",
+      "llm_evidence": "持续学习中遗忘现象的理论表征",
+      "canonical_evidence": "持续学习中遗忘现象的理论表征",
+      "llm_tldr_en": "Provides a spectral characterization of how task distributions govern forgetting in linear continual learning.",
+      "llm_tldr_cn": "从频谱角度对线性持续学习中的遗忘现象进行了严谨的理论分析。",
+      "llm_tldr": "从频谱角度对线性持续学习中的遗忘现象进行了严谨的理论分析。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.13730v1",
+      "source": "arxiv",
+      "title": "ReConText3D: Replay-based Continual Text-to-3D Generation",
+      "abstract": "Continual learning enables models to acquire new knowledge over time while retaining previously learned capabilities. However, its application to text-to-3D generation remains unexplored. We present ReConText3D, the first framework for continual text-to-3D generation. We first demonstrate that existing text-to-3D models suffer from catastrophic forgetting under incremental training. ReConText3D enables generative models to incrementally learn new 3D categories from textual descriptions while preserving the ability to synthesize previously seen assets. Our method constructs a compact and diverse replay memory through text-embedding k-Center selection, allowing representative rehearsal of prior knowledge without modifying the underlying architecture. To systematically evaluate continual text-to-3D learning, we introduce Toys4K-CL, a benchmark derived from the Toys4K dataset that provides balanced and semantically diverse class-incremental splits. Extensive experiments on the Toys4K-CL benchmark show that ReConText3D consistently outperforms all baselines across different generative backbones, maintaining high-quality generation for both old and new classes. To the best of our knowledge, this work establishes the first continual learning framework and benchmark for text-to-3D generation, opening a new direction for incremental 3D generative modeling. Project page is available at: https://mauk95.github.io/ReConText3D/.",
+      "authors": [
+        "Muhammad Ahmed Ullah Khan",
+        "Muhammad Haris Bin Amir",
+        "Didier Stricker",
+        "Muhammad Zeshan Afzal"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-15T11:11:36+00:00",
+      "link": "https://arxiv.org/pdf/2604.13730v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "first framework for continual text-to-3D generation using replay-based methods",
+      "llm_evidence_cn": "首个基于重放方法的持续文本生成3D框架",
+      "llm_evidence": "首个基于重放方法的持续文本生成3D框架",
+      "canonical_evidence": "首个基于重放方法的持续文本生成3D框架",
+      "llm_tldr_en": "Introduces ReConText3D, a replay-based method to enable incremental learning in text-to-3D generative models.",
+      "llm_tldr_cn": "引入 ReConText3D，一种基于重放的方法，使文本生成3D模型能够进行增量学习。",
+      "llm_tldr": "引入 ReConText3D，一种基于重放的方法，使文本生成3D模型能够进行增量学习。",
+      "llm_tags": [
+        "query:q6"
+      ],
+      "matched_query_tag": "query:q6",
+      "matched_query_text": "state of the art methods in continual learning",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14010v1",
+      "source": "arxiv",
+      "title": "Parameter Importance is Not Static: Evolving Parameter Isolation for Supervised Fine-Tuning",
+      "abstract": "Supervised Fine-Tuning (SFT) of large language models often suffers from task interference and catastrophic forgetting. Recent approaches alleviate this issue by isolating task-critical parameters during training. However, these methods represent a static solution to a dynamic problem, assuming that parameter importance remains fixed once identified. In this work, we empirically demonstrate that parameter importance exhibits temporal drift over the course of training. To address this, we propose Evolving Parameter Isolation (EPI), a fine-tuning framework that adapts isolation decisions based on online estimates of parameter importance. Instead of freezing a fixed subset of parameters, EPI periodically updates isolation masks using gradient-based signals, enabling the model to protect emerging task-critical parameters while releasing outdated ones to recover plasticity. Experiments on diverse multi-task benchmarks demonstrate that EPI consistently reduces interference and forgetting compared to static isolation and standard fine-tuning, while improving overall generalization. Our analysis highlights the necessity of synchronizing isolation mechanisms with the evolving dynamics of learning diverse abilities.",
+      "authors": [
+        "Zekai Lin",
+        "Chao Xue",
+        "Di Liang",
+        "Xingsheng Han",
+        "Peiyang Liu",
+        "Xianjie Wu",
+        "Lei Jiang",
+        "Yu Lu",
+        "Haibo Shi",
+        "Shuang Liang",
+        "Minlong Peng"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-04-15T15:55:38+00:00",
+      "link": "https://arxiv.org/pdf/2604.14010v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Proposes Evolving Parameter Isolation to address catastrophic forgetting during supervised fine-tuning of LLMs.",
+      "llm_evidence_cn": "提出了演化参数隔离（EPI）来解决大语言模型微调过程中的灾难性遗忘。",
+      "llm_evidence": "提出了演化参数隔离（EPI）来解决大语言模型微调过程中的灾难性遗忘。",
+      "canonical_evidence": "提出了演化参数隔离（EPI）来解决大语言模型微调过程中的灾难性遗忘。",
+      "llm_tldr_en": "Adapts parameter isolation masks dynamically to mitigate forgetting and interference in large language models.",
+      "llm_tldr_cn": "动态调整参数隔离掩码，以缓解大语言模型中的遗忘和任务干扰。",
+      "llm_tldr": "动态调整参数隔离掩码，以缓解大语言模型中的遗忘和任务干扰。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14259v1",
+      "source": "arxiv",
+      "title": "Continual Learning for fMRI-Based Brain Disorder Diagnosis via Functional Connectivity Matrices Generative Replay",
+      "abstract": "Functional magnetic resonance imaging (fMRI) is widely used for studying and diagnosing brain disorders, with functional connectivity (FC) matrices providing powerful representations of large-scale neural interactions. However, existing diagnostic models are trained either on a single site or under full multi-site access, making them unsuitable for real-world scenarios where clinical data arrive sequentially from different institutions. This results in limited generalization and severe catastrophic forgetting. This paper presents the first continual learning framework specifically designed for fMRI-based diagnosis across heterogeneous clinical sites. Our framework introduces a structure-aware variational autoencoder that synthesizes realistic FC matrices for both patient and control groups. Built on this generative backbone, we develop a multi-level knowledge distillation strategy that aligns predictions and graph representations between new-site data and replayed samples. To further enhance efficiency, we incorporate a hierarchical contextual bandit scheme for adaptive replay sampling. Experiments on multi-site datasets for major depressive disorder (MDD), schizophrenia (SZ), and autism spectrum disorder (ASD) show that the proposed generative model enhances data augmentation quality, and the overall continual learning framework substantially outperforms existing methods in mitigating catastrophic forgetting. Our code is available at https://github.com/4me808/FORGE.",
+      "authors": [
+        "Qianyu Chen",
+        "Shujian Yu"
+      ],
+      "primary_category": "q-bio.TO",
+      "categories": [
+        "q-bio.TO",
+        "cs.LG",
+        "eess.IV"
+      ],
+      "published": "2026-04-15T16:08:52+00:00",
+      "link": "https://arxiv.org/pdf/2604.14259v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Uses generative replay to mitigate catastrophic forgetting in fMRI-based brain disorder diagnosis.",
+      "llm_evidence_cn": "利用生成式回放缓解基于fMRI的脑部疾病诊断中的灾难性遗忘。",
+      "llm_evidence": "利用生成式回放缓解基于fMRI的脑部疾病诊断中的灾难性遗忘。",
+      "canonical_evidence": "利用生成式回放缓解基于fMRI的脑部疾病诊断中的灾难性遗忘。",
+      "llm_tldr_en": "A generative replay framework for continual learning in medical imaging across heterogeneous clinical sites.",
+      "llm_tldr_cn": "一种用于跨异构临床机构医学影像持续学习的生成式回放框架。",
+      "llm_tldr": "一种用于跨异构临床机构医学影像持续学习的生成式回放框架。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14336v1",
+      "source": "arxiv",
+      "title": "Mistake gating leads to energy and memory efficient continual learning",
+      "abstract": "Synaptic plasticity is metabolically expensive, yet animals continuously update their internal models without exhausting energy reserves. However, when artificial neural networks are trained, the network parameters are typically updated on every sample that is presented, even if the sample was classified correctly. Inspired by the human negativity bias and error-related negativity, we propose 'memorized mistake-gated learning' -- a biologically plausible plasticity rule where synaptic updates are strictly gated by current and past classification errors. This reduces the number of updates the network needs to make by $50\\%\\sim80\\%$. Mistake gating is particularly well suited in two cases: 1) For incremental learning where new knowledge is acquired on a background of pre-existing knowledge, 2) For online learning scenarios when data needs to be stored for later replay, as mistake-gating reduces storage buffer requirements. The algorithm can be implemented in a few lines of code, adds no hyper-parameters, and comes at negligible computational overhead. Learning on mistakes is an energy efficient and biologically relevant modification to commonly used learning rules that is well suited for continual learning.",
+      "authors": [
+        "Aaron Pache",
+        "Mark CW van Rossum"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-04-15T18:44:23+00:00",
+      "link": "https://arxiv.org/pdf/2604.14336v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "biologically inspired plasticity rule for efficient incremental learning",
+      "llm_evidence_cn": "受生物启发的可塑性规则，用于高效增量学习",
+      "llm_evidence": "受生物启发的可塑性规则，用于高效增量学习",
+      "canonical_evidence": "受生物启发的可塑性规则，用于高效增量学习",
+      "llm_tldr_en": "Proposes mistake-gated learning to reduce synaptic updates and improve efficiency in incremental learning.",
+      "llm_tldr_cn": "提出错误门控学习，以减少突触更新并提高增量学习的效率。",
+      "llm_tldr": "提出错误门控学习，以减少突触更新并提高增量学习的效率。",
+      "llm_tags": [
+        "query:q2"
+      ],
+      "matched_query_tag": "query:q2",
+      "matched_query_text": "advancements in incremental learning algorithms",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14375v1",
+      "source": "arxiv",
+      "title": "Modular Continual Learning via Zero-Leakage Reconstruction Routing and Autonomous Task Discovery",
+      "abstract": "Catastrophic forgetting remains a primary hurdle in sequential task learning for artificial neural networks. We propose a silicon-native modular architecture that achieves structural parameter isolation using Task-Specific Experts and a distributed, outlier-based Gatekeeper. Moving beyond traditional sequential consolidation, our framework utilizes a Simultaneous Pipeline where Teacher learning, Student distillation, and Router manifold acquisition occur in parallel while raw data is present in a localized training session. This approach ensures computational efficiency and complies with privacy mandates like GDPR by deleting raw data as soon as a task is learned. We demonstrate that a Tight-Bottleneck Autoencoder (TB-AE) can effectively distinguish semantically crowded manifolds in high-dimensional latent spaces, overcoming the posterior collapse inherent to standard variational methods. By establishing strict topological boundaries, our TB-AE resolves latent space crowding in 4096-D LLM embeddings to provide a robust, unsupervised novelty signal. Furthermore, we validate an Autonomous Retrieval mechanism that confidently identifies returning manifolds, enabling stable lifelong learning without redundant module instantiation. Empirical results demonstrate that our ``Live Distillation'' approach acts as a natural regularizer, achieving strong retention across computer vision and natural language processing domains without suffering a student fidelity gap.",
+      "authors": [
+        "Noureddine Kermiche"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-15T19:48:40+00:00",
+      "link": "https://arxiv.org/pdf/2604.14375v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Modular architecture for sequential task learning and autonomous task discovery",
+      "llm_evidence_cn": "用于顺序任务学习和自主任务发现的模块化架构",
+      "llm_evidence": "用于顺序任务学习和自主任务发现的模块化架构",
+      "canonical_evidence": "用于顺序任务学习和自主任务发现的模块化架构",
+      "llm_tldr_en": "A modular architecture using task-specific experts and gatekeepers to achieve zero-leakage continual learning.",
+      "llm_tldr_cn": "一种利用任务特定专家和门控机制实现零泄漏持续学习的模块化架构。",
+      "llm_tldr": "一种利用任务特定专家和门控机制实现零泄漏持续学习的模块化架构。",
+      "llm_tags": [
+        "query:q4"
+      ],
+      "matched_query_tag": "query:q4",
+      "matched_query_text": "benchmarks and methods for task-incremental learning",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.14779v1",
+      "source": "arxiv",
+      "title": "AIM: Asymmetric Information Masking for Visual Question Answering Continual Learning",
+      "abstract": "In continual visual question answering (VQA), existing Continual Learning (CL) methods are mostly built for symmetric, unimodal architectures. However, modern Vision-Language Models (VLMs) violate this assumption, as their trainable components are inherently asymmetric. This structural mismatch renders VLMs highly prone to catastrophic forgetting when learning from continuous data streams. Specifically, the asymmetry causes standard global regularization to favor the massive language decoder during optimization, leaving the smaller but critical visual projection layers highly vulnerable to interference. Consequently, this localized degradation leads to a severe loss of compositional reasoning capabilities. To address this, we propose Asymmetric Information Masking (AIM), which balances stability and plasticity by applying targeted masks based on modality-specific sensitivity. Experiments on VQA v2 and GQA under continual VQA settings show that AIM achieves state-of-the-art performance in both Average Performance (AP) and Average Forgetting (AF), while better preserving generalization to novel skill-concept compositions.",
+      "authors": [
+        "Peifeng Zhang",
+        "Zice Qiu",
+        "Donghua Yu",
+        "Shilei Cao",
+        "Juepeng Zheng",
+        "Yutong Lu",
+        "Haohuan Fu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL"
+      ],
+      "published": "2026-04-16T08:39:02+00:00",
+      "link": "https://arxiv.org/pdf/2604.14779v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Addresses catastrophic forgetting in Vision-Language Models by using asymmetric information masking.",
+      "llm_evidence_cn": "通过非对称信息掩码解决视觉问答模型中的灾难性遗忘问题。",
+      "llm_evidence": "通过非对称信息掩码解决视觉问答模型中的灾难性遗忘问题。",
+      "canonical_evidence": "通过非对称信息掩码解决视觉问答模型中的灾难性遗忘问题。",
+      "llm_tldr_en": "Proposes asymmetric masking to mitigate forgetting in vision-language models during continual learning.",
+      "llm_tldr_cn": "提出非对称掩码技术，以缓解视觉语言模型在持续学习过程中的遗忘问题。",
+      "llm_tldr": "提出非对称掩码技术，以缓解视觉语言模型在持续学习过程中的遗忘问题。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.15414v1",
+      "source": "arxiv",
+      "title": "Beyond Single-Model Optimization: Preserving Plasticity in Continual Reinforcement Learning",
+      "abstract": "Continual reinforcement learning must balance retention with adaptation, yet many methods still rely on \\emph{single-model preservation}, committing to one evolving policy as the main reusable solution across tasks. Even when a previously successful policy is retained, it may no longer provide a reliable starting point for rapid adaptation after interference, reflecting a form of \\emph{loss of plasticity} that single-policy preservation cannot address. Inspired by quality-diversity methods, we introduce \\textsc{TeLAPA} (Transfer-Enabled Latent-Aligned Policy Archives), a continual RL framework that organizes behaviorally diverse policy neighborhoods into per-task archives and maintains a shared latent space so that archived policies remain comparable and reusable under non-stationary drift. This perspective shifts continual RL from retaining isolated solutions to maintaining \\emph{skill-aligned neighborhoods} with competent and behaviorally related policies that support future relearning. In our MiniGrid CL setting, \\textsc{TeLAPA} learns more tasks successfully, recovers competence faster on revisited tasks after interference, and retains higher performance across a sequence of tasks. Our analyses show that source-optimal policies are often not transfer-optimal, even within a local competent neighborhood, and that effective reuse depends on retaining and selecting among multiple nearby alternatives rather than collapsing them to one representative. Together, these results reframe continual RL around reusable and competent policy neighborhoods, providing a route beyond single-model preservation toward more plastic lifelong agents.",
+      "authors": [
+        "Lute Lillo",
+        "Nick Cheney"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.NE"
+      ],
+      "published": "2026-04-16T17:06:54+00:00",
+      "link": "https://arxiv.org/pdf/2604.15414v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Continual reinforcement learning framework for preserving plasticity across tasks",
+      "llm_evidence_cn": "用于在任务间保持塑性的持续强化学习框架",
+      "llm_evidence": "用于在任务间保持塑性的持续强化学习框架",
+      "canonical_evidence": "用于在任务间保持塑性的持续强化学习框架",
+      "llm_tldr_en": "Introduces TeLAPA to maintain plasticity and diverse policy archives in continual reinforcement learning.",
+      "llm_tldr_cn": "引入 TeLAPA 框架，通过策略存档在持续强化学习中保持模型塑性和行为多样性。",
+      "llm_tldr": "引入 TeLAPA 框架，通过策略存档在持续强化学习中保持模型塑性和行为多样性。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.15678v1",
+      "source": "arxiv",
+      "title": "HyCal: A Training-Free Prototype Calibration Method for Cross-Discipline Few-Shot Class-Incremental Learning",
+      "abstract": "Pretrained Vision-Language Models (VLMs) like CLIP show promise in continual learning, but existing Few-Shot Class-Incremental Learning (FSCIL) methods assume homogeneous domains and balanced data distributions, limiting real-world applicability where data arises from heterogeneous disciplines with imbalanced sample availability and varying visual complexity. We identify Domain Gravity, a representational asymmetry where data imbalance across heterogeneous domains causes overrepresented or low-entropy domains to disproportionately influence the embedding space, leading to prototype drift and degraded performance on underrepresented or high-entropy domains. To address this, we introduce Cross-Discipline Variable Few-Shot Class-Incremental Learning (XD-VSCIL), a benchmark capturing real-world heterogeneity and imbalance where Domain Gravity naturally intensifies. We propose Hybrid Prototype Calibration (HyCal), a training-free method combining cosine similarity and Mahalanobis distance to capture complementary geometric properties-directional alignment and covariance-aware magnitude-yielding stable prototypes under imbalanced heterogeneous conditions. Operating on frozen CLIP embeddings, HyCal achieves consistent retention-adaptation improvements while maintaining efficiency. Experiments show HyCal effectively mitigates Domain Gravity and outperforms existing methods in imbalanced cross-domain incremental learning.",
+      "authors": [
+        "Eunju Lee",
+        "MiHyeon Kim",
+        "JuneHyoung Kwon",
+        "Yoonji Lee",
+        "JiHyun Kim",
+        "Soojin Jang",
+        "YoungBin Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-17T04:00:31+00:00",
+      "link": "https://arxiv.org/pdf/2604.15678v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Addresses prototype drift and domain gravity challenges in few-shot class-incremental learning.",
+      "llm_evidence_cn": "解决了少样本类增量学习中的原型漂移和领域引力挑战。",
+      "llm_evidence": "解决了少样本类增量学习中的原型漂移和领域引力挑战。",
+      "canonical_evidence": "解决了少样本类增量学习中的原型漂移和领域引力挑战。",
+      "llm_tldr_en": "A training-free calibration method for few-shot class-incremental learning across heterogeneous domains.",
+      "llm_tldr_cn": "一种针对跨领域少样本类增量学习的免训练原型校准方法。",
+      "llm_tldr": "一种针对跨领域少样本类增量学习的免训练原型校准方法。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "challenges in class-incremental learning scenarios",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.16496v1",
+      "source": "arxiv",
+      "title": "Gradient-Free Continual Learning in Spiking Neural Networks via Inter-Spike Interval Regularization",
+      "abstract": "Continual learning, the ability to acquire new tasks sequentially without forgetting prior knowledge, is essential for deploying neural networks in dynamic real-world environments, from nuclear digital twin monitoring to grid-edge fault detection. Existing synaptic importance methods, such as Elastic Weight Consolidation (EWC) and Synaptic Intelligence (SI), rely on gradient computation, making them incompatible with neuromorphic hardware that lacks backpropagation support. We propose ISI-CV, the first gradient-free synaptic importance metric for SNN continual learning, derived from the Coefficient of Variation (CV) of Inter-Spike Intervals (ISIs). Neurons that fire regularly (low CV) encode stable, task-relevant features and are protected from overwriting; neurons with irregular firing are permitted to adapt freely. ISI-CV requires only spike time counters and integer arithmetic, all of which are native to every neuromorphic chip. We evaluate on four benchmarks of increasing difficulty: Split-MNIST, Permuted-MNIST, Split-FashionMNIST, and Split-N-MNIST using real Dynamic Vision Sensor (DVS) event data. Across three seeds, ISI-CV achieves zero forgetting (AF = 0.000 +/- 0.000) on Split-MNIST and Split-FashionMNIST, near-zero forgetting on Permuted-MNIST (AF = 0.001 +/- 0.000), and the highest accuracy with the lowest forgetting on real neuromorphic DVS data (AA = 0.820 +/- 0.012, AF = 0.221 +/- 0.014). On N-MNIST, gradient-based methods produce unreliable importance estimates and perform worse than no regularization; ISI-CV avoids this failure by design.",
+      "authors": [
+        "Samrendra Roy",
+        "Kazuma Kobayashi",
+        "Souvik Chakraborty",
+        "Sajedul Talukder",
+        "Syed Bahauddin Alam"
+      ],
+      "primary_category": "cs.NE",
+      "categories": [
+        "cs.NE",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-14T03:16:26+00:00",
+      "link": "https://arxiv.org/pdf/2604.16496v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Gradient-free synaptic importance metric to mitigate forgetting in SNNs",
+      "llm_evidence_cn": "用于缓解脉冲神经网络遗忘的无梯度突触重要性指标",
+      "llm_evidence": "用于缓解脉冲神经网络遗忘的无梯度突触重要性指标",
+      "canonical_evidence": "用于缓解脉冲神经网络遗忘的无梯度突触重要性指标",
+      "llm_tldr_en": "Proposes ISI-CV, a gradient-free method for continual learning in spiking neural networks.",
+      "llm_tldr_cn": "为脉冲神经网络提出 ISI-CV 无梯度持续学习方法，适用于神经形态硬件。",
+      "llm_tldr": "为脉冲神经网络提出 ISI-CV 无梯度持续学习方法，适用于神经形态硬件。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.17089v1",
+      "source": "arxiv",
+      "title": "Tree of Concepts: Interpretable Continual Learners in Non-Stationary Clinical Domains",
+      "abstract": "Continual learning aims to update models under distribution shift without forgetting, yet many high-stakes deployments, such as healthcare, also require interpretability. In practice, models that adapt well (e.g., deep networks) are often opaque, while models that are interpretable (e.g., decision trees) are brittle under shift, making it difficult to achieve both properties simultaneously. In response, we propose Tree of Concepts, an interpretable continual learning framework that uses a shallow decision tree to define a fixed, rule-based concept interface and trains a concept bottleneck model to predict these concepts from raw features. Continual updates act on the concept extractor and label head while keeping concept semantics stable over time, yielding explanations that do not drift across sequential updates. On multiple tabular healthcare benchmarks under continual learning protocols, our method achieves a stronger stability-plasticity trade-off than existing baselines, including replay-enhanced variants. Our results suggest that structured concept interfaces can support continual adaptation while preserving a consistent audit interface in non-stationary, high-stakes domains.",
+      "authors": [
+        "Dongkyu Cho",
+        "Xiyue Li",
+        "Samrachana Adhikari",
+        "Rumi Chunara"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-04-18T17:58:37+00:00",
+      "link": "https://arxiv.org/pdf/2604.17089v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Proposes an interpretable continual learning framework for non-stationary clinical domains.",
+      "llm_evidence_cn": "为非平稳临床领域提出了一种可解释的持续学习框架。",
+      "llm_evidence": "为非平稳临床领域提出了一种可解释的持续学习框架。",
+      "canonical_evidence": "为非平稳临床领域提出了一种可解释的持续学习框架。",
+      "llm_tldr_en": "Combines decision trees and concept bottleneck models for interpretable continual learning in healthcare.",
+      "llm_tldr_cn": "结合决策树和概念瓶颈模型，实现医疗领域中可解释的持续学习。",
+      "llm_tldr": "结合决策树和概念瓶颈模型，实现医疗领域中可解释的持续学习。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.18075v1",
+      "source": "arxiv",
+      "title": "Enhancing Continual Learning of Vision-Language Models via Dynamic Prefix Weighting",
+      "abstract": "We investigate recently introduced domain-class incremental learning scenarios for vision-language models (VLMs). Recent works address this challenge using parameter-efficient methods, such as prefix-tuning or adapters, which facilitate model adaptation to downstream tasks by incorporating task-specific information into input tokens through additive vectors. However, previous approaches often normalize the weights of these vectors, disregarding the fact that different input tokens require different degrees of adjustment. To overcome this issue, we propose Dynamic Prefix Weighting (DPW), a framework that dynamically assigns weights to prefixes, complemented by adapters. DPW consists of 1) a gating module that adjusts the weights of each prefix based on the importance of the corresponding input token, and 2) a weighting mechanism that derives adapter output weights as a residual of prefix-tuning weights, ensuring that adapters are utilized only when necessary. Experimental results demonstrate that our method achieves state-of-the-art performance in domain-class incremental learning scenarios for VLMs. The code is available at: https://github.com/YonseiML/dpw.",
+      "authors": [
+        "Hyeonseo Jang",
+        "Hyuk Kwon",
+        "Kibok Lee"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-20T10:46:09+00:00",
+      "link": "https://arxiv.org/pdf/2604.18075v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Investigates domain-class incremental learning scenarios for vision-language models",
+      "llm_evidence_cn": "研究视觉语言模型的域类增量学习场景",
+      "llm_evidence": "研究视觉语言模型的域类增量学习场景",
+      "canonical_evidence": "研究视觉语言模型的域类增量学习场景",
+      "llm_tldr_en": "Proposes Dynamic Prefix Weighting to enhance continual learning in vision-language models.",
+      "llm_tldr_cn": "提出动态前缀加权（DPW）框架，通过参数高效微调提升视觉语言模型的持续学习能力。",
+      "llm_tldr": "提出动态前缀加权（DPW）框架，通过参数高效微调提升视觉语言模型的持续学习能力。",
+      "llm_tags": [
+        "query:q5"
+      ],
+      "matched_query_tag": "query:q5",
+      "matched_query_text": "challenges in class-incremental learning scenarios",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.18270v1",
+      "source": "arxiv",
+      "title": "Incremental learning for audio classification with Hebbian Deep Neural Networks",
+      "abstract": "The ability of humans for lifelong learning is an inspiration for deep learning methods and in particular for continual learning. In this work, we apply Hebbian learning, a biologically inspired learning process, to sound classification. We propose a kernel plasticity approach that selectively modulates network kernels during incremental learning, acting on selected kernels to learn new information and on others to retain previous knowledge. Using the ESC-50 dataset, the proposed method achieves 76.3% overall accuracy over five incremental steps, outperforming a baseline without kernel plasticity (68.7%) and demonstrating significantly greater stability across tasks.",
+      "authors": [
+        "Riccardo Casciotti",
+        "Francesco De Santis",
+        "Alberto Antonietti",
+        "Annamaria Mesaros"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.LG"
+      ],
+      "published": "2026-04-20T13:45:31+00:00",
+      "link": "https://arxiv.org/pdf/2604.18270v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "proposes kernel plasticity for incremental learning in audio classification",
+      "llm_evidence_cn": "提出用于音频分类增量学习的卷积核可塑性方法",
+      "llm_evidence": "提出用于音频分类增量学习的卷积核可塑性方法",
+      "canonical_evidence": "提出用于音频分类增量学习的卷积核可塑性方法",
+      "llm_tldr_en": "Applies Hebbian learning and kernel plasticity to improve stability in incremental audio classification tasks.",
+      "llm_tldr_cn": "应用赫布学习和卷积核可塑性来提高增量音频分类任务的稳定性。",
+      "llm_tldr": "应用赫布学习和卷积核可塑性来提高增量音频分类任务的稳定性。",
+      "llm_tags": [
+        "query:q2"
+      ],
+      "matched_query_tag": "query:q2",
+      "matched_query_text": "advancements in incremental learning algorithms",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.13627v1",
+      "source": "arxiv",
+      "title": "(How) Learning Rates Regulate Catastrophic Overtraining",
+      "abstract": "Supervised fine-tuning (SFT) is a common first stage of LLM post-training, teaching the model to follow instructions and shaping its behavior as a helpful assistant. At the same time, SFT may harm the fundamental capabilities of an LLM, particularly after long pretraining: a phenomenon known as catastrophic overtraining (Springer et al., 2025). To understand overtraining, we first investigate catastrophic forgetting in finetuning through the lens of implicit regularization of the learning rate. For models trained to the same SFT loss, we identify how the learning rate mediates optimization: finetuning with large and small steps converges to qualitatively different models. Next, we link forgetting to overtraining: learning rate decay increases the sharpness of the pretrained model, which in turn exacerbates catastrophic forgetting during SFT, leading to overtraining. Our findings paint a picture of the overtraining mechanism in LLMs and broadly contribute to the understanding of the interplay between optimization dynamics during pretraining and finetuning.",
+      "authors": [
+        "Mark Rofin",
+        "Aditya Varre",
+        "Nicolas Flammarion"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-04-15T08:53:42+00:00",
+      "link": "https://arxiv.org/pdf/2604.13627v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "investigates catastrophic forgetting in LLM finetuning through learning rate regulation",
+      "llm_evidence_cn": "通过学习率调节研究大语言模型微调中的灾难性遗忘",
+      "llm_evidence": "通过学习率调节研究大语言模型微调中的灾难性遗忘",
+      "canonical_evidence": "通过学习率调节研究大语言模型微调中的灾难性遗忘",
+      "llm_tldr_en": "Explores how learning rates regulate catastrophic overtraining and forgetting during LLM supervised fine-tuning.",
+      "llm_tldr_cn": "探讨了学习率如何调节大语言模型有监督微调过程中的灾难性过度训练和遗忘现象。",
+      "llm_tldr": "探讨了学习率如何调节大语言模型有监督微调过程中的灾难性过度训练和遗忘现象。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2604.11508v1",
+      "source": "arxiv",
+      "title": "Not All Forgetting Is Equal: Architecture-Dependent Retention Dynamics in Fine-Tuned Image Classifiers",
+      "abstract": "Fine-tuning pretrained image classifiers is standard practice, yet which individual samples are forgotten during this process, and whether forgetting patterns are stable or architecture dependent, remains unclear. Understanding these dynamics has direct implications for curriculum design, data pruning, and ensemble construction. We track per-sample correctness at every epoch during fine-tuning of ResNet-18 and DeiT-Small on a retinal OCT dataset (7 classes, 56:1 imbalance) and CUB-200-2011 (200 bird species), fitting Ebbinghaus-style exponential decay curves to each sample's retention trace. Five findings emerge. First, the two architectures forget fundamentally different samples: Jaccard overlap of the top 10 percent most-forgotten is 0.34 on OCTDL and 0.15 on CUB-200. Second, ViT forgetting is more structured (mean $R^2 = 0.74$) than CNN forgetting ($R^2 = 0.52$). Third, per-sample forgetting is stochastic across random seeds (Spearman $ρ\\approx 0.01$), challenging the assumption that sample difficulty is an intrinsic property. Fourth, class-level forgetting is consistent and semantically interpretable: visually similar species are forgotten most, distinctive ones least. Fifth, a sample's loss after head warmup predicts its long-term decay constant ($ρ= 0.30$ to $0.50$, $p < 10^{-45}$). These findings suggest that architectural diversity in ensembles provides complementary retention coverage, and that curriculum or pruning methods based on per-sample difficulty may not generalize across runs. A spaced repetition sampler built on these decay constants does not outperform random sampling, indicating that static scheduling cannot exploit unstable per-sample signals.",
+      "authors": [
+        "Miit Daga",
+        "Swarna Priya Ramu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-13T14:11:47+00:00",
+      "link": "https://arxiv.org/pdf/2604.11508v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "investigates sample-level forgetting patterns in fine-tuned neural networks",
+      "llm_evidence_cn": "研究微调神经网络中的样本级遗忘模式",
+      "llm_evidence": "研究微调神经网络中的样本级遗忘模式",
+      "canonical_evidence": "研究微调神经网络中的样本级遗忘模式",
+      "llm_tldr_en": "Examines how different architectures forget specific samples during fine-tuning to inform curriculum design.",
+      "llm_tldr_cn": "研究不同架构在微调过程中如何遗忘特定样本，以为课程设计提供参考。",
+      "llm_tldr": "研究不同架构在微调过程中如何遗忘特定样本，以为课程设计提供参考。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.15794v1",
+      "source": "arxiv",
+      "title": "Self-Distillation as a Performance Recovery Mechanism for LLMs: Counteracting Compression and Catastrophic Forgetting",
+      "abstract": "Large Language Models (LLMs) have achieved remarkable success, underpinning diverse AI applications. However, they often suffer from performance degradation due to factors such as catastrophic forgetting during Supervised Fine-Tuning (SFT), quantization, and pruning. In this work, we introduce a performance recovery framework based on Self-Distillation Fine-Tuning (SDFT) that effectively restores model capabilities. Complementing this practical contribution, we provide a rigorous theoretical explanation for the underlying recovery mechanism. We posit that an LLM's generative capability fundamentally relies on the high-dimensional manifold constructed by its hidden layers. To investigate this, we employ Centered Kernel Alignment (CKA) to quantify the alignment between student and teacher activation trajectories, leveraging its invariance to orthogonal transformations and scaling. Our experiments demonstrate a strong correlation between performance recovery and manifold alignment, substantiating the claim that self-distillation effectively aligns the student's high-dimensional manifold with the optimal structure represented by the teacher. This study bridges the gap between practical recovery frameworks and geometric representation theory, offering new insights into the internal mechanisms of self-distillation.",
+      "authors": [
+        "Chi Liu",
+        "Xin Chen",
+        "Xu Zhou",
+        "Fangbo Tu",
+        "Srinivasan Manoharan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-04-17T07:55:38+00:00",
+      "link": "https://arxiv.org/pdf/2604.15794v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "uses self-distillation to counteract catastrophic forgetting in LLMs",
+      "llm_evidence_cn": "使用自蒸馏对抗大语言模型中的灾难性遗忘",
+      "llm_evidence": "使用自蒸馏对抗大语言模型中的灾难性遗忘",
+      "canonical_evidence": "使用自蒸馏对抗大语言模型中的灾难性遗忘",
+      "llm_tldr_en": "Introduces a self-distillation framework to recover LLM performance lost to catastrophic forgetting and compression.",
+      "llm_tldr_cn": "引入自蒸馏框架，以恢复因灾难性遗忘和压缩而损失的大语言模型性能。",
+      "llm_tldr": "引入自蒸馏框架，以恢复因灾难性遗忘和压缩而损失的大语言模型性能。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2604.11508v2",
+      "source": "arxiv",
+      "title": "Not All Forgetting Is Equal: Architecture-Dependent Retention Dynamics in Fine-Tuned Image Classifiers",
+      "abstract": "Fine-tuning pretrained image classifiers is standard practice, yet which individual samples are forgotten during this process, and whether forgetting patterns are stable or architecture dependent, remains unclear. Understanding these dynamics has direct implications for curriculum design, data pruning, and ensemble construction. We track per-sample correctness at every epoch during fine-tuning of ResNet-18 and DeiT-Small on a retinal OCT dataset (7 classes, 56:1 imbalance) and CUB-200-2011 (200 bird species), fitting Ebbinghaus-style exponential decay curves to each sample's retention trace. Five findings emerge. First, the two architectures forget fundamentally different samples: Jaccard overlap of the top 10 percent most-forgotten is 0.34 on OCTDL and 0.15 on CUB-200. Second, ViT forgetting is more structured (mean $R^2 = 0.74$) than CNN forgetting ($R^2 = 0.52$). Third, per-sample forgetting is stochastic across random seeds (Spearman $ρ\\approx 0.01$), challenging the assumption that sample difficulty is an intrinsic property. Fourth, class-level forgetting is consistent and semantically interpretable: visually similar species are forgotten most, distinctive ones least. Fifth, a sample's loss after head warmup predicts its long-term decay constant ($ρ= 0.30$ to $0.50$, $p < 10^{-45}$). These findings suggest that architectural diversity in ensembles provides complementary retention coverage, and that curriculum or pruning methods based on per-sample difficulty may not generalize across runs. A spaced repetition sampler built on these decay constants does not outperform random sampling, indicating that static scheduling cannot exploit unstable per-sample signals.",
+      "authors": [
+        "Miit Daga",
+        "Swarna Priya Ramu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-13T14:11:47+00:00",
+      "link": "https://arxiv.org/pdf/2604.11508v2",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "tracks per-sample forgetting dynamics during fine-tuning of image classifiers",
+      "llm_evidence_cn": "追踪图像分类器微调过程中每个样本的遗忘动态",
+      "llm_evidence": "追踪图像分类器微调过程中每个样本的遗忘动态",
+      "canonical_evidence": "追踪图像分类器微调过程中每个样本的遗忘动态",
+      "llm_tldr_en": "Analyzes architecture-dependent retention and forgetting patterns during the fine-tuning of image classifiers.",
+      "llm_tldr_cn": "分析了图像分类器微调过程中与架构相关的保留和遗忘模式。",
+      "llm_tldr": "分析了图像分类器微调过程中与架构相关的保留和遗忘模式。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.17429v1",
+      "source": "arxiv",
+      "title": "Jupiter-N Technical Report",
+      "abstract": "We present Jupiter-N, a hybrid reasoning model post-trained from Nemotron 3 Super, a fully open-source 120 billion parameter LLM. We target three objectives: (1) agentic capability via uncertainty-curated trajectories; (2) UK cultural alignment via synthetic data grounded in cultural norms; and (3) Welsh language support via parallel corpora and LLM-translated Welsh conversations. Our data curation strategy carefully preserves the base model's capabilities: using our Forget-Me-Not framework, we mix on-policy synthetic replay with off-policy task data to mitigate catastrophic forgetting, and include a mixture of reasoning and non-reasoning traces to maintain Nemotron's hybrid reasoning ability. Jupiter-N achieves standout gains over Nemotron in Welsh (+18 on ARC-Easy, +5.25 on MMLU-Lite), terminal-use (+9.1 on Terminal Bench 2) and instruction following (+4.4 on IFBench), while retaining the base model capabilities. We frame this work as a reproducible template for sovereign post-training: substituting cultural knowledge, institutional corpora, and target languages produces an equivalent pipeline for any country. All model weights and all post-training datasets are publicly released under open licences.",
+      "authors": [
+        "George Drayson"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-04-19T13:18:51+00:00",
+      "link": "https://arxiv.org/pdf/2604.17429v1",
+      "tags": [
+        "keyword:持续学习"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Uses synthetic replay to mitigate catastrophic forgetting during LLM post-training",
+      "llm_evidence_cn": "在 LLM 后训练中使用合成重放来缓解灾难性遗忘",
+      "llm_evidence": "在 LLM 后训练中使用合成重放来缓解灾难性遗忘",
+      "canonical_evidence": "在 LLM 后训练中使用合成重放来缓解灾难性遗忘",
+      "llm_tldr_en": "Employs the Forget-Me-Not framework to preserve base model capabilities during multi-objective post-training.",
+      "llm_tldr_cn": "利用 Forget-Me-Not 框架通过合成重放缓解大模型多目标训练中的灾难性遗忘。",
+      "llm_tldr": "利用 Forget-Me-Not 框架通过合成重放缓解大模型多目标训练中的灾难性遗忘。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2604.12526v1",
+      "source": "arxiv",
+      "title": "Orthogonal Subspace Projection for Continual Machine Unlearning via SVD-Based LoRA",
+      "abstract": "Continual machine unlearning aims to remove the influence of data that should no longer be retained, while preserving the usefulness of the model on everything else. This setting becomes especially difficult when deletion requests arrive sequentially, because the model must repeatedly adapt without erasing previously retained knowledge. Low-Rank Adaptation (LoRA) offers an efficient way to implement such updates, but naively combining many sequential LoRA modules leads to parameter collision, causing \\textit{strong interference} between tasks. We propose a static alternative based on Singular Value Decomposition (SVD)-guided orthogonal subspace projection. Our method constrains each new LoRA update during training so that it lies in the orthogonal complement of the subspaces used by earlier unlearning tasks. This preserves task isolation without requiring dynamic routing at deployment. Experiments on CIFAR-100 with ResNet-20 and on MNIST show stable behavior across long sequences of unlearning tasks. After thirty sequential unlearning tasks, state-of-the-art static fusion reduces retained accuracy from 60.39\\% to 12.70\\%, whereas the proposed in-training constrained optimization maintains baseline performance ($\\sim$58.1\\%) while preserving strong unlearning efficacy.",
+      "authors": [
+        "Yogachandran Rahulamathavan",
+        "Nasir Iqbal",
+        "Juncheng Hu",
+        "Sangarapillai Lambotharan"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-04-14T09:59:32+00:00",
+      "link": "https://arxiv.org/pdf/2604.12526v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "addresses sequential adaptation and knowledge preservation in continual unlearning",
+      "llm_evidence_cn": "解决持续机器卸载中的顺序适应和知识保留问题",
+      "llm_evidence": "解决持续机器卸载中的顺序适应和知识保留问题",
+      "canonical_evidence": "解决持续机器卸载中的顺序适应和知识保留问题",
+      "llm_tldr_en": "Proposes orthogonal subspace projection to prevent parameter collision in sequential machine unlearning tasks.",
+      "llm_tldr_cn": "提出正交子空间投影，以防止顺序机器卸载任务中的参数冲突。",
+      "llm_tldr": "提出正交子空间投影，以防止顺序机器卸载任务中的参数冲突。",
+      "llm_tags": [
+        "query:q1"
+      ],
+      "matched_query_tag": "query:q1",
+      "matched_query_text": "research papers on continual learning in machine learning",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.16557v1",
+      "source": "arxiv",
+      "title": "S-GRPO: Unified Post-Training for Large Vision-Language Models",
+      "abstract": "Current post-training methodologies for adapting Large Vision-Language Models (LVLMs) generally fall into two paradigms: Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL). Despite their prevalence, both approaches suffer from inefficiencies when applied in isolation. SFT forces the model's generation along a single expert trajectory, often inducing catastrophic forgetting of general multimodal capabilities due to distributional shifts. Conversely, RL explores multiple generated trajectories but frequently encounters optimization collapse - a cold-start problem where an unaligned model fails to spontaneously sample any domain-valid trajectories in sparse-reward visual tasks. In this paper, we propose Supervised Group Relative Policy Optimization (S-GRPO), a unified post-training framework that integrates the guidance of imitation learning into the multi-trajectory exploration of preference optimization. Tailored for direct-generation visual tasks, S-GRPO introduces Conditional Ground-Truth Trajectory Injection (CGI). When a binary verifier detects a complete exploratory failure within a sampled group of trajectories, CGI injects the verified ground-truth trajectory into the candidate pool. By assigning a deterministic maximal reward to this injected anchor, S-GRPO enforces a positive signal within the group-relative advantage estimation. This mechanism reformulates the supervised learning objective as a high-advantage component of the policy gradient, compelling the model to dynamically balance between exploiting the expert trajectory and exploring novel visual concepts. Theoretical analysis and empirical results demonstrate that S-GRPO gracefully bridges the gap between SFT and RL, drastically accelerates convergence, and achieves superior domain adaptation while preserving the base model's general-purpose capabilities.",
+      "authors": [
+        "Yuming Yan",
+        "Kai Tang",
+        "Sihong Chen",
+        "Ke Xu",
+        "Dan Hu",
+        "Qun Yu",
+        "Pengfei Hu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL",
+        "cs.CV"
+      ],
+      "published": "2026-04-17T08:39:07+00:00",
+      "link": "https://arxiv.org/pdf/2604.16557v1",
+      "tags": [
+        "keyword:持续学习",
+        "query:持续学习"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Addresses catastrophic forgetting of general multimodal capabilities during post-training",
+      "llm_evidence_cn": "解决后训练过程中通用多模态能力的灾难性遗忘问题",
+      "llm_evidence": "解决后训练过程中通用多模态能力的灾难性遗忘问题",
+      "canonical_evidence": "解决后训练过程中通用多模态能力的灾难性遗忘问题",
+      "llm_tldr_en": "S-GRPO combines SFT and RL to prevent catastrophic forgetting and optimization collapse in vision-language models.",
+      "llm_tldr_cn": "S-GRPO结合有监督微调与强化学习，解决了视觉语言模型中的灾难性遗忘和优化崩溃问题。",
+      "llm_tldr": "S-GRPO结合有监督微调与强化学习，解决了视觉语言模型中的灾难性遗忘和优化崩溃问题。",
+      "llm_tags": [
+        "query:q3"
+      ],
+      "matched_query_tag": "query:q3",
+      "matched_query_text": "mitigating catastrophic forgetting in neural networks",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

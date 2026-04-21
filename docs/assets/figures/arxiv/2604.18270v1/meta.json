@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.18270v1/fig-001.webp",
+      "caption": "Fig. 1. Model architecture: Hebbian convolutional layers and task-dependent classifier heads.",
+      "page": 2,
+      "index": 1,
+      "width": 821,
+      "height": 229
+    }
+  ]
+}

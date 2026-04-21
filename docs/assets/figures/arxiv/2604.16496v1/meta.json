@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.16496v1/fig-001.webp",
+      "caption": "Figure 4: ISI-CV stability–plasticity tradeoff on Split-MNIST (AF scaled ×10 for visibility). Forgetting stays near zero across 𝜆 ∈ [10, 5000]; average accuracy peaks at 𝜆=500 (AA= 0.983). The tradeoff is smooth and controlled by a single hyperparameter with no architectural changes.",
+      "page": 6,
+      "index": 1,
+      "width": 485,
+      "height": 314
+    },
+    {
+      "url": "assets/figures/arxiv/2604.16496v1/fig-002.webp",
+      "caption": "Figure 5: Backward Transfer (BWT) across four benchmarks (mean ± std, 3 seeds). ISI-CV achieves BWT≥ 0 on three of four benchmarks. EWC performs worse than No Reg on Split-MNIST and N-MNIST.",
+      "page": 7,
+      "index": 2,
+      "width": 1038,
+      "height": 250
+    },
+    {
+      "url": "assets/figures/arxiv/2604.16496v1/fig-003.webp",
+      "caption": "Figure 1: ISI-CV regularization as a four-step continual learning cycle. (1) The SNN is trained on task 𝑘 via surrogategradient descent. The shared trunk (W1+LIF) feeds 𝐾 pertask heads. (2) After training, a gradient-free inference pass collects hidden spike trains. Neuron 𝑖 (blue) fires regularly (equal ISIs, low CV); Neuron 𝑗 (orange) fires in burst– gap bursts (variable ISIs, high CV). (3) ISI-CV importance scores are assigned: Ω𝑖 = (CV𝑖+𝜀)−1. High-Ω neurons protect W1 (blue bar); low-Ω neurons update freely (orange bar). (4) Task 𝑘+1 trains with the regularized loss (Eq. 5). The new head (teal) adapts freely whileW1 is penalized by Ω (𝑘 ) . The orange loop arrow marks the increment to task 𝑘+2.",
+      "page": 4,
+      "index": 3,
+      "width": 499,
+      "height": 1036
+    },
+    {
+      "url": "assets/figures/arxiv/2604.16496v1/fig-004.webp",
+      "caption": "Figure 2: Average Accuracy (top row) and Average Forgetting (bottom row) for all methods across four benchmarks (mean ± std, 3 seeds). ISI-CV achieves the lowest forgetting on every benchmark and the highest accuracy on FashionMNIST and N-MNIST.",
+      "page": 5,
+      "index": 4,
+      "width": 1036,
+      "height": 427
+    }
+  ]
+}

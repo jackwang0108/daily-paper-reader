@@ -1,0 +1,1290 @@
+Title: Beyond Single-Model Optimization: Preserving Plasticity in Continual Reinforcement Learning
+
+URL Source: https://arxiv.org/pdf/2604.15414v1
+
+Published Time: Mon, 20 Apr 2026 00:08:29 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+Preprint. 
+
+# BEYOND SINGLE -M ODEL OPTIMIZATION : P RESERVING 
+
+# PLASTICITY IN CONTINUAL REINFORCEMENT LEARNING 
+
+Lute Lillo, Nick Cheney 
+
+Department of Computer Science University of Vermont USA 
+
+{elillopo, ncheney }@uvm.edu 
+
+# ABSTRACT 
+
+Continual reinforcement learning must balance retention with adaptation, yet many methods still rely on single-model preservation , committing to one evolving policy as the main reusable solu-tion across tasks. Even when a previously successful policy is retained, it may no longer provide a reliable starting point for rapid adaptation after interference, reflecting a form of loss of plasticity 
+
+that single-policy preservation cannot address. Inspired by quality-diversity methods, we introduce TELAPA (Transfer-Enabled Latent-Aligned Policy Archives), a continual RL framework that or-ganizes behaviorally diverse policy neighborhoods into per-task archives and maintains a shared latent space so that archived policies remain comparable and reusable under non-stationary drift. This perspective shifts continual RL from retaining isolated solutions to maintaining skill-aligned neighborhoods with competent and behaviorally related policies that support future relearning. In our MiniGrid CL setting, T ELAPA learns more tasks successfully, recovers competence faster on revisited tasks after interference, and retains higher performance across a sequence of tasks. Our analyses show that source-optimal policies are often not transfer-optimal, even within a local com-petent neighborhood, and that effective reuse depends on retaining and selecting among multiple nearby alternatives rather than collapsing them to one representative. Together, these results re-frame continual RL around reusable and competent policy neighborhoods, providing a route beyond single-model preservation toward more plastic lifelong agents. 
+
+# 1 INTRODUCTION 
+
+Training neural networks on a sequence of tasks exposes a fundamental stability–plasticity dilemma. This tension leads to two primary failure modes: Catastrophic Forgetting , where a network’s performance on previously learned tasks degrades as it acquires new information McCloskey & Cohen (1989), and Loss of Plasticity , where the agent’s ability to learn new tasks diminishes after continuous training (Abbas et al., 2023; Dohare et al., 2024). While forgetting is often framed as overwriting weights important to older tasks (Kirkpatrick et al., 2017), loss of plasticity reflects a degradation of the learning mechanism itself, leading to slow convergence or an inability to adapt even when retention is otherwise strong (Lyle et al., 2024; 2022). Most continual learning methods operate within a single-model paradigm: they preserve one evolving parameter vector by regularizing updates (Kirkpatrick et al., 2017), replaying past data (Rebuffi et al., 2017), or allocating addi-tional parameters via growth/routing/pruning (Mallya & Lazebnik, 2018). Despite their differences, these approaches are predominantly trapped in a single-model preservation paradigm . They protect or modify a single converged solution—a sharp, highly specialized point in parameter space that can be unstable under distribution shift and inter-ference. Consequently, preserving a single solution can inadvertently undermine the capacity for future adaptation. (Abbas et al., 2023; Kumar et al., 2023; Nikishin et al., 2022; Lewandowski et al., 2023; Dohare et al., 2021). We instead ask a slightly different question: under non-stationarity and interference, what must be preserved so that the agent remains able to learn well later ? Our premise is that future learnability is often not a property of one param-eter vector, but of a recoverable neighborhood around a competent solution. A single policy may retain immediate competence yet fail to support later adaptation, whereas a neighborhood of behaviorally related policies can preserve multiple nearby starting points for future learning. Therefore, we propose that the relevant object of preservation in continual RL is not a point solution, but a skill neighborhood : a local manifold of behaviorally distinct policies. Inspired by Quality-Diversity (QD) optimization 1
+
+> arXiv:2604.15414v1 [cs.LG] 16 Apr 2026
+
+Preprint. (Mouret & Clune, 2015; Pugh et al., 2016; Lehman & Stanley, 2011b), we introduce TeLAPA 1 (Transfer-Enabled Latent-Aligned Policy Archives 2). T ELAPA trains a base policy with PPO (Schulman et al., 2017) and populates an archive of diverse elites around it using parameter-space MAP-Elites (Mouret & Clune, 2015). During continual trans-fer, candidate initializations are retrieved from prior archives using latent-space diversity and then selected through short transfer-time evaluations. This archive-then-retrieve instrument allows us to evaluate continual learning in terms of latent-space geometry , answering not just whether a prior policy was retained, but whether a useful neighborhood remains navigable .TELAPA relies on a learned trajectory embedder to place archived policies into a shared latent behavior space, where nearby policies are intended to reflect behaviorally similar solutions. However, because learned representations are non-stationary, the latent coordinates of archived behaviors can drift and scramble these neighborhood relations, de-grading retrieval and downstream reuse even with replay (Caccia et al., 2021; Lin et al., 2023). Similar alignment challenges exist in unsupervised QD (Grillotti & Cully, 2022; Nilsson & Cully, 2021). Thus, maintaining a shared latent geometry under encoder drift becomes central to the continual-learning problem itself. 
+
+Contributions & Roadmap. We reframe continual RL around latent manifold dynamics , advancing two main claims: (i) transfer should be evaluated by the preservation of useful behavioral neighborhoods rather than isolated policies, and (ii) stabilizing the embedding coordinate system is essential for retrieval. To achieve this, T ELAPA em-ploys a robust embedding procedure using anchor sets, replay/alignment losses , and periodic re-embedding to mitigate drift across non-stationary curricula. Section 2 contextualizes our work within continual plasticity, representation drift, and Quality-Diversity (QD) behav-ior embeddings. Section 3 formalizes continual RL with revisits, introducing T ELAPA as a neighborhood-preserving alternative to single-model retention. Section 3.1 details our maintenance procedure—utilizing anchor banks, replay updates, normalizer refitting, and periodic re-embedding—to ensure the shared latent behavior space remains naviga-ble under encoder drift. Section 4 evaluates whether these illuminated neighborhoods improve transfer compared to single-model baselines, and analyze whether T ELAPA preserves a longer-horizon stepping-stones structure. 
+
+# 2 RELATED WORK 
+
+This section surveys prior work relevant to our geometry-centric view of continual RL, organized around: (i) mech-anisms of plasticity loss and representational pathologies, (ii) representation drift and encoder alignment under non-stationarity, (iii) quality-diversity and unsupervised behavior embeddings, and (iv) policy-manifold and basin-geometry perspectives. Together, these four lines of work motivate our framework. CL methods based on regularization, replay, or routing expose the limits of preserving a single model; works on representation-drift show that feature-space neighborhoods can become unstable under non-stationarity; QD methods provide a mechanism for preserving local repertoires rather than one optimum; and policy-manifold geometry suggests that transfer depends on basin structure, not only isolated solutions. Our contribution is to connect these ideas in continual RL to preserve skill neighborhoods , organize them in a shared latent behavior space, and study both their utility and their failure modes under representation drift. 
+
+Beyond the single-model plasticity bottleneck. Most continual learning approaches—whether utilizing regulariza-tion (Li & Hoiem, 2017; Kirkpatrick et al., 2017; Chung et al., 2024), replay (Rebuffi et al., 2017; Chaudhry et al., 2018; Lin et al., 2023), architectural expansion (Mallya & Lazebnik, 2018; Yoon et al., 2017; Yang et al., 2021), or weight resets (Frati et al., 2023; Kumar et al., 2023)—operate within a single-model paradigm. We argue this focus on preserving a single, highly specialized policy exacerbates the plasticity bottleneck (Klein et al., 2024). Converged RL solutions are inherently fragile to interference and lack the adaptability required for future tasks, often perform-ing worse than random initialization. This loss of plasticity is the primary hurdle for long-term autonomy and stems from a complex intersection of representational issues. While researchers have identified contributing factors such as dead or dormant units (Maas et al., 2013; Sokar et al., 2023), impact of activation functions (Delfosse et al., 2021; Lewandowski et al., 2024; Lillo & Cheney, 2025), reduced gradients (Abbas et al., 2023), increasing parameter norms (Nikishin et al., 2022), rank-deficient curvature (Lyle et al., 2022; Lewandowski et al., 2023), and declining diversity (Kumar et al., 2020; 2023; Dohare et al., 2024), no single mechanism fully explains its onset. Instead, it resembles a “Swiss cheese” of overlapping failures (Lyle et al., 2024). Because single point solutions are so vulnerable to these  
+
+> 1Code available at: https://anonymous.4open.science/r/telapa-map_elites-54E8/README.md
+> 2TeLAPA is named after te lapa, a Polynesian wayfinding phenomenon described as faint flashing light on the ocean used to orient toward land; analogously, our latent policy archives serve as an illumination-based navigational aid in policy space
+
+2Preprint. cascading representational collapses, our approach abandons single-model preservation to instead maintain robust, adaptable solution neighborhoods .
+
+Representation drift and encoder alignment under non-stationarity In continual learning, the learned embed-ding itself can drift as training proceeds, so representations of previously seen data (and thus neighborhood relations) change under new-task updates, degrading retrieval and transfer even when replay is present (Caccia et al., 2021). Recent methods therefore treat stability as a feature-space problem: replay is augmented with contrastive/metric ob-jectives that explicitly preserve neighborhood structure, e.g., proxy-based contrastive replay (PCR) built on supervised contrastive learning (Lin et al., 2023; Khosla et al., 2020). Correspondingly, drift can be diagnosed geometrically rather than only through task accuracy, via prototype/centroid displacement and neighborhood-graph overlap measures such as kNN graph similarity (Jaccard-style agreement), which directly quantify whether local neighborhoods are preserved across time (Tavares et al., 2024). These tools are directly relevant to continual RL with latent behavior embeddings, where policy vicinity is the substrate for archive retrieval and where non-stationary encoders can otherwise invalidate cross-time comparisons. 
+
+Quality-diversity and unsupervised behavior embeddings Quality-Diversity (QD) algorithms, such as MAP-Elites (Mouret & Clune, 2015), aim to generate a diverse archive of high-performing solutions rather than a single opti-mum (Pugh et al., 2016). Classical MAP-Elites relies on handcrafted behavior descriptors, while AURORA introduced 
+
+learned behavior embeddings (autoencoder latents on trajectories) as descriptors, enabling unsupervised discovery of behavioral structure (Grillotti & Cully, 2022). Recent work combines QD with gradient-based updates and learned de-scriptors (e.g., PGA-MAP-Elites and PGA-AURORA) (Nilsson & Cully, 2021; Chalumeau et al., 2022), while other extensions have explored multi-task and parameterized settings (Mouret & Maguire, 2020; Anne & Mouret, 2023; 2024), they typically assume tasks are known or optimized simultaneously. In parallel, unsupervised skill discovery in RL (e.g., DIAYN) learns latent skill variables that induce diverse behaviors and can be viewed as a complementary route to behavior embedding (Eysenbach et al., 2018). In contrast, CL faces sequential tasks under interference, where the key challenge is not only to preserve past competence but to preserve future learnability . In contrast, we adapt the archive-based view of QD to continual RL by preserving skill neighborhoods—sets of competent, behaviorally related policies—rather than a single retained policy per task. 
+
+Policy manifold and basin geometry viewpoints A growing literature studies the geometry of solution landscapes, showing that many distinct minima can be connected by low-loss curves (mode connectivity) (Garipov et al., 2018; Draxler et al., 2018; Frankle et al., 2020). In RL and multi-task RL, connectivity and policy-subspace approaches suggest that task solutions may share basins or lie on lower-dimensional manifolds that can be exploited for transfer (Hendawy et al., 2025; Gaya et al., 2022; Rakicevic et al., 2021). These perspectives motivate our focus on transfer-relevant policy geometry in continual RL, viewed through a learned latent behavior space. In particular, we ask not only whether solutions are connected, but whether they retain a recoverable neighborhood of behaviorally related policies that can support later adaptation. 
+
+# 3 FRAMEWORK : P OLICY ARCHIVES FOR CONTINUAL RL 
+
+Inspired by other recent experimental settings for continual learning (Abbas et al., 2023) we designed our evaluation such that the environment cycles over through a fixed sequence of tasks S = ( T1, . . . , T K ), where each Tk is an MDP and a policy πθ is trained to maximize the expected discounted return on the current task. Our focus is not only retention of past competence, but plasticity preservation : the ability to rapidly (re)adapt after interference from intervening tasks and the transferability of skills between tasks. In our experiments, tasks Tk are goal-oriented MiniGrid environments (Chevalier-Boisvert et al., 2023), which provide lightweight, partially observable grid-worlds with procedurally generated layouts and sparse success-based rewards. To isolate plasticity under interference, we construct a short curriculum {A, B, C, D, E } (Narvekar et al., 2020), and corresponding revisits {A′, B ′, . . . } by selecting environment IDs that progressively increase interaction and long-horizon structure (e.g., navigation, pickup/unlock, and subgoal chaining), while keeping evaluation comparable via consistent success-rate metrics and fresh seeds per visit. In App. G.1 we evaluate different curriculum configurations to avoid of designing only favorable hand-crafted sequences. In this setting, revisit performance primarily reflects whether the learner can re-enter a suitable behavioral basin after interference, rather than whether it can discover the task from scratch (see App. A.2 for deeper discussion). 
+
+Archive-then-retrieve: constructing per-task neighborhoods. Rather than preserving a single parameter vector across the stream, T ELAPA maintains a library of per-task policy neighborhoods . For each task Tk, we first train a 3Preprint. competent base policy θbase  
+
+> Tk
+
+with PPO (Schulman et al., 2017). We then run a post-training illumination phase around that elite ( ei) solution: mutated offspring θ′ = θ +δ are evaluated on Tk, assigned a task fitness fTk (θ′), and embedded into a shared latent behavior space. The resulting archive ATk = {ei}Nk
+
+> i=1
+
+, stores competent but behaviorally diverse elites for task Tk. Across tasks, the archive library {A Tm }m≤k serves as a set of candidate basins that can later be navigated when adaptation is required on a revisit or new task. 
+
+Candidate pooling. Rather than restricting transfer to the immediately preceding task, T ELAPA builds the candi-date pool from the union of all previously learned task archives, so that any prior archive can serve as a source of transfer candidates. First, when a new task Tk+1 arrives, we retrieve an initialization from the library of previously learned task archives: Uk+1 = S 
+
+> m≤k
+
+ATm . Then, we construct a compact candidate pool Ck+1 = {ei}Mi=1 where we compute M = Kpool using a diversity-aware down-selection procedure in the shared latent space. The goal of this stage is to retain a small set of source elites that are both competent and behaviorally distinct, so that few-shot evaluation explores multiple plausible transfer origins rather than minor variations of the same source solution. 
+
+Few-shot origin selection. For each candidate ei ∈ C k+1 on the incoming task Tk+1 we measure zero-shot perfor-mance and run a short adaptation probe, resetting optimizer state each time so that the probe reflects basin recover-ability rather than optimizer momentum. Selection is conservative: we first keep only candidates whose final probe performance is close to the best observed value, and among those near-best candidates we prefer the one showing the strongest short-horizon recoverability. The selected initialization is designed to explicitly target recoverable plasticity .Thus, being the source elite whose basin appears most readily reusable for the new task, not necessarily the one with the highest few-shot score. 3.1 PRESERVING THE LATENT SPACE UNDER DRIFT 
+
+In continual RL, interference affects not only policy parameters, but also the representation used to organize archived behaviors. In T ELAPA, retrieval depends on a shared latent space to assess and maintain behavioral diversity, so archived policies remain useful only as long as latent proximity continues to reflect comparable behavior over time. As new tasks arrive, updates to the trajectory embedder and its normalization can shift previously stored behaviors in latent space, changing neighborhood relations even when the archived policies themselves remain unchanged. An archive may therefore stay populated while becoming progressively harder to navigate and reuse. Therefore, we treat latent-space stability as part of the continual-learning problem . Preserving an archive means preserving not only its policies, but also the neighborhood structure that makes those policies retrievable for future adaptation. Our goal is not to freeze the representation, but to maintain a latent geometry that can evolve without destroying the behavioral organization needed to make stored policies reusable. Inspired by QD methods with station-ary re-embedding procedures such as AURORA (Grillotti & Cully, 2022), we augment T ELAPA with three coupled mechanisms: anchor sets , replay-based alignment , and periodic re-embedding of archives .
+
+Archive Representation Under Drift. Let ϕt denote the shared trajectory embedder after task boundary t, and let 
+
+Ak denote the archive for task Tk. Each elite stores its policy parameters ( θk,i ), source-task fitness ( fk,i ), and latent descriptor ( zk,i ) computed from its rollout trajectory τk,i :
+
+Ak =
+
+n
+
+(θk,i , f k,i , z (t)
+
+> k,i
+
+)
+
+oNk
+
+> i=1
+
+, z(t) 
+
+> k,i
+
+= ϕt(τk,i ). (1) When ϕt changes, previously stored descriptors may no longer be expressed in the current coordinate system, degrad-ing retrieval even if the underlying archived policies are unchanged. 
+
+Anchor Sets and Replay-Based Alignment. At each task boundary, we maintain two banks of past episode sets: an anchor bank of reference behaviors and a replay bank of broader episode sets. We freeze a “teacher” copy of the current embedder and update a live “student” embedder on mixed batches drawn from new-task data and both banks. The student is trained with a composite that makes the latent space informative and keeps it from moving arbitrarily across task boundaries: 
+
+Lemb = wcontrast Lcontrast + wdistill Ldistill (2) where the contrastive term enforces augmentation invariance by aligning two views of the same episode and separating them from other episodes, and the distillation term constrains drift on anchor episodes. The distillation term reduces representation drift by keeping the student’s embeddings of anchor episodes only close to those produced by the frozen teacher so that reference behaviors remain stable while the representation adapts to new tasks. 4Preprint. 
+
+Periodic Archive Re-embedding. After each embedder update, we re-embed previously stored archives in the cur-rent latent space: z(t+1)  
+
+> k,i
+
+= ϕt+1 (τk,i ) so that downstream retrieval and geometry analysis are performed in a consistent coordinate system. 
+
+# 4 PRESERVING POLICY NEIGHBORHOODS IMPROVES CONTINUAL TRANSFER 
+
+We first test whether preserving policy neighborhoods yields better continual transfer than preserving a single evolving model. To evaluate transfer and forgetting, we report the Standardized Time-To-Threshold (TTT) , which measures recoverability by the number of environment steps required to reach a competence target performance level τT upon task revisit. For each task, this target τT is set to 0.9 times the mean best success rate (SR) achieved by task-specific SCRATCH , ensuring a rigorous “baseline-to-beat” standard. Alongside TTT, we provide a diagnostic for Backward Transfer (BWT) to address where a model that fails to learn a task cannot technically forget it. This diagnostic decomposes retention into three additional metrics: (i) Coverage , the fraction of tasks that reached τT during initial training; (ii) normalized BWT (nBWT) , measuring the relative performance drop exclusively on previously learned tasks ( SR( T ) ≥ τT ) to isolate true forgetting from non-learning; and (iii) Threshold Retention (TR) , the fraction of tasks remaining above τT at the end of the sequence. Together, these diagnostics clarify whether performance is due to a failure to acquire knowledge, a failure to retain it, or an improved capacity for rapid recovery (see App. F). We compare T ELAPA against a diverse set of baselines, each representing a different form of single-model preserva-tion or transfer: (i) Scratch: train each task independently from random initialization; (ii) Scratch-Reuse: train from scratch the first time a task is seen, store the resulting task-specific policy, and reuse only that policy when the same task reappears; (iii) Finetune: continue training a single PPO instance across the task sequence; (iv) Finetune-Reset: 
+
+initialize each new task from the immediately previous task’s parameters, but reset optimizer state and rollout state; (v) EWC : transfer-style initialization with diagonal-Fisher regularization (Kirkpatrick et al., 2017); and (vi) L2Init :transfer-style initialization with an initialization-preserving penalty (Kumar et al., 2023); (vii) DFF : replaces the stan-dard ReLU with Deep Fourier Features to improve plasticity and sustain learning (Lewandowski et al., 2024); (viii) 
+
+Shrink-and-Perturb : transfer-style initialization where, at each task boundary, the previous task’s parameters are shrunk and then perturbed with small random noise before training on the next task (Ash & Adams, 2020); and (ix) 
+
+TeLAPA-Static: an ablated version of our method that uses the same shared latent space but keeps the embedder fixed and disables the online re-embedding procedure.                                                                                                                                                                              
+
+> Method Mean SR ↑TTT ↓BWT ↑Coverage ↑nBWT ↑TR ↑
+> SCRATCH 0.374 ±0.03 7.75 ±2.19 −0.283 ±0.052 0.33 ±0.04 −0.748 ±0.106 0.02 ±0.03
+> SCR .-T RANSFER 0.525 ±0.02 5.49 ±2.33 −0.054 ±0.008 0.30 ±0.03 0.009 ±0.001 0.24 ±0.04
+> FINETUNE 0.588 ±0.09 6.55 ±2.42 −0.262 ±0.065 0.37 ±0.04 −0.695 ±0.146 0.14 ±0.05
+> FINETUNE -R ESET 0.576 ±0.10 5.91 ±2.15 −0.263 ±0.073 0.33 ±0.06 −0.709 ±0.147 0.15 ±0.04
+> EWC 0.143 ±0.02 9.67 ±2.01 −0.090 ±0.013 0.05 ±0.06 −0.115 ±0.137 0.05 ±0.05
+> L2I NIT 0.120 ±0.01 9.74 ±2.03 −0.072 ±0.007 0.08 ±0.02 −0.140 ±0.096 0.02 ±0.03
+> DFF 0.388 ±0.01 8.04 ±2.26 −0.101 ±0.009 0.09 ±0.04 −0.212 ±0.068 0.01 ±0.02
+> S&P0.463 ±0.05 6.86 ±2.34 −0.330 ±0.047 0.33 ±0.07 −0.844 ±0.113 0.06 ±0.06
+> TELAPA-S TATIC 0.507 ±0.10 5.59 ±2.49 −0.294 ±0.059 0.38 ±0.09 −0.702 ±0.063 0.12 ±0.05
+> TELAPA 0.706 ±0.08 3 .35 ±2.09 −0.303 ±0.086 0.50 ±0.09 −0.629 ±0.071 0.25 ±0.05
+
+Table 1: TELAPA against single-model baselines. Across 20 runs (mean ± 95% CI), T ELAPA is strongest on met-rics most directly tied to continual recoverability—higher mean SR, faster TTT, broader task coverage, and stronger threshold retention—supporting the claim that preserving policy neighborhoods improves later reuse relative to single-model preservation. Mean SR, Coverage, nBWT, and TR are higher-is-better; TTT is reported in millions of environ-ment steps and lower-is-better. For BWT, values closer to 0 are better, negative values indicate stronger forgetting. Together, these baselines let us ask not just whether T ELAPA works better, but why: whether its advantage comes from preserving neighborhoods rather than a single model, from retaining more than one solution per task, and from improving recoverability rather than only immediate reuse. Table 1 shows that T ELAPA is the strongest overall method on the metrics most directly tied to continual recoverability. It achieves the highest mean success rate ( 0.706 ±
+
+0.08 ), the lowest standardized time-to-threshold ( 3.35 ± 2.09 M steps), the highest coverage ( 0.50 ± 0.09 ), and the highest threshold retention ( 0.26 ± 0.04 ). Relative to F INETUNE and F INETUNE -R ESET , this indicates that preserving and navigating a neighborhood of competent policies is more effective than carrying forward a single evolving model. Crucially, T ELAPA also outperforms S CRATCH -R EUSE , which stores one solution per task, improving mean SR from 0.525 to 0.706 and reducing TTT from 5.49 M to 3.35 M steps. This suggests that the gain cannot be explained by task-indexed caching alone, but depends on retaining and selecting among multiple nearby competent alternatives. At the same time, S CRATCH -R EUSE remains best on BWT and nBWT, so T ELAPA’s advantage is not best interpreted 5Preprint. as strict no-forgetting of a single stored policy. Rather, its advantage is that it learns more tasks in the first place and recovers them more effectively when they reappear. This interpretation is further supported by the gap between TELAPA-S TATIC and full T ELAPA, which shows that archive storage alone is insufficient: online maintenance of the shared latent geometry materially improves continual transfer. 4.1 LOCAL TRANSFER REVEALS FAILURE MODE OF SINGLE -MODEL PRESERVATION 
+
+The baseline comparison above showed that preserving policy neighborhoods improves continual recoverability rel-ative to single-model baselines, including methods that reuse or store only one policy per task. We now directly test the mechanism behind that advantage. In the most favorable version of single-model preservation, one would retain the source-optimal policy and reuse it later as the transfer seed. The question in this subsection is whether that single representative is actually sufficient, or whether nearby source-competent alternatives—policies that still perform well on the source task—already contain transfer-relevant variation that a one-policy summary discards. We show a consistent local failure mode of single-model preservation separated across three questions: (i) Does the source-competent set contain multiple viable alternatives, or does it collapse to a single latent point? (ii) Even near the preserved source-best elite, do competent alternatives differ in their downstream transfer utility? (iii) Does searching for this local competent basin recover better transfer policies than preserving only the source-best elite? Let Cs→t denote the set of policies from source task s evaluated as transfer for target task t. For each candidate policy πi ∈ C s→t, we record its source-task fitness f src i , its target performance after few-shot transfer evaluation 
+
+ytgt i , and its latent embedding zi in the shared behavior space. We define the source-best elite in Cs→t as π∗ 
+
+> src
+
+=arg max πi∈C s→t f src i and use its latent embedding z∗ 
+
+> src
+
+as the reference point for the local basin analysis. This design directly matches the single-model preservation setting, since such methods would naturally retain the source-optimal representative solution. 
+
+Competent source set. We first define the good-enough source set Gs→t as the set of elite policies ( πi) for which its source task fitness f src i ≥ γ · f ∗ 
+
+> src
+
+where f ∗ 
+
+> src
+
+is the source-best elite fitness and γ ∈ (0 , 1] is the source-competence threshold. This set isolates the candidates that would still be considered acceptable source solutions, while allowing multiple alternatives to coexist. 
+
+Local basin inside the competent set. We define locality within the competence set. For every πi ∈ G s→t, we compute its latent distance to the source-best elite: di = ∥zi − z∗
+
+> src
+
+∥2, and rank all candidates by increasing distance to z∗
+
+> src
+
+. Let ρi ∈ [0 , 1] denote this normalized distance-rank, where ρi = 0 corresponds to the closest competent candidate and ρi = 1 to the farthest competent candidate. Then, we define the competent local basin Bs→t as the set of elites for which ρi ≤ τ where τ is the local-rank threshold. 
+
+Figure 1: Transfer gap in target task performance between the best good-enough elite and source-optimal elite. 
+
+Source-best is not always transfer-best. We demonstrate the failure of single-model preservation and show that source-optimality does not uniquely determine transfer-optimality. For each s → t pair, we compare the target performance of the source-best elite against the policy with the highest target performance within the entire good-enough set: 
+
+∆good = max 
+
+> πi∈G s→t
+
+ytgt i − ytgt (π∗
+
+> src
+
+).
+
+Fig. 1 shows that the source-best elite is often not the transfer-best elite even among source-competent alternatives: in 35 .5% of all s → t pairs, the best policy in the good-enough set outperforms the preserved source-best elite on the target (transfer gap > 0). Thus, even before imposing locality, a method that preserves only π∗ 
+
+> src
+
+already discards better downstream options that were available in the source archive. 
+
+Figure 2: Relative latent spread of the 
+
+good-enough set. 
+
+The good-enough set occupies a broad latent basin. If the good-enough 
+
+set were concentrated at essentially one point, then preserving a single repre-sentative policy could indeed be sufficient. Fig. 2 tests this by measuring how broadly the good-enough set spreads around the source-best elite relative to the full candidate set: 
+
+Span 0.75 = Q0.75 ({∥ zi − z∗
+
+> src
+
+∥2 : πi ∈ G s→t})max πj ∈C s→t ∥zj − z∗
+
+> src
+
+∥2
+
+,
+
+where Q0.75 (·) denotes the 75 th percentile. A high value means that most source-competent candidates extend far from π∗ 
+
+> src
+
+relative to the full available 6Preprint. candidate range, rather than collapsing into a narrow neighborhood. In our analysis, the median Span 0.75 is 0.792 , showing that the good-enough set occupies a substantial portion of the candidate latent region. This indicates that the archive is not merely storing redundant source-competent copies of the same policy, but retains a broadly distributed set of behaviorally distinct candidates. As a result, transfer from the archive is likely to expose multiple qualitatively different source-competent behaviors, any of which may later outperform the source-optimal policy on the target task. 
+
+Figure 3: Latent distance-rank bins, relative to the source-best, pooled within the local competent basin B.
+
+Transfer differs even within a local competent neighborhood. A stricter test is whether the source-best policy is already insufficient even within its own local competent neighborhood, rather than only because better transfer seeds exist farther away in the source-competent set. To test this, Fig. 3 re-stricts attention to the competent local basin Bs→t around the source-best elite and compares each candidate πi ∈ B s→t against that preserved source-best policy through 
+
+δi = ytgt i − ytgt (π∗
+
+> src
+
+).
+
+Candidates are grouped by latent distance-rank ρi within the good-enough 
+
+set, so the panel asks whether nearby source-competent alternatives are effec-tively interchangeable for downstream transfer. They are not. If these nearby source-competent candidates were effectively interchangeable, then δi would concentrate near zero and the source-best elite would be a good proxy for its neighborhood. Instead, across rank bins, the distributions of δi remain cen-tered near zero but retain clear positive and negative tails, indicating that policies that are all source-competent and locally nearby can still differ meaningfully in target performance. Thus, even within a tight competent neighborhood around the retained source-best elite, nearby policies are not interchangeable for downstream transfer. The point is not that the transfer-optimal seed must also be local—it may still lie farther away elsewhere in the archive—but that meaningful transfer variation already exists in the immediate neighborhood of the policy a single-model method would retain. 
+
+Figure 4: Transfer gain obtained by searching only within the local basin. 
+
+Collapsing the local basin to one preserved policy incurs a transfer cost. 
+
+Fig. 4 summarizes the practical consequence of the local heterogeneity shown in Fig. 3. We compare the preserved source-best elite against the best candi-date available inside the competent local basin: ∆local = max πi∈B r,s →t ytgt i −
+
+ytgt (π∗
+
+> src
+
+). This occurs in a substantial fraction of s → t pairs, showing that the competent neighborhood around the source-best elite is not transfer-redundant. Archive-based preservation is therefore valuable not just for main-taining global diversity, but for retaining nearby competent alternatives with distinct downstream utility. Although some transfer-optimal policies may lie outside this tight local basin, the local result alone shows that reducing the preserved neighborhood to a single representative is already suboptimal. 4.2 STEPPING -S TONE LINEAGES ACROSS TASK ARCHIVES 
+
+Previously, we showed that single-model preservation methods retain only one policy snapshot, thereby collapsing alternative behaviors that may later prove more adaptable under new tasks or revisits. T ELAPA addresses this limita-tion by preserving an archive of competent, behaviorally distinct policies, including intermediate ones that may not be source-optimal but still retain useful structure from which later high-performing solutions can emerge. Now, we ask whether this effect extends beyond a single local neighborhood to the archive system as a whole. Specifically, we study whether T ELAPA preserves a longer-horizon stepping-stones structure: intermediate policies that are not necessarily final or source-optimal, but whose archived task history makes them especially reusable later. This view is closely related to novelty search and quality-diversity, which argue that search benefits from preserving diverse intermediates rather than collapsing onto a single objective-maximizing solution (Lehman & Stanley, 2011a; Mouret & Clune, 2015; Gaier et al., 2019; Nordmoen et al., 2021). TELAPA repeatedly selects elites from prior archives, adapts them to new tasks, and stores them again as future transfer candidates. Accordingly, what matters is not only which archive supplies a policy to the current target, but also how that policy was shaped by earlier transfers. Therefore, our goal is not to reconstruct the full optimization trace of every elite, but to recover the minimal lineage structure needed to study how reusable policies move through task space over time. 7Preprint. 
+
+Intra-task archive structure. Before analyzing cross-task lineages, we first characterize the internal geometry of each task archive. For elite i in task Tk, we define a novelty proxy as the within-task nearest-neighbor distance in standardized latent space, νnorm  
+
+> k,i
+
+= min j̸ =i∥˜zk,i −˜zk,j ∥2 
+
+> median i(νk,i )+ ϵ
+
+. Figure 5 shows that these archives do not collapse to single 
+
+Figure 5: Pooled QD structure across runs. We visualize the density of archive elites as a function of fitness and normalized novelty νnorm . Small novelty indicates local redundancy, whereas large novelty indicates more isolated or frontier elites. Differences across tasks reveal how each archive balances competence and behavioral spread within its own latent geometry. redundant clusters, but instead exhibit task-dependent internal structure. Tasks A and B show broad support across novelty with only modest fitness degradation, indicating that competent but behaviorally distinct elites coexist within each archive. Task C shows the clearest case of relatively “cheap” diversity, maintaining a concentrated high-fitness region across a wider novelty range. Task E is more stratified, multiple fitness bands coexist across novelty, suggesting a rougher internal geometry with several behavioral regimes rather than one dominant mode. Task D is too sparse to support a strong within-task interpretation. Overall, the archive library contains both dense local groupings and more isolated frontier elites, providing the internal heterogeneity needed for later retrieval and stepping-stone reuse. 
+
+Cross-task lineage structure. Figure 6 shows that these non-redundant within-task archives are not used only as isolated task memories, but participate in longer multi-archive lineages. Panel (a) summarizes immediate transfer reuse: for each current target-task archive, it shows how many evaluated candidates were drawn from each most-recent source archive. Reuse is not strictly sequential: rather than drawing only from the immediately preceding task, several later targets receive candidates from a broader historical library, including both original-task and revisit archives. Recall that when a new target task arrives, T ELAPA constructs its transfer candidate pool from the union of all previously learned task archives, so any earlier archive can in principle supply a transfer seed. Thus, later reuse is not constrained to follow the curriculum order, but can be shaped by downstream utility across the full archive library. While panel (a) focuses on immediate source selection, panel (b) summarizes deeper recorded ancestry. For candidates evaluated for the current target-task archive on each column, each cell counts how often the archive tag on the row appears anywhere in their recorded lineage history. Thus, a large value in row D′, column E does not indicate backward-in-time transfer from E to D′; it indicates that candidates evaluated for E often carry recorded ancestry that passes through D′. These lineage counts show that later target archives are not shaped only by their most recent transfer source. Instead, candidates evaluated on later targets often retain ancestry through multiple earlier archive tags, so reuse reflects accumulated historical paths rather than only fresh one-hop transfers. Early archive tags continue to appear across many later targets, while intermediate tags recur in patterns consistent with historical bridge roles. Together, these patterns indicate that T ELAPA maintains multi-archive stepping-stone lineages rather than collapsing reuse to a single representative per task. The presence of multi-stage ancestry suggests that transfer on a target task can depend on more than its immediate source archive, and may instead reflect a longer historical path through earlier tasks (e.g., success on C may depend not only on the immediate source B, but on the broader trajectory A → B → C). I n this sense, T ELAPA supports an internal skill-aligned curriculum , where later reuse is shaped not only by the most recent transfer step but also by deeper lineage structure preserved across archives. However, structural depth alone is not yet a functional explanation. Therefore, we next analyze which lineage properties are actually associated with improved later reuse. 
+
+Which lineage properties predict later reuse? Structural existence alone does not imply functional importance. Fig. 7 asks whether simple lineage properties are associated with higher final transfer performance by comparing, for each target, the distributions of final transfer success across two lineage-defined candidate groups. Panel (a) tests generic breadth , defined as the number of distinct archive families in a candidate’s history. Breadth-richer lineages help for some targets, especially several revisits, but the effect is weak or inconsistent for others, showing that generic historical breadth is not by itself a universal explanation for reuse. Panel (b) tests task-relevant ancestry: candidates are divided by whether their lineage contains that target’s original archive family. For several revisits, candidates whose history includes the corresponding original family tend to perform better, suggesting that reuse depends more on preserving specific task-relevant stepping stones than on accumulating broad lineage history alone. Thus, T ELAPA’s 8Preprint. 
+
+Figure 6: Stepping-stone lineage structure across task archives. (a) Immediate source-task archive → current target-task archive. Rows denote the most recent source archive used for transfer, and columns denote the current target-task archive. Each cell shows how many evaluated candidates for that target were drawn from that immediate source archive. (b) Recorded archive visits in lineage. Columns denote the current target-task archive, and rows denote archive tags appearing anywhere in recorded lineage history. Each cell shows the total number of recorded lineage visits to archive tag S among candidates evaluated for target archive T . Counts are overlapping rather than exclusive: a single candidate contributes to every archive tag that appears in its lineage. advantage lies not just in maintaining long-lived lineages, but in preserving lineage structure that remains useful for future reuse. Panel (c) tests whether useful stepping stones must follow only adjacent curriculum progression by comparing candidates with and without a non-adjacent transition in their lineage. Although the effect varies across targets, non-adjacent ancestry is beneficial for several revisits, indicating that useful stepping stones need not lie only along the shortest curriculum path. This supports the stepping-stone view: T ELAPA’s efficacy does not come from any single lineage pattern being uniformly best, but from maintaining a diverse behavioral library of reusable histories. 
+
+Figure 7: Lineage utility across transferred candidates. Each panel compares the distributions of final transfer performance for two candidate groups defined by a different lineage property, shown separately for each target task. 
+
+(a) Breadth-rich versus breadth-poor lineage histories . Candidates are grouped by whether their lineage contains the original archive family corresponding to the current target. (b) Revisit-family membership . Candidates are grouped by whether their lineage contains the original family corresponding to the current target. We measure whether including that target-relevant family predicts higher final transfer performance. (c) Adjacent versus non-adjacent ancestry .Candidates are grouped by whether their lineage includes a non-adjacent transition in archive-family order. 
+
+# 5 CONCLUSION & F UTURE WORK 
+
+Conclusion Throughout this paper, we argued that continual reinforcement learning should look beyond approaches that rely on a single evolving policy as the main reusable solution across tasks. Under non-stationarity and interference, keeping one previously successful policy available is often not enough to support future adaptation. Instead, later reuse can depend on access to a structured set of competent, behaviorally related alternatives from which rapid re-adaptation can emerge. Motivated by this view, we introduced T ELAPA, a continual RL framework that organizes behaviorally diverse policy neighborhoods into per-task archives and maintains a shared latent space so that archived policies remain comparable and reusable under non-stationary drift. Across our MiniGrid continual-learning setting, this perspective led to a consistent empirical picture. T ELAPA achieved the strongest overall performance on the metrics most directly tied to learning, re-adaptation, and retention. Our analyses further showed why relying on a single policy is insufficient: even source-competent policies near the source optimum can differ meaningfully in transfer value, and effective reuse depends not only on retaining task-specific candidates, but also on maintaining stepping-stone structure across archives. Taken together, these results suggest that sustaining plasticity in continual RL depends on maintaining a structured, skill-aligned archive of diverse policies rather than collapsing reuse to a single successful policy. 9Preprint. 
+
+Future Work Future work should test whether these ideas hold beyond the cycle-based MiniGrid setting, including longer task streams, weaker task boundaries, richer visual domains, continuous-control environments, and settings where the interaction rules themselves change. It should also identify which forms of diversity are genuinely useful by isolating the causal roles of archive construction, latent-space maintenance, and lineage formation in later transfer. Because retrieval depends on distances in a shared behavior space, latent-space maintenance should be treated as a central problem in its own right, with methods that directly preserve navigability and cross-task discriminability under non-stationary drift. More broadly, a natural next step is to move beyond archive-augmented PPO toward continual RL algorithms that jointly optimize representation learning, archive growth, and transfer-time selection around future adaptability rather than only immediate performance or parameter retention. 10 Preprint. 
+
+# REFERENCES 
+
+Zaheer Abbas, Rosie Zhao, Joseph Modayil, Adam White, and Marlos C Machado. Loss of plasticity in continual deep reinforcement learning. In Conference on lifelong learning agents , pp. 620–636. PMLR, 2023. Timoth´ ee Anne and Jean-Baptiste Mouret. Multi-task multi-behavior map-elites. In Proceedings of the companion conference on genetic and evolutionary computation , pp. 111–114, 2023. Timoth´ ee Anne and Jean-Baptiste Mouret. Parametric-task map-elites. In Proceedings of the Genetic and Evolutionary Computation Conference , pp. 68–77, 2024. Jordan Ash and Ryan P Adams. On warm-starting neural network training. Advances in neural information processing systems , 33:3884–3894, 2020. Samuel J Bell and Neil D Lawrence. The effect of task ordering in continual learning. arXiv preprint arXiv:2205.13323 , 2022. Yuri Burda, Harrison Edwards, Amos Storkey, and Oleg Klimov. Exploration by random network distillation. arXiv preprint arXiv:1810.12894 , 2018. Lucas Caccia, Rahaf Aljundi, Nader Asadi, Tinne Tuytelaars, Joelle Pineau, and Eugene Belilovsky. New insights on reducing abrupt representation change in online continual learning. arXiv preprint arXiv:2104.05025 , 2021. Felix Chalumeau, Raphael Boige, Bryan Lim, Valentin Mac´ e, Maxime Allard, Arthur Flajolet, Antoine Cully, and Thomas Pierrot. Neuroevolution is a competitive alternative to reinforcement learning for skill discovery. arXiv preprint arXiv:2210.03516 , 2022. Arslan Chaudhry, Marc’Aurelio Ranzato, Marcus Rohrbach, and Mohamed Elhoseiny. Efficient lifelong learning with a-gem. arXiv preprint arXiv:1812.00420 , 2018. Maxime Chevalier-Boisvert, Bolun Dai, Mark Towers, Rodrigo Perez-Vicente, Lucas Willems, Salem Lahlou, Suman Pal, Pablo Samuel Castro, and Jordan Terry. Minigrid & miniworld: Modular & customizable reinforcement learn-ing environments for goal-oriented tasks. In Advances in Neural Information Processing Systems 36, New Orleans, LA, USA , December 2023. Wesley Chung, Lynn Cherif, David Meger, and Doina Precup. Parseval regularization for continual reinforcement learning. Advances in Neural Information Processing Systems , 37:127937–127967, 2024. Quentin Delfosse, Patrick Schramowski, Martin Mundt, Alejandro Molina, and Kristian Kersting. Adaptive rational activations to boost deep reinforcement learning. arXiv preprint arXiv:2102.09407 , 2021. Shibhansh Dohare, Richard S Sutton, and A Rupam Mahmood. Continual backprop: Stochastic gradient descent with persistent randomness. arXiv preprint arXiv:2108.06325 , 2021. Shibhansh Dohare, J. Fernando Hernandez-Garcia, Qingfeng Lan, Parash Rahman, A. Ruapm Mahmood, and Richard S. Sutton. Loss of plasticity in deep continual learning. Nature , 632:768—774, 2024. Felix Draxler, Kambis Veschgini, Manfred Salmhofer, and Fred Hamprecht. Essentially no barriers in neural network energy landscape. In International conference on machine learning , pp. 1309–1318. PMLR, 2018. Benjamin Eysenbach, Abhishek Gupta, Julian Ibarz, and Sergey Levine. Diversity is all you need: Learning skills without a reward function. arXiv preprint arXiv:1802.06070 , 2018. Carlos Florensa, David Held, Markus Wulfmeier, Michael Zhang, and Pieter Abbeel. Reverse curriculum generation for reinforcement learning. In Conference on robot learning , pp. 482–495. PMLR, 2017. Jonathan Frankle, Gintare Karolina Dziugaite, Daniel Roy, and Michael Carbin. Linear mode connectivity and the lottery ticket hypothesis. In International Conference on Machine Learning , pp. 3259–3269. PMLR, 2020. Lapo Frati, Neil Traft, Jeff Clune, and Nick Cheney. Reset it and forget it: Relearning last-layer weights improves continual and transfer learning. arXiv preprint arXiv:2310.07996 , 2023. Adam Gaier, Alexander Asteroth, and Jean-Baptiste Mouret. Are quality diversity algorithms better at generating step-ping stones than objective-based search? In Proceedings of the Genetic and Evolutionary Computation Conference Companion , GECCO ’19, pp. 115–116, New York, NY, USA, 2019. Association for Computing Machinery. ISBN 9781450367486. doi: 10.1145/3319619.3321897. 11 Preprint. Timur Garipov, Pavel Izmailov, Dmitrii Podoprikhin, Dmitry P Vetrov, and Andrew G Wilson. Loss surfaces, mode connectivity, and fast ensembling of dnns. Advances in neural information processing systems , 31, 2018. Jean-Baptiste Gaya, Thang Doan, Lucas Caccia, Laure Soulier, Ludovic Denoyer, and Roberta Raileanu. Building a subspace of policies for scalable continual learning. arXiv preprint arXiv:2211.10445 , 2022. Luca Grillotti and Antoine Cully. Unsupervised behavior discovery with quality-diversity optimization. IEEE Trans-actions on Evolutionary Computation , 26(6):1539–1552, 2022. Mikael Henaff, Minqi Jiang, and Roberta Raileanu. A study of global and episodic bonuses for exploration in contex-tual mdps. In International Conference on Machine Learning , pp. 12972–12999. PMLR, 2023. A. Hendawy, H. Metternich, J. Peters, G. Tiboni, and C. D’Eramo. It is all connected: Multi-task reinforcement learning via mode connectivity. In Eighteenth European Workshop on Reinforcement Learning (EWRL 2025) ,2025. Prannay Khosla, Piotr Teterwak, Chen Wang, Aaron Sarna, Yonglong Tian, Phillip Isola, Aaron Maschinot, Ce Liu, and Dilip Krishnan. Supervised contrastive learning. Advances in neural information processing systems , 33: 18661–18673, 2020. James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences , 114(13):3521–3526, 2017. Timo Klein, Lukas Miklautz, Kevin Sidak, Claudia Plant, and Sebastian Tschiatschek. Plasticity loss in deep rein-forcement learning: A survey. arXiv preprint arXiv:2411.04832 , 2024. Aviral Kumar, Rishabh Agarwal, Dibya Ghosh, and Sergey Levine. Implicit under-parameterization inhibits data-efficient deep reinforcement learning. arXiv preprint arXiv:2010.14498 , 2020. Saurabh Kumar, Henrik Marklund, and Benjamin Van Roy. Maintaining plasticity in continual learning via regenera-tive regularization. arXiv preprint arXiv:2308.11958 , 2023. Joel Lehman and Kenneth O. Stanley. Abandoning objectives: Evolution through the search for novelty alone. Evol. Comput. , 19(2):189–223, June 2011a. ISSN 1063-6560. doi: 10.1162/EVCO a 00025. Joel Lehman and Kenneth O. Stanley. Abandoning objectives: Evolution through the search for novelty alone. Evol. Comput. , 19(2):189–223, June 2011b. ISSN 1063-6560. doi: 10.1162/EVCO a 00025. Alex Lewandowski, Haruto Tanaka, Dale Schuurmans, and Marlos C Machado. Directions of curvature as an expla-nation for loss of plasticity. arXiv preprint arXiv:2312.00246 , 2023. Alex Lewandowski, Dale Schuurmans, and Marlos C Machado. Plastic learning with deep fourier features. In The Thirteenth International Conference on Learning Representations , 2024. Zhizhong Li and Derek Hoiem. Learning without forgetting. IEEE transactions on pattern analysis and machine intelligence , 40(12):2935–2947, 2017. Ziyan Li and Naoki Hiratani. Optimal task order for continual learning of multiple tasks. arXiv preprint arXiv:2502.03350 , 2025. Lute Lillo and Nick Cheney. Activation function design sustains plasticity in continual learning. arXiv preprint arXiv:2509.22562 , 2025. Huiwei Lin, Baoquan Zhang, Shanshan Feng, Xutao Li, and Yunming Ye. Pcr: Proxy-based contrastive replay for online class-incremental continual learning. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 24246–24255, 2023. Clare Lyle, Mark Rowland, and Will Dabney. Understanding and preventing capacity loss in reinforcement learning. 
+
+arXiv preprint arXiv:2204.09560 , 2022. Clare Lyle, Zeyu Zheng, Khimya Khetarpal, Hado van Hasselt, Razvan Pascanu, James Martens, and Will Dabney. Disentangling the causes of plasticity loss in neural networks. arXiv preprint arXiv:2402.18762 , 2024. 12 Preprint. Andrew L Maas, Awni Y Hannun, Andrew Y Ng, et al. Rectifier nonlinearities improve neural network acoustic models. In Proc. icml , volume 30, pp. 3. Atlanta, GA, 2013. Arun Mallya and Svetlana Lazebnik. Packnet: Adding multiple tasks to a single network by iterative pruning. In 
+
+Proceedings of the IEEE conference on Computer Vision and Pattern Recognition , pp. 7765–7773, 2018. Michael McCloskey and Neal J Cohen. Catastrophic interference in connectionist networks: The sequential learning problem. In Psychology of learning and motivation , volume 24, pp. 109–165. Elsevier, 1989. Jean-Baptiste Mouret and Jeff Clune. Illuminating search spaces by mapping elites. arXiv preprint arXiv:1504.04909 ,2015. Jean-Baptiste Mouret and Glenn Maguire. Quality diversity for multi-task optimization. In Proceedings of the 2020 Genetic and Evolutionary Computation Conference , pp. 121–129, 2020. Sanmit Narvekar, Bei Peng, Matteo Leonetti, Jivko Sinapov, Matthew E Taylor, and Peter Stone. Curriculum learning for reinforcement learning domains: A framework and survey. Journal of Machine Learning Research , 21(181): 1–50, 2020. Evgenii Nikishin, Max Schwarzer, Pierluca D’Oro, Pierre-Luc Bacon, and Aaron Courville. The primacy bias in deep reinforcement learning. In International conference on machine learning , pp. 16828–16847. PMLR, 2022. Olle Nilsson and Antoine Cully. Policy gradient assisted map-elites. In Proceedings of the Genetic and Evolution-ary Computation Conference , GECCO ’21, pp. 866–875, New York, NY, USA, 2021. Association for Computing Machinery. ISBN 9781450383509. doi: 10.1145/3449639.3459304. Jørgen Nordmoen, Frank Veenstra, Kai Olav Ellefsen, and Kyrre Glette. Map-elites enables powerful stepping stones and diversity for modular robotics. Frontiers in Robotics and AI , 8:639173, 2021. Deepak Pathak, Pulkit Agrawal, Alexei A Efros, and Trevor Darrell. Curiosity-driven exploration by self-supervised prediction. In International conference on machine learning , pp. 2778–2787. PMLR, 2017. Justin K Pugh, Lisa B Soros, and Kenneth O Stanley. Quality diversity: A new frontier for evolutionary computation. 
+
+Frontiers in Robotics and AI , 3:40, 2016. Roberta Raileanu and Tim Rockt¨ aschel. Ride: Rewarding impact-driven exploration for procedurally-generated envi-ronments. arXiv preprint arXiv:2002.12292 , 2020. Nemanja Rakicevic, Antoine Cully, and Petar Kormushev. Policy manifold search: Exploring the manifold hypothesis for diversity-based neuroevolution. In Proceedings of the Genetic and Evolutionary Computation Conference , pp. 901–909, 2021. Sylvestre-Alvise Rebuffi, Alexander Kolesnikov, Georg Sperl, and Christoph H Lampert. icarl: Incremental classifier and representation learning. In Proceedings of the IEEE conference on Computer Vision and Pattern Recognition ,pp. 2001–2010, 2017. John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. Proximal policy optimization algorithms. arXiv preprint arXiv:1707.06347 , 2017. Ghada Sokar, Rishabh Agarwal, Pablo Samuel Castro, and Utku Evci. The dormant neuron phenomenon in deep reinforcement learning. In International Conference on Machine Learning , pp. 32145–32168. PMLR, 2023. Tiago F Tavares, Fabio Ayres, and Paris Smaragdis. Measuring similarity between embedding spaces using induced neighborhood graphs. arXiv preprint arXiv:2411.08687 , 2024. Kaixin Wang, Jiashi Feng, and Shuicheng Yan. Revisiting intrinsic reward for exploration in procedurally generated environments. In International Conference on Learning Representations , 2023. Li Yang, Sen Lin, Junshan Zhang, and Deliang Fan. Grown: Grow only when necessary for continual learning. arXiv preprint arXiv:2110.00908 , 2021. Jaehong Yoon, Eunho Yang, Jeongtae Lee, and Sung Ju Hwang. Lifelong learning with dynamically expandable networks. arXiv preprint arXiv:1708.01547 , 2017. Tianjun Zhang, Huazhe Xu, Xiaolong Wang, Yi Wu, Kurt Keutzer, Joseph E Gonzalez, and Yuandong Tian. Bebold: Exploration beyond the boundary of explored regions. arXiv preprint arXiv:2012.08621 , 2020. 13 Preprint. 
+
+# A MINI GRID : E NVIRONMENT SUITE AND CURRICULUM DESIGN 
+
+A.1 MINI GRID TASKS USED IN THE CURRICULUM 
+
+We evaluate continual transfer on a MiniGrid curriculum designed as a skill ladder : each task introduces a small number of new interaction requirements while reusing earlier ones. This makes transfer falsifiable : if a method preserves adaptable skill neighborhoods, revisits should recover faster and with higher success than training from scratch. 
+
+Tag Environment ID Primary skills and incremental difficulty 
+
+A MiniGrid-GoToObject-8x8-N2-v0 Navigation and text-conditioned goal specification (grounding color/type); no object pickup required. Establishes basic explo-ration, obstacle avoidance, and mission conditioning. B MiniGrid-Fetch-6x6-N2-v0 Adds object interaction: pick up the correct object specified by the mission and bring it to a target condition (delivery). Requires learning the pickup primitive and linking it to text grounding, beyond pure navigation. C MiniGrid-DoorKey-8x8-v0 Introduces the key–door dependency: obtain a key, unlock/open a door, then navigate to the goal. Requires sequential subgoals (pickup key → toggle/open door → reach goal )under cluttered navigation. D MiniGrid-BlockedUnlockPickup-v0 Adds clutter interaction and “don’t pick up the wrong thing” pressure. The agent must manipulate blocking objects to access the relevant interaction chain while avoiding detrimental pickups (e.g., moving blockers out of the way without committing to in-correct object handling). E MiniGrid-ObstructedMaze-1Dlh-v0 Longest-horizon task: maze-like navigation with obstructing ob-jects and a hidden key, requiring both exploration and correct subgoal chaining. This setting stresses interference and plastic-ity most strongly: success requires committing to a precise multi-step plan while handling clutter. 
+
+Table 2: Curriculum environments and intended skill increments. Each task builds on prior primitives while adding a new interaction requirement (navigation → pickup → unlocking → clutter manipulation → long-horizon subgoal chaining). A.2 REVISITS AND CONTINUAL -LEARNING SIGNAL 
+
+The evaluation sequence includes revisits: 
+
+A → B → C → D → E → A′ → B′ → C′ → D′ → E′.
+
+Revisits are identical environment families to their first encounters (same environment IDs, new procedural in-stances/seeds as applicable). Because the policy archives for A, B, C, D, E have already been populated in the first pass, revisit performance measures recovery under interference : the method must re-enter a suitable behavioral basin and (for few-shot selection) regain competence rapidly. This makes revisits a direct operational proxy for plasticity preservation in continual RL. 
+
+Why this curriculum? Purely deeper navigation benchmarks can over-emphasize exploration depth while under-testing interference between interaction primitives . Here, later tasks deliberately introduce conflicts (e.g., when to pick up, when to toggle/open, how to move blockers, when to commit to a long chain), so that sequential training can induce both forgetting and loss of plasticity. A successful continual learner should therefore show both strong forward transfer (reuse of earlier skills) and rapid recovery on revisits despite intervening tasks. A.3 REWARDS IN MINI GRID 
+
+MiniGrid rewards are sparse and given only upon successful termination. For an episode that succeeds at step count 
+
+step count , the return is 
+
+R = 1 − 0.9 ·
+
+ step count max steps 
+
+
+
+,
+
+14 Preprint. and failure yields R = 0 . Thus, mean reward near zero typically indicates no successful episodes , rather than slow-but-steady progress. Accordingly, we report both reward and success rate (SR) , where 
+
+SR = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+I[Ri > 0] ,
+
+i.e., the fraction of evaluation episodes that terminate successfully (positive terminal reward). SR provides the cleanest “is it solving” signal in sparse-reward regimes, while reward captures solution efficiency once success is achieved. 
+
+# B HYPER -P ARAMETERS SWEEPS FOR BASELINE METHODS 
+
+To ensure that each method was evaluated under a reasonable configuration, we conducted a targeted hyperparameter search for methods requiring method-specific tuning. Tables 3 summarize the explored grids and the final selected configuration used in the main experiments. Methods without method-specific hyperparameters—namely F INETUNE ,DFF, F INETUNE -R ESET , S CRATCH , and S CRATCH -R EUSE —were run without an additional method-level tuning grid. 
+
+Method Hyperparameter(s) Explored values Selected configuration 
+
+EWC λ {200 , 500 , 1000 } λ = 200 .EWC Decay {0.95 , 0.99 } Decay = 0.95 .L2I NIT λ {0.1, 0.25 , 0.5, 1.0} λ = 0.1 .SHRINK &P ERTURB α {0.8, 0.9} α = 0.9 
+
+SHRINK &P ERTURB Noise Scale {10 −2, 10 −3} Noise Scale = 1e-3 
+
+Table 3: Hyperparameter grids explored for baseline methods. For EWC, the main grid was run without critic regular-ization. 
+
+# C MAP-E LITES 
+
+MAP-Elites Hyperparameters. We also report the main hyperparameters used for the MAP-Elites illumination stage in able 4. These control the size of the archive, the strength and duration of the search process, and the way candidate policies are evaluated before being inserted into the archive. In particular, the archive is initialized with a target size and capacity, candidates are evaluated over multiple episodes, and accepted insertions trigger adaptation of the diversity threshold so that the container remains close to its intended operating size. 
+
+Parameter Value used Role in the algorithm 
+
+Archive target size 256 Desired number of elites to preserve in the archive during illumi-nation. Archive capacity 384 Maximum archive size. Set to 1.5× the target archive size unless explicitly overridden. Initial diversity τ 0.10 Initial minimum distance used by the unstructured archive to de-cide whether a candidate is behaviorally distinct enough to be retained. This threshold is later adapted online as the archive evolves. Larger values enforce more separation; smaller values allow denser archives. Nº of illumination itrs. 1000 Total nº of candidate policies proposed and evaluated during MAP-Elites search. Higher values allow broader exploration but increase compute cost. Each iteration samples a parent, mutates it, evaluates the child, and attempts archive insertion. Mutation scale 0.05 Strength of parameter-space mutation applied to sampled parents. Larger values encourage broader exploration, while smaller val-ues keep mutations more local and conservative. Evaluation episodes 50 Number of episodes used to estimate each candidate’s return, suc-cess rate, and behavior descriptor before archive insertion. 
+
+Table 4: MAP-Elites hyperparameters used in the illumination stage. 15 Preprint. C.1 MAP-E LITES ALGORITHM 
+
+Algorithm 1 summarizes the whole illumination MAP-Elites procedure used in T ELAPA. In the implementation, MAP-Elites operates as a parameter-space illumination procedure that initializes the archive with the converged base policy, repeatedly samples a parent from the archive, mutates it, evaluates the resulting candidate over several episodes, and inserts accepted candidates while adapting the archive diversity threshold online. 
+
+Algorithm 1: MAP-Elites for task-local archive construction 
+
+Input: environment et; reference policy θt; base tag ¯τt;shared embedder fϕ; current embedding state Et−1;illumination budget NME ; evaluation episodes m; initial mutation scale σ0;optional initial archive H(0) ; optional injection pool P
+
+Output: task archive H¯τt
+
+/* 1. Archive initialization */ 
+
+1 if H(0) is provided then 2 initialize H¯τt ← H (0) ;
+
+3 else 4 create an empty unstructured archive H¯τt with target size and spacing dmin ;
+
+5 evaluate θt on et for m episodes and collect trajectories Ξbase ;
+
+6 compute raw latent statistics from Ξbase ;
+
+7 encode them under Et−1 to obtain descriptor zbd base ;
+
+8 insert the base elite (zbd base , θ t, F base , SR base , σ 0) into H¯τt ;
+
+9 store the archive reference descriptor zref ¯τt ← zbd base ;
+
+/* 2. Illumination loop */ 
+
+10 for i = 1 , . . . , N ME do 11 choose a parent elite xp from H¯τt ;
+
+12 if P̸ = ∅ and elite injection is triggered then 13 optionally replace xp with a candidate from P to improve coverage of underrepresented regions; 
+
+14 self-adapt the mutation scale from the parent’s scale to obtain σi;
+
+15 mutate the parent parameters to obtain candidate policy ˜θi;
+
+16 evaluate ˜θi on et for m episodes and collect trajectories Ξi;
+
+17 compute raw latent statistics from Ξi;
+
+18 encode them under Et−1 to obtain descriptor zbd  
+
+> i
+
+;
+
+19 compute the competence threshold gi;
+
+20 if SR( ˜θi) ≥ gi then 21 insert elite (zbd  
+
+> i
+
+, ˜θi, F i, SR i, σ i) into H¯τt ;
+
+22 if the archive changed then 23 adapt the spacing threshold dmin ;
+
+24 save archive snapshots and summary statistics; 
+
+25 restore the original reference policy θt;
+
+26 return H¯τt ;
+
+# D TELAPA 
+
+TeLAPA Hyperparameters. Tables 5 summarize the explored grids and the final selected configuration used in the main experiments for the online latent space maintenance procedure described in App. E. We also provide a description of what each hyperparameter controls: • Embedding Steps : Number of gradient steps to train the trajectory embedder at each task boundary • Embedding Learning Rate : Learning rate for the trajectory embedder boundary update using the Adam optimizer. • Anchor Bank Fraction : Fraction of normalizer refit bank drawn from anchors (rest from replay). • Store as Anchor Threshold : SR threshold for adding episode-sets to anchor bank. 16 Preprint. 
+
+Hyperparameter Explored values Selected value 
+
+Embedding Steps {300 , 500 , 700 } 700 
+
+Embedding Learning Rate {10 −3, 2×10 −4, 3×10 −4, 5×10 −4} 5 × 10 −4
+
+Anchor Bank Fraction {0.20 , 0.33 , 0.50 } 0.33 
+
+Store as Anchor Threshold {0.50 , 0.60 , 0.70 } 0.50 
+
+Min. Bank Sets {12 , 24 , 32 } 32 
+
+Distill W eight {0.5, 1.0, 2.0} 1.0
+
+Distill W eight N orm {0.0, 0.25 , 0.5, 1.0} 1.0
+
+Embedding Temperature {0.07 , 0.10 , 0.15 , 0.22 } 0.15 
+
+Table 5: Hyperparameter search space explored for T ELAPA, together with the final selected configuration used in the main experiments. • Min. Bank Sets : Minimum number of episode-sets available in anchors+replay required to run the boundary embedder update. • Distill W eight : Weight for teacher distillation loss on anchors (anti-drift) during boundary training. • Distill W eight N orm : Weight for the scale component of the anchor distillation loss (norm-matching). Distilla-tion already matches teacher vs student direction via MSE on normalized embeddings; this term additionally matches || zstudent || to || zteacher || on the anchor subset to prevent embedding inflation/deflation (high L2-drift even when cosine drift stays high). • Embedding Temperature : InfoNCE temperature for contrastive loss in embedder training. D.1 TELAPA A LGORITHM 
+
+Algorithm 2 summarizes the full TeLAPA pipeline at the sequence level. The method alternates between: (i) archive-based initialization for the incoming task, (ii) PPO adaptation while collecting trajectory evidence, (iii) archive illumi-nation or revisit update, and (iv) boundary maintenance of the shared latent space. For details about MAP-Elites see Appendix C. For details about the components of the online re-embedding procedure check Appendix E. 
+
+# E LEARNED TRAJECTORY EMBEDDING UNDER DRIFT 
+
+This appendix details the learned behavioral embedding used during the online re-embedding under drift. Unlike in any fixed-encoder variant, the embedding space is not static: the trajectory encoder is updated at task boundaries using anchor and replay data, and previously stored archives are periodically re-expressed under the current latent geometry. E.1 ALGORITHM : O NLINE LATENT -SPACE MAINTENANCE 
+
+Algorithm 3 summarizes the boundary maintenance step used in TeLAPA. After each task, the shared trajectory embedder is updated from accumulated anchor and replay trajectories, the global latent normalizer is refit under the updated encoder, and all previously saved archives are re-expressed under the current geometry. E.2 TRAJECTORY FEATURES , EPISODES , AND EPISODE SETS 
+
+Behavior is logged through a trajectory wrapper that records a compact symbolic feature vector at every environment step. For a rollout of length T , the episode is represented as 
+
+E = [ f1, . . . , f T ] ∈ RT ×D, D = 11 , (3) where each timestep feature vector is 
+
+ft = x01  
+
+> t
+
+, y 01  
+
+> t
+
+, d 01  
+
+> t
+
+, τ 01  
+
+> t
+
+, a 01  
+
+> t
+
+, {has key t},
+
+{has ball t}, {has box t}, {door open t}, {box toggled t}, {delivered t}. (4) 17 Preprint. 
+
+Algorithm 2: TeLAPA: Continual reinforcement learning with archive-based transfer and online latent-space maintenance. 
+
+Input : task sequence S = {(τt, e t)}Tt=1 
+
+shared trajectory embedder fϕ
+
+PPO budget Bppo 
+
+illumination budget BME 
+
+Output: trained policy sequence {θt}Tt=1 and archive set H
+
+1 Initialize archive dictionary H ← ∅
+
+2 Initialize embedding manager M ← (E0, no normalizer )
+
+3 Initialize anchor store A and replay store R
+
+4 Initialize previous policy snapshot θprev ← ∅
+
+5 for t = 1 , . . . , T do 
+
+/* 1. Archive-based Task Initialization & Policy Seeding */ 
+
+6 Build a fresh PPO learner for environment et
+
+7 bt ← BaseTag( τt) // drop prime marks on revisits 
+
+8 if H̸ = ∅ then 9 θ(0)  
+
+> t
+
+← FewShotSelectElite( τt, H, M)
+
+10 Initialize PPO with θ(0) 
+
+> t
+
+11 else 12 Initialize PPO from scratch 
+
+13 end 
+
+/* 2. Task Training & Evaluation */ 
+
+14 Pre-eval: Evaluate initial policy on et
+
+15 Elite Storage: Add resulting trajectories to R and high-success/diverse ones to A
+
+16 Optimize: θt ← TrainTask( et, θ (0)  
+
+> t
+
+, B ppo , A, R)
+
+17 Post-eval: Evaluate final policy θt on et
+
+18 Final Storage: Append final trajectories to R, and successful ones to A
+
+/* 3. MAP-Elites (Illumination & Archive Update) */ 
+
+19 if bt /∈ H then 20 H[bt] ← BuildArchive( et, θ t, B ME , f ϕ, M)
+
+21 else 22 H[bt] ← RefreshArchive( H[bt], θ t, e t, f ϕ, M)
+
+23 end 
+
+/* 4. Online Latent Space Maintenance */ 
+
+24 M, H ← BoundaryMaintenance( fϕ, M, A, R, H)
+
+25 θprev ← θt
+
+26 end 
+
+The first five coordinates are normalized geometric and control features: 
+
+x01  
+
+> t
+
+= clip 
+
+ xt
+
+max( W − 1, 1) , 0, 1
+
+
+
+, (5) 
+
+y01  
+
+> t
+
+= clip 
+
+ yt
+
+max( H − 1, 1) , 0, 1
+
+
+
+, (6) 
+
+d01  
+
+> t
+
+= clip 
+
+ dt
+
+3 , 0, 1
+
+
+
+, (7) 
+
+τ 01  
+
+> t
+
+= clip 
+
+ step count t
+
+max steps , 0, 1
+
+
+
+, (8) 
+
+a01  
+
+> t
+
+=
+
+
+
+clip 
+
+ at
+
+nact − 1 , 0, 1
+
+
+
+, nact > 1,at, otherwise ,
+
+(9) where (xt, y t) is the agent position, dt ∈ { 0, 1, 2, 3} is the agent direction, and at is the executed action. The remaining six coordinates are sticky binary task-event indicators provided by the upstream event wrapper. Thus, the encoder does not consume raw observations directly; it consumes a sequence of compact per-step behavioral features. 18 Preprint. 
+
+Algorithm 3: Online latent-space maintenance 
+
+Input: shared embedder fϕ; embedding state Et−1; anchor buffer A; replay buffer R;archive set {H j }; minimum bank size Bmin ; training steps K
+
+Output: updated embedding state Et and maintained archive set {H j }
+
+/* 1. Check whether boundary maintenance is possible */ 
+
+1 form the bank B ← A ∪ R ;
+
+2 if |B| < B min then 3 Et ← E t−1;
+
+4 return (Et, {H j });
+
+5 take a frozen teacher snapshot ˜fϕ ← fϕ;
+
+/* 2. Update the embedder on anchor/replay batches */ 
+
+6 for k = 1 , . . . , K do 7 sample a mixed mini-batch from A and R;
+
+8 compute a contrastive objective on augmented trajectory views; 
+
+9 if enough anchor samples are available then 10 add a teacher-student distillation term on anchor examples only; 
+
+11 update fϕ by one gradient step; 
+
+/* 3. Refit the latent normalizer */ 
+
+12 bump the embedding version; 
+
+13 sample a representative bank from A and R;
+
+14 refit the global latent normalizer under the updated embedder; 
+
+15 set Et to the new embedder-normalizer state; 
+
+/* 4. Re-express all archives under the current geometry */ 
+
+16 foreach archive Hj in {H j } do 17 save a stale pre-maintenance snapshot of Hj ;
+
+18 re-embed archive elites from stored trajectory sketches under Et;
+
+19 if too many elites lack stored trajectory information then 20 re-evaluate those elites on their native task to rebuild trajectory sketches and re-embed them; 
+
+21 refresh the archive reference descriptor in the same updated latent space; 
+
+22 repack the archive under the current geometry to enforce spacing and capacity constraints; 
+
+23 stamp archive metadata with the new embedding version and normalizer identifier; 
+
+24 save the maintained archive; 
+
+25 return (Et, {H j });
+
+During boundary updates, data are sampled not as isolated episodes but as episode sets . An episode set is a list of rollout episodes associated with the same stored unit in anchor or replay memory: 
+
+Si = {Ei, 1, . . . , E i,n i }, (10) Anchor and replay buffers store collections of episode sets rather than single trajectories. Given a batch of B episode sets, 
+
+B = {S 1, . . . , SB }, (11) the training step samples one episode uniformly from each set, 
+
+˜Ei ∼ U (Si), (12) pads or truncates the resulting episodes to a common temporal cap Tmax , and forms 
+
+X ∈ RB×Tmax ×D , ℓ ∈ { 0, . . . , T max }B , (13) where ℓi is the valid length of the i-th sampled episode. In the current implementation, Tmax = 256 .E.3 EPISODE ENCODER ARCHITECTURE 
+
+The learned trajectory encoder maps an episode E ∈ RT ×D to a latent vector with latent dimension d = 8 :
+
+ze ∈ Rd, (14) The encoder consists of three stages. 19 Preprint. 
+
+Per-step MLP. Each per-step feature vector is first transformed independently: 
+
+h(0)  
+
+> t
+
+= MLP step (ft) = φ(W2 φ(W1ft + b1) + b2) , (15) where φ(·) is a ReLU nonlinearity. This produces a sequence 
+
+H(0) = [ h(0) 1 , . . . , h (0)  
+
+> T
+
+]. (16) 
+
+Temporal aggregation with a GRU. The per-step embeddings are then processed by a recurrent aggregator: 
+
+ht = GRU( ht−1, h (0)  
+
+> t
+
+), (17) and the final hidden state is used as the episode summary: 
+
+hE = hT . (18) The GRU is used to preserve temporal ordering and to summarize variable-length trajectories into a fixed-size repre-sentation. 
+
+Projection to the latent descriptor. The episode-level latent is obtained via a projection head: 
+
+ze = Proj( hE ) = W4 φ(W3hE + b3) + b4 ∈ Rd. (19) Thus, the full episode encoder is 
+
+ze = ϕ(E), (20) where ϕ denotes the current shared trajectory embedder. E.4 POLICY -LEVEL LATENT SUMMARIES 
+
+A policy is evaluated over a collection of episodes 
+
+E(π) = {E(1) , . . . , E (M )}. (21) The encoder is applied to every episode: 
+
+z(m) 
+
+> e
+
+= ϕ(E(m)), m = 1 , . . . , M. (22) The policy-level mean descriptor is 
+
+zmean (π) = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+z(m) 
+
+> e
+
+. (23) This is the principal behavioral descriptor used for archive geometry. We also store two variability summaries. 
+
+Across-episode variability. The first is the standard deviation across episode embeddings: 
+
+zstd ,ep (π) = 
+
+vuut 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+
+
+z(m) 
+
+> e
+
+− zmean (π)
+
+2
+
+, (24) where the square root is taken element-wise. 
+
+Within-episode temporal variability. To quantify variation over time inside an episode, we also compute per-timestep latent projections. Let 
+
+z(m)1: Tm = z(m)1 , . . . , z (m)
+
+> Tm
+
+ ∈ RTm×d (25) denote the sequence of per-timestep projected embeddings for episode m. We define the within-episode standard deviation 
+
+s(m)time =
+
+vuut 1
+
+TmTmX
+
+> t=1
+
+
+
+z(m) 
+
+> t
+
+− ¯z(m)
+
+2
+
+, ¯z(m) = 1
+
+TmTmX
+
+> t=1
+
+z(m) 
+
+> t
+
+, (26) 20 Preprint. and then average across episodes: 
+
+zstd ,time (π) = 1
+
+M
+
+> M
+
+X
+
+> m=1
+
+s(m)time . (27) The tuple 
+
+zmean (π), z std ,ep (π), z std ,time (π)
+
+
+
+(28) is the full raw latent summary attached to a policy evaluation. E.5 VIEW GENERATION FOR CONTRASTIVE TRAINING 
+
+Boundary training uses two augmented views of the same sampled episode. Given an episode 
+
+E = [ f1, . . . , f T ], (29) we generate two stochastic views 
+
+eE(1) , eE(2) . (30) Each view is produced by the following transformations. 
+
+Temporal crop. A contiguous sub-trajectory is sampled by choosing a crop length 
+
+L′ ∼ U  {⌊ ρT ⌋, . . . , T }, (31) where ρ ∈ (0 , 1] is the minimum crop fraction, and then selecting a start index s uniformly from the valid range. The cropped episode is 
+
+Ecrop = [ fs, . . . , f s+L′−1]. (32) In the current implementation, ρ = 0 .6 by default. 
+
+Feature dropout. A binary mask 
+
+m ∈ { 0, 1}D (33) is sampled once per episode view and then applied uniformly across time: 
+
+eft = m ⊙ ft. (34) This removes a subset of feature channels while keeping the temporal structure intact. The same mask is used at every timestep of that view. 
+
+Additive Gaussian noise. Finally, small independent Gaussian noise is added: 
+
+eft ← eft + σnoise εt, εt ∼ N (0 , I D ). (35) These augmentations encourage the encoder to represent stable behavioral structure rather than overfit to exact timestep-level realizations. E.6 TEACHER –STUDENT BOUNDARY UPDATE 
+
+After task t, let ϕt denote the current shared embedder. If the anchor and replay stores contain enough episode sets, we perform a boundary update. A frozen copy of the pre-update encoder is created, 
+
+˜ϕt ← ϕt, (36) and used as the teacher . The live encoder ϕt becomes the student and is optimized for a fixed number of steps on mixed anchor–replay batches. 
+
+Batch construction. Each boundary step samples a mixed batch of episode sets from the anchor store and replay store: 
+
+B = {S 1, . . . , SB }, (37) with a prescribed anchor fraction. A minimum number of anchor examples may also be enforced per batch. From each set, one episode is sampled and converted into two augmented views as described above. 21 Preprint. 
+
+Student embeddings for the two views. Let 
+
+z(1)  
+
+> i
+
+= ϕt
+
+ eE(1) 
+
+> i
+
+
+
+, z(2)  
+
+> i
+
+= ϕt
+
+ eE(2) 
+
+> i
+
+
+
+, (38) be the student embeddings for the two augmented views of the i-th sampled episode. E.6.1 CONTRASTIVE LOSS 
+
+The contrastive term is a symmetric InfoNCE objective. First normalize the view embeddings: 
+
+¯z(1)  
+
+> i
+
+= z(1) 
+
+> i
+
+∥z(1)  
+
+> i
+
+∥2
+
+, ¯z(2)  
+
+> i
+
+= z(2) 
+
+> i
+
+∥z(2)  
+
+> i
+
+∥2
+
+. (39) Then define the similarity matrix 
+
+sij =
+
+
+
+¯z(1) 
+
+> i
+
+⊤
+
+¯z(2) 
+
+> j
+
+τ , (40) where τ > 0 is a temperature hyperparameter. In our implementation τ = 0 .1.The forward and backward cross-entropy terms are 
+
+L1→2 = − 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+log exp( sii )
+
+PBj=1 exp( sij ) , (41) 
+
+L2→1 = − 1
+
+B
+
+> B
+
+X
+
+> i=1
+
+log exp( sii )
+
+PBj=1 exp( sji ) . (42) The final contrastive loss is 
+
+Lcontrast = 12 (L1→2 + L2→1) . (43) This encourages two perturbed views of the same episode to map nearby while different batch items act as negatives. E.6.2 ANCHOR -MASKED TEACHER DISTILLATION 
+
+The teacher gives us a target embedding for each anchor episode. We want the student to stay close to that target in a smooth, stable way. Therefore, the purpose of distillation is to constrain representation drift in trusted reference behaviors. Unlike the contrastive branch, teacher–student matching is computed on the original, non-augmented 
+
+sampled episodes. Let 
+
+zteach  
+
+> i
+
+= ˜ϕt(Ei), zstud  
+
+> i
+
+= ϕt(Ei). (44) Let Ianc ⊆ { 1, . . . , B } denote the anchor subset of the batch. Distillation is applied only when enough anchor data are available globally. We use an MSE-based distillation loss to provide a direct regression to the teacher representation. It consists of a directional term on L2-normalized embeddings that aims to keep the teacher and student pointing in the same latent direction: 
+
+Ldistill = MSE  norm( zstud  
+
+> i
+
+), norm( zteach  
+
+> i
+
+) 
+
+> i∈I anc
+
+(45) However, once we normalize the embeddings, we lose the magnitude information. Thus, the student could preserve the direction while letting the latent space inflate or collapse in norm. Therefore, to preserve not just the direction, but also the approximate scale, we also match embedding magnitudes: 
+
+MSE  ∥zstud  
+
+> i
+
+∥2, ∥zteach  
+
+> i
+
+∥2
+
+ 
+
+> i∈I anc
+
+. (46) The distillation term is 
+
+Ldistill = Ldir + λnorm Lscale . (47) E.6.3 TOTAL BOUNDARY OBJECTIVE 
+
+The student encoder is trained with the composite objective 3
+
+Lemb = wcontrast Lcontrast + wdistill Ldistill . (48) Only the student parameters are updated. The teacher remains frozen throughout the boundary step. 
+
+> 3
+
+Training-time losses live in raw encoder space, while archive-time geometry lives in globally normalized latent-space. 
+
+22 Preprint. E.7 GLOBAL LATENT NORMALIZATION 
+
+The encoder produces raw policy-level latent summaries, but archive geometry is defined in a shared normalized space. To maintain a single within-run coordinate system, the global latent normalizer maps raw policy-level latent means into the shared behavior-descriptor space used for archive geometry. Thus, the normalizer is fit globally after each boundary update from a bank of anchor and replay episode sets , not separately per archive, and then reused for elite insertion, archive re-embedding, and all subsequent distance-based operations. Let 
+
+Bt = {S 1, . . . , SN } (49) denote the bank used at boundary t, where each Si is a list of episodes. For each episode set, we compute a raw policy-level mean descriptor via the current encoder: 
+
+zi = zmean (Si) ∈ Rd. (50) Empty episode sets, malformed outputs, and non-finite descriptors are discarded. Stacking the remaining descriptors yields 
+
+Zt =
+
+
+
+z⊤
+
+> 1
+
+...
+
+z⊤
+
+> N
+
+ ∈ RN ×d. (51) The global normalizer is then fit component-wise using robust statistics: 
+
+μt = median( Zt) ∈ Rd, (52) 
+
+q25 ,t = Q25 (Zt) ∈ Rd, (53) 
+
+q75 ,t = Q75 (Zt) ∈ Rd, (54) 
+
+σt = max 
+
+ q75 ,t − q25 ,t 
+
+1.349 , σ min 
+
+
+
+, (55) where all statistics are taken element-wise. We use σmin = 10 −3 in the current implementation. The factor 1.349 con-verts IQR to the corresponding standard deviation under normality. Given any raw descriptor z ∈ Rd, the normalized descriptor is 
+
+ˆz = Nt(z) = z − μt
+
+σt + ϵ , ϵ = 10 −8. (56) The descriptor used for archive geometry is therefore 
+
+zbd (π) = Nt(zmean (π)) . (57) By default, only the policy-level mean descriptor is normalized in this way. Thus, all nearest-neighbor queries, novelty distances, and archive insertions at boundary t are performed using the shared transformation Nt applied to policy-level mean descriptors. 
+
+# F FORGETTING AND PLASTICITY THROUGH BWT M ETRICS 
+
+Absolute backward transfer (BWT) is widely used to quantify forgetting, but in reinforcement learning it can be misleading due to floor effects : a method that fails to learn early tasks (low post-training success) cannot “forget” much, producing deceptively small-magnitude BWT. 
+
+Notation. Let SR post (T ) denote the success rate on task T immediately after training on T (i.e., post-task perfor-mance), and let SR end (T ) denote the success rate on T at the end of the entire sequence. 
+
+(A) Absolute BWT (SR units). We compute absolute forgetting as 
+
+BWT = 1
+
+|T prev |
+
+X 
+
+> T∈T prev
+
+
+
+SR end (T ) − SR post (T )
+
+
+
+,
+
+where Tprev is the set of previously encountered (non-current) tasks. Values near 0 indicate little net change; more negative values indicate forgetting. However, BWT alone cannot distinguish “retained knowledge” from “knowledge never acquired”. 23 Preprint. 
+
+(B) Coverage (learned-at-train-time). First, for each task, this target τT is defined as 
+
+τT = max  0.9 · bestSR T , τ min 
+
+,
+
+where bestSR T is the mean best success rate achieved by task-specific S CRATCH runs on task T , and τmin is a fixed fallback threshold. This yields a rigorous task-specific “baseline-to-beat” standard while preventing trivially low targets on difficult tasks. Then, to measure whether forgetting is meaningful, we report the fraction of tasks that were learned to the competence threshold when they were trained: 
+
+Coverage = Pr SR post (T ) ≥ τT
+
+.
+
+Low coverage implies the method rarely achieved competent performance, so absolute BWT is expected to be artifi-cially small. 
+
+(C) Normalized BWT on learned tasks (nBWT). To evaluate forgetting conditional on having learned the task ,we normalize the performance drop and restrict to eligible tasks: 
+
+E = {T : SR post (T ) ≥ τT }, nBWT = 1
+
+|E| 
+
+X 
+
+> T∈E
+
+SR end (T ) − SR post (T )max(SR post (T ), ϵ ) .
+
+This reports a relative retention loss on tasks that were actually learned. If |E| = 0 , nBWT is undefined (NaN), which itself is informative: the method never achieved competence under τT . Higher is better (i.e., closer to 0 or positive). • If nBWT = 0: no average change → method kept what it learned (good). • If nBWT < 0: performance dropped → forgetting (worse as it gets more negative). • If nBWT > 0: performance improved relative to post-training (can happen due to positive backward transfer / later training helping earlier tasks). 
+
+(D) Threshold retention (TR). We also report the end-of-sequence competence fraction: 
+
+TR = Pr SR end (T ) ≥ τT
+
+.
+
+TR is easy to interpret and is robust to the floor-effect because it expresses “how many tasks remain solved” under a shared competence standard. 
+
+Interpretation. A method can appear to have “low forgetting” under absolute BWT simply because it never learned the tasks (low coverage), in which case nBWT is undefined or uninformative and TR is near zero. Conversely, methods with high coverage but low TR exhibit catastrophic forgetting: they learned tasks when trained but do not retain competence by the end. In our setting, the diagnostics clarify why absolute BWT must be contextualized and motivate the main text emphasis on revisit recoverability (TTT) and competence-based retention (TR). 
+
+# G ADDITIONAL EXPERIMENTAL STUDIES AND ABLATIONS 
+
+G.1 TASK -O RDER ROBUSTNESS : A LTERNATIVE CURRICULA 
+
+Curriculum learning in reinforcement learning commonly improves learning by sequencing tasks or task distributions so that the agent first encounters easier or more informative settings before harder sparse-reward ones (Narvekar et al., 2020; Florensa et al., 2017). However, in continual learning, task order itself can materially affect forgetting: Bell and Lawrence show that simply reordering the same task set can significantly change catastrophic forgetting (Bell & Lawrence, 2022). More recent work further suggests that effective task orders need not coincide with a simple easy-to-hard progression, and may instead depend on broader structural relations among tasks (Li & Hiratani, 2025). Taking this into consideration, a natural concern arising from this paper is that our primary MiniGrid sequence was designed as a favorable hand-crafted curriculum, and that the gains of TeLAPA may depend critically on this ordering. Therefore, we include a task-order ablation that keeps the task set , revisit protocol, and all training hyperparameters fixed, and varies only the order in which tasks are presented. See App. A for an in-depth description of each task. 
+
+Primary curriculum (main text). Our main sequence follows a skill-ladder design: 
+
+A → B → C → D → E → A′ → B′ → C′ → D′ → E′.
+
+This ordering introduces new interaction requirements gradually, moving from navigation and text grounding to pickup, unlocking, clutter manipulation, and longer-horizon subgoal chaining. 24 Preprint. 
+
+Alternative curriculum 1: reverse anti-curriculum. The first alternative is a strict reverse ordering: 
+
+E → D → C → B → A → E′ → D′ → C′ → B′ → A′.
+
+This is the strongest anti-curriculum variant. It removes the easy-to-hard scaffold and instead presents the longest-horizon task first. If TeLAPA’s advantage depends mainly on a favorable human-designed curriculum, then its gains should shrink substantially under this ordering. On the other hand, if our method preserves and reuses transferable skill neighborhoods, it should remain competitive even when the sequence begins with the hardest tasks.                                                                                                                                                                              
+
+> Method Mean SR ↑TTT ↓BWT ↑Coverage ↑nBWT ↑TR ↑
+> SCRATCH 0.359 ±0.03 7.92 ±2.25 −0.291 ±0.024 0.35 ±0.05 −0.728 ±0.091 0.04 ±0.04
+> SCR .-R EUSE 0.514 ±0.04 5.66 ±2.43 −0.055 ±0.007 0.31 ±0.05 −0.017 ±0.015 0.31 ±0.06
+> FINETUNE 0.590 ±0.10 5.86 ±2.44 −0.379 ±0.037 0.62 ±0.05 −0.568 ±0.041 0.23 ±0.03
+> FINETUNE -R ESET 0.690 ±0.09 4.56 ±2.33 −0.387 ±0.041 0.59 ±0.05 −0.613 ±0.052 0.21 ±0.02
+> EWC 0.289 ±0.05 8.35 ±2.33 −0.106 ±0.032 0.29 ±0.06 −0.221 ±0.118 0.21 ±0.07
+> L2I NIT 0.115 ±0.01 9.74 ±2.04 −0.076 ±0.010 0.06 ±0.04 −0.128 ±0.114 0.02 ±0.03
+> DFF 0.398 ±0.03 7.31 ±2.10 −0.020 ±0.009 0.06 ±0.04 −0.094 ±0.069 0.12 ±0.04
+> S&P0.660 ±0.12 4.75 ±2.45 −0.326 ±0.063 0.57 ±0.06 −0.510 ±0.070 0.24 ±0.04
+> TELAPA-S TATIC 0.890 ±0.04 1.74 ±1.49 −0.493 ±0.068 0.63 ±0.04 −0.646 ±0.061 0.21 ±0.02
+> TELAPA 0.903 ±0.04 1 .60 ±1.54 −0.411 ±0.046 0.70 ±0.08 −0.569 ±0.061 0.24 ±0.04
+
+Table 6: Alternative curriculum 1: reverse anti-curriculum. We report mean ± 95% CI across 20 runs. We evaluate all single-model preservation baselines and TeLAPA variations following the Alternative Curriculum 1. We use the same hyperparameter configuration for all methods as in the main paper results. 
+
+Alternative curriculum 2: skill-scrambled non-monotone order. The second alternative is a non-monotone, skill-scrambled sequence: 
+
+C → A → E → B → D → C′ → A′ → E′ → B′ → D′.
+
+Unlike the reverse ordering, this variant is not simply hardest-to-easiest. Instead, it deliberately breaks the smooth skill ladder by forcing abrupt shifts in task horizon and interaction structure. For example, the agent moves from key–door dependency to pure navigation, then to the longest-horizon maze, then back to short-horizon pickup, and finally to obstacle manipulation.                                                                                                                                                                              
+
+> Method Mean SR ↑TTT ↓BWT ↑Coverage ↑nBWT ↑TR ↑
+> SCRATCH 0.356 ±0.03 7.88 ±2.22 −0.377 ±0.046 0.35 ±0.08 −0.923 ±0.038 0.00 ±0.00
+> SCR .-R EUSE 0.513 ±0.03 5.63 ±2.46 −0.055 ±0.008 0.33 ±0.06 −0.011 ±0.012 0.32 ±0.06
+> FINETUNE 0.807 ±0.09 3.77 ±2.00 −0.489 ±0.061 0.77 ±0.05 −0.775 ±0.058 0.18 ±0.08
+> FINETUNE -R ESET 0.726 ±0.08 4.58 ±2.16 −0.557 ±0.063 0.75 ±0.04 −0.857 ±0.032 0.09 ±0.06
+> EWC 0.320 ±0.04 8.44 ±2.27 −0.203 ±0.057 0.35 ±0.07 −0.423 ±0.146 0.18 ±0.07
+> L2I NIT 0.116 ±0.01 9.75 ±2.03 −0.082 ±0.006 0.07 ±0.04 −0.128 ±0.075 0.02 ±0.03
+> DFF 0.409 ±0.02 8.36 ±2.03 −0.105 ±0.007 0.15 ±0.04 −0.336 ±0.041 0.00 ±0.00
+> S&P0.599 ±0.07 5.46 ±2.46 −0.621 ±0.049 0.77 ±0.04 −0.858 ±0.026 0.06 ±0.04
+> TELAPA-S TATIC 0.915 ±0.04 0.99 ±1.33 −0.688 ±0.027 0.92 ±0.05 −0.789 ±0.046 0.15 ±0.05
+> TELAPA 0.927 ±0.04 0 .95 ±1.30 −0.671 ±0.035 0.91 ±0.04 −0.805 ±0.053 0.18 ±0.06
+
+Table 7: Alternative curriculum 2: skill-scrambled non-monotone order. We report mean ± 95% CI across 20 runs. We evaluate all single-model preservation baselines and TeLAPA variations following the Alternative Curriculum 2. We use the same hyperparameter configuration for all methods as in the main paper results. This sequence tests whether TeLAPA requires gradual prerequisite accumulation, or whether it can still retain and exploit useful policies when tasks arrive in a less curriculum-like order. 
+
+Results. Task order still matters, but TeLAPA’s advantage does not disappear under either alternative curriculum. Under the anti-curriculum, TeLAPA achieves the best Mean SR ( 0.903 ), fastest TTT ( 1.60 ), and highest Coverage (0.70 ), with TeLAPA-Static close behind. Under the skill-scrambled curriculum, the same pattern holds: TeLAPA again obtains the best Mean SR ( 0.927 ) and TTT ( 0.95 ), while TeLAPA-Static attains the highest Coverage ( 0.92 )and TeLAPA remains nearly identical ( 0.91 ). Although some single-model baselines retain stronger BWT, nBWT, or TR values in specific cases, the overall picture is consistent across both reorderings: TeLAPA remains the strongest method on the main forward-performance metrics even when the original skill ladder is broken or reversed. This supports the claim that its gains are not tied to one favorable hand-designed curriculum, but to preserving and reusing transferable skill neighborhoods across task orders. 25 Preprint. G.2 EPISODIC INTRINSIC REWARD ABLATION 
+
+Intrinsic rewards are a standard tool for sparse-reward exploration, but their effect in our setting is not obvious. In TeLAPA, the relevant question is not whether extra diversity can be produced, but whether the induced diversity re-mains skill-aligned with later transfer targets. This distinction matters because an exploration bonus may help an agent discover additional competent behaviors on the current task, while simultaneously shifting the stored neighborhood toward exploratory modes that are less reusable on later revisits. Therefore, we study an intrinsic-reward ablation to test whether adding exploration pressure during policy optimization is uniformly beneficial for continual transfer, or whether it changes the archive in ways that are only conditionally useful. We base our choice of an episodic count bonus on a series of recent works. First, Wang et al. (2023) revisits intrinsic rewards in procedurally generated environments and compare combinations of several lifelong bonuses, including ICM (Pathak et al., 2017), RIDE (Raileanu & Rockt¨ aschel, 2020), RND (Burda et al., 2018), and BeBold (Zhang et al., 2020), with simple episodic bonuses such as episodic count and episodic visitation. Second, Henaff et al. (2023) analyzes the tradeoff between global and episodic bonuses in contextual MDPs, showing that episodic bonuses are especially effective when there is limited shared structure across episodes. 
+
+Formulation. We use an episodic count-based exploration bonus . Let ϕ(st) denote the hashed state representation used for counting, and let Nep (ϕ(st)) be the number of visits to that state within the current episode .
+
+rtot  
+
+> t
+
+= rext  
+
+> t
+
++ rint  
+
+> t
+
+, rint  
+
+> t
+
+= βint 
+
+q
+
+Nep (ϕ(st)) . (58) In our implementation, we augment the environment reward during during PPO training only and remove at the time of evaluation. The episodic count table is reset at every environment reset.                                                                                                                                                                                                 
+
+> Method Mean SR ↑TTT ↓BWT ↑Coverage ↑nBWT ↑TR ↑
+> SCRATCH 0.302 ±0.00 7.74 ±2.34 −0.303 ±0.009 0.24 ±0.04 −0.911 ±0.051 0.00 ±0.00
+> SCR .-R EUSE 0.357 ±0.02 7.26 ±2.52 −0.079 ±0.005 0.25 ±0.04 −0.015 ±0.013 0.25 ±0.04
+> FINETUNE 0.650 ±0.10 4.95 ±2.35 −0.462 ±0.041 0.72 ±0.06 −0.582 ±0.068 0.25 ±0.05
+> FINETUNE -R ESET 0.698 ±0.09 4.50 ±2.32 −0.460 ±0.051 0.71 ±0.05 −0.569 ±0.071 0.23 ±0.05
+> EWC 0.146 ±0.02 9.46 ±2.10 −0.130 ±0.024 0.16 ±0.06 −0.285 ±0.142 0.11 ±0.04
+> L2I NIT 0.107 ±0.00 9.78 ±2.00 −0.070 ±0.006 0.03 ±0.03 −0.208 ±0.019 0.03 ±0.03
+> DFF 0.710 ±0.02 4.20 ±2.24 −0.059 ±0.035 0.46 ±0.06 −0.414 ±0.065 0.37 ±0.06
+> S&P0.787 ±0.01 3.45 ±2.01 −0.369 ±0.047 0.72 ±0.07 −0.544 ±0.071 0.33 ±0.04
+> TELAPA-S TATIC 0.668 ±0.09 3.90 ±2.32 −0.178 ±0.086 0.40 ±0.06 −0.593 ±0.104 0.35 ±0.11
+> TELAPA 0.681 ±0.08 3.79 ±2.43 −0.197 ±0.069 0.32 ±0.07 −0.684 ±0.128 0.26 ±0.06
+
+Table 8: Episodic Intrinsic Reward Ablation. We report mean ± 95% CI across 20 runs. We introduce Episodic Intrinsic Reward in all single-model preservation baselines and TeLAPA variations following Eq. 58. We use the same hyperparameter configuration for all methods as in the main paper results. The intrinsic-reward ablation shows that additional exploration pressure is not uniformly helpful for continual transfer. Although several methods improve under this setting, the best results are obtained by S&P and DFF rather than by TeLAPA variants. TeLAPA and TeLAPA-Static still adapt relatively quickly, but they do not achieve the strongest Mean SR, Coverage, or TR, indicating that the extra exploratory behaviors induced by the bonus are not necessarily the most reusable ones. Overall, these results support the view that diversity alone is insufficient: what matters is whether exploration produces skill-aligned neighborhoods that remain useful for later retrieval and transfer, since additional exploratory pressure can broaden the archive in ways that reduce later reuse when the induced diversity is not sufficiently skill-aligned. G.3 CROSS -A RCHIVE ELITE INJECTION ABLATION 
+
+A central claim of the paper is that useful diversity is not arbitrary diversity, but skill-aligned diversity. MAP-Elites already expands local neighborhoods through mutation and selection, but we can additionally force the search to occasionally branch from elites originating outside the current task archive. Therefore, we study an archive-level ablation that explicitly perturbs how diversity is generated during illumination to test whether occasionally importing parents from outside the current archive improves useful coverage, or instead introduces behaviorally diverse but weakly reusable modes. 26 Preprint. 
+
+Injection mechanism. During illumination, let pinj denote the elite-injection probability. To avoid indiscriminate perturbations, at each parent-selection step, with probability pinj we replace the standard parent choice with a parent drawn from a curated pool of elites collected from other archives. When pinj = 0 , the method reduces to the default no-injection setting. 
+
+score( zi) = dmin (zi, Acurr ) + λ ˜fi, (59) where dmin (zi, Acurr ) is the minimum latent-space distance from candidate i to the current archive, and ˜fi is the candidate’s normalized source fitness within the sampled subset. Thus, injected parents are chosen to occupy regions that are under-covered by the current archive while avoiding extremely weak candidates.                                                                                                           
+
+> Method Mean SR ↑TTT ↓BWT ↑Coverage ↑nBWT ↑TR ↑
+> pinj = 0 0.706 ±0.08 3 .35 ±2.09 −0.303 ±0.086 0.50 ±0.09 −0.629 ±0.071 0.25 ±0.05
+> pinj = 0 .10.636 ±0.09 4.16 ±2.37 −0.328 ±0.064 0.53 ±0.08 −0.637 ±0.085 0.22 ±0.05
+> pinj = 0 .20.638 ±0.09 4.06 ±2.38 −0.327 ±0.065 0.52 ±0.09 −0.707 ±0.062 0.20 ±0.04
+> pinj = 0 .30.598 ±0.09 4.84 ±2.37 −0.256 ±0.076 0.42 ±0.09 −0.597 ±0.074 0.25 ±0.05
+> INTR .+ pinj = 0 .20.673 ±0.09 4.25 ±2.50 −0.175 ±0.067 0.29 ±0.07 −0.717 ±0.145 0.26 ±0.08
+
+Table 9: TeLAPA Cross-Archive Elite Injection Ablation. We report mean ± 95% CI across 20 runs. We introduce the Elite Injection mechanism with various elite-injection probabilities pinj ∈ [0 .1, 0.2, 0.3] following Eq. 59. We use the same hyperparameter configuration for all methods as in the main paper results. Additionally we combine the best 
+
+pinj value with Episodic Intrinsic Reward (Intr.) to evaluate the impact of both ablation studies used together. pinj = 0 
+
+indicates main paper baseline as seen in Tab. 1. We interpret elite injection as an archive-shaping intervention to isolate whether externally introduced diversity helps or creates noise. Introducing it at pinj ∈ { 0.1, 0.2, 0.3} does not improve overall performance: while small injection slightly increases coverage (best at pinj = 0 .1 with 0.53 ), it consistently lowers Mean SR, slows adaptation, and generally reduces transfer ratio. At higher injection rates, these degradations become more pronounced, suggesting that imported parents are behaviorally diverse but not sufficiently aligned with the target task’s skill structure. Thus, proving that diversity must remain structured by the target-relevant geometry of the archive in order to help long-horizon revisit recovery. Combining injection with intrinsic reward partially improves BWT and TR, but still fails to recover the baseline’s overall balance and yields substantially lower coverage. 
+
+# H GEOMETRY DIAGNOSTICS IN THE SHARED BEHAVIOR SPACE 
+
+We expand the analysis in Section 4.2 by testing whether per-task archives occupy structured and transfer-relevant regions of the shared latent behavior space through a geometry perspective. Within each run, all task archives are embedded in a common standardized latent space, which enables cross-task comparisons of archive location, overlap, and nearest cross-task attachment. 4 For each task archive Ak, we compute the archive centroid ( ck), whose distances (Dkℓ ) provide a measure of inter-task separation: 
+
+ck = 1
+
+NkNkX
+
+> i=1
+
+˜zk,i , Dkℓ = ∥ck − cℓ∥2; (60) However, centroid distances alone ignore the spread within the task. We therefore compute a within-task dispersion (RMS radius) and define a separation ratio that normalizes distance by the spread within the task: 
+
+Rk =
+
+vuut 1
+
+NkNkX
+
+> i=1
+
+∥˜zk,i − ck∥22; Skℓ = ∥ck − cℓ∥2
+
+pR2 
+
+> k
+
++ R2 
+
+> ℓ
+
++ ϵ . (61) Large Skℓ indicates that two task archives are well separated relative to their within-task spread. We also visualize two representative runs in the shared latent behavior space: the run with the highest mean success rate (SR) across tasks and the run with the lowest mean SR. This figure provides a meaningful organized look into the latent space, allowing us to analyze whether two tasks in nearby regions are more likely to transfer to the other. The first two panels of Fig. 8 show 2D t-SNE projections of archived elites 5, colored by task, with task centroids marked by “X”.   
+
+> 4Because the embedder and normalization pipeline are non-stationary and run-dependent, raw latent coordinates are not assumed aligned across seeds. Therefore, we aggregate scalar geometry statistics across runs (means and confidence intervals), and we pool only those quantities that can be made dimensionless.
+> 5t-SNE is nonlinear and stochastic: its axes are arbitrary and global distances in 2D should not be over-interpreted.
+
+27 Preprint. 
+
+Figure 8: Cross-task geometry in the shared latent space. Left: t-SNE of elites from the best run (highest mean SR across tasks). Middle: same visualization for the worst run (lowest mean SR across tasks). Right: mean separation ratio matrix Skℓ (Eq. 61), measuring centroid distance normalized by within-task dispersion. Figure 8 indicates a structured shared space and suggests that high performance runs are less associated with maximal task separation than with coherent local organization. In the best run, archives form compact task-specific neighbor-hoods with interpretable adjacencies: A and B lie very close, C occupies a distinct region, while E and D sit far from the rest but close together. In the worst run, the structure is less favorable: B spreads broadly across the space, while several low-performing tasks occupy smaller or poorly aligned regions, even though some centroid distances become larger. Thus, larger global separation alone is not a sufficient indicator of useful geometry. What appears more im-portant is whether tasks form compact, recoverable neighborhoods, and meaningful local adjacencies that can support retrieval.                                                        
+
+> Method A′B′C′D′E′
+> SCRATCH 0.258 0.480 1.00 0.00 0.129 SCR .-R EUSE 0.156 0.497 1.00 0.00 0.97 FINETUNE 0.601 0.822 0.80 0.168 0.55 FINETUNE -R ESET 0.628 0.846 0.752 0.20 0.454 EWC 0.113 0.472 0.11 0.00 0.008 L2I NIT 0.091 0.478 0.027 0.003 0.001 DFF 0.289 0.65 0.995 0.003 0.003 S&P 0.737 0.928 0.451 0.00 0.20 TELAPA-S TATIC 0.277 0.592 1.00 0.152 0.513 TELAPA 0.526 0.698 1.00 ∗0.357 0.99
+
+Table 10: Revisit Mean SR (Continual Learning signal). Per-task mean Success Rate on revisited tasks after the archive has been illuminated across previous tasks. ∗ indicates that multiple methods achieve 100% success rate on that task. The latent-space visualization provided by Fig. 8 suggested that useful transfer is associated less with maximal global separation than with compact task-specific neighborhoods and meaningful local adjacencies. Table 10 provides a per-task functional look on the performance exclusive to the revisit results originally presented in Table. 1. T ELAPA is the strongest or tied strongest method on the harder revisits, reaching the best performance on D′ and E′ and matching the ceiling on C′, while also remaining competitive on A′ and B′. By contrast, methods that retain only a single solution or rely primarily on parameter regularization show much less consistent revisit behavior, often collapsing on some revisited tasks despite sometimes performing well on others. A particularly informative comparison is with T ELAPA-STATIC : although a fixed archive already helps on several revisits, the full online-maintained variant is substantially better on D′ and E′, which suggests that preserving diverse policies is not by itself sufficient; keeping those policies geometrically aligned in the updated shared space also matters. Likewise, S&P attains the best scores on A′ and B′
+
+but fails to generalize across the full revisit set, indicating that strong local recovery on a subset of tasks does not imply a reusable cross-task organization. 28

@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-001.webp",
+      "caption": "Table 4: MIMIC-III in-hospital mortality (AUROC), continual protocol (B) demographic shift by age bucket. We report the mean and standard error over three runs.",
+      "page": 10,
+      "index": 1,
+      "width": 662,
+      "height": 301
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-002.webp",
+      "caption": "Figure 2: Stability–plasticity trade-offs on MIMIC-III mortality prediction under protocols (A) and (B); points are means across three runs (see tables for ± SE).",
+      "page": 10,
+      "index": 2,
+      "width": 872,
+      "height": 504
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-003.webp",
+      "caption": "Table 1: UCI Heart Disease (binary classification, AUROC). We report the mean and standard error over five runs.",
+      "page": 8,
+      "index": 3,
+      "width": 662,
+      "height": 301
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-004.webp",
+      "caption": "Table 2: CDC Diabetes Health Indicators (3-class classification, Macro-F1). We report the mean and standard error over five runs.",
+      "page": 8,
+      "index": 4,
+      "width": 662,
+      "height": 302
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-005.webp",
+      "caption": "Figure 1: Stability–plasticity trade-off on open-access tabular datasets (mean across five runs; tables give mean ± SE). The x-axis is plasticity (Avg. Current-Task), and the y-axis is stability (Avg. Past-Task). Segments link no-replay and replay for each baseline.",
+      "page": 9,
+      "index": 5,
+      "width": 872,
+      "height": 505
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17089v1/fig-006.webp",
+      "caption": "Table 3: MIMIC-III in-hospital mortality (AUROC), continual protocol (A) time-window shift by admission year. We report the mean and standard error over three runs.",
+      "page": 9,
+      "index": 6,
+      "width": 662,
+      "height": 301
+    }
+  ]
+}

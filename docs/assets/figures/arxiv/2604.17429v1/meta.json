@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-001.webp",
+      "caption": "Table 2: Evaluation results (all values %). Nemotron denotes the unmodified Nemotron 3 Super base. Best result per benchmark for each reasoning mode is bolded. Both models use temperature 1.0, top-p 0.95.",
+      "page": 6,
+      "index": 1,
+      "width": 663,
+      "height": 227
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-002.webp",
+      "caption": "Table 5: English→Welsh instruction templates (n = 11).",
+      "page": 10,
+      "index": 2,
+      "width": 525,
+      "height": 277
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-003.webp",
+      "caption": "Table 6: Welsh→English instruction templates (n = 10).",
+      "page": 10,
+      "index": 3,
+      "width": 569,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-004.webp",
+      "caption": "Figure 1: Per-dataset sequence length distributions (kernel density estimates on log-scaled token counts). Datasets are ordered by mean length to match Table 1, spanning three orders of magnitude from self-cognition (∼102) to terminal trajectories (∼104).",
+      "page": 3,
+      "index": 4,
+      "width": 423,
+      "height": 417
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-005.webp",
+      "caption": "Figure 2: System prompt used to generate UK cultural alignment training data. Cultural descriptors and persona information are injected at the placeholders.",
+      "page": 3,
+      "index": 5,
+      "width": 458,
+      "height": 412
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-006.webp",
+      "caption": "Figure 4: Training loss over the single-epoch fine-tuning run.",
+      "page": 5,
+      "index": 6,
+      "width": 453,
+      "height": 300
+    },
+    {
+      "url": "assets/figures/arxiv/2604.17429v1/fig-007.webp",
+      "caption": "Figure 3: Prompt template for English→Welsh translation of the synthetic Welsh chat dataset. Code, URLs, and mathematical notation are preserved verbatim.",
+      "page": 5,
+      "index": 7,
+      "width": 461,
+      "height": 352
+    }
+  ]
+}
