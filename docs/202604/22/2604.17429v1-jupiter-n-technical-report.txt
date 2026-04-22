@@ -1,0 +1,326 @@
+Title: Jupiter-N Technical Report
+
+URL Source: https://arxiv.org/pdf/2604.17429v1
+
+Published Time: Tue, 21 Apr 2026 01:20:55 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Jupiter-N Technical Report 
+
+George Drayson 
+
+Locai Labs, University College London 
+
+george.drayson@locailabs.com 
+
+Abstract 
+
+We present Jupiter-N, a hybrid reasoning model post-trained from Nemotron 3 Super, a fully open-source 120 billion parameter LLM. We target three objectives: (1) agentic capability via uncertainty-curated trajectories; (2) UK cul-tural alignment via synthetic data grounded in cultural norms; and (3) Welsh language support via parallel corpora and LLM-translated Welsh conversations. Our data curation strategy care-fully preserves the base model’s capabilities: using our Forget-Me-Not framework, we mix on-policy synthetic replay with off-policy task data to mitigate catastrophic forgetting, and in-clude a mixture of reasoning and non-reasoning traces to maintain Nemotron’s hybrid reasoning ability. Jupiter-N achieves standout gains over Nemotron in Welsh ( +18 on ARC-Easy, +5 .25 
+
+on MMLU-Lite), terminal-use ( +9 .1 on Termi-nal Bench 2) and instruction following ( +4 .4
+
+on IFBench), while retaining the base model ca-pabilities. We frame this work as a reproducible template for sovereign post-training : substitut-ing cultural knowledge, institutional corpora, and target languages produces an equivalent pipeline for any country. All model weights 1
+
+and all post-training datasets 2 are publicly re-leased under open licences. 
+
+1 Introduction 
+
+Large Language Models (LLMs) have become foundational infrastructure across industry, gov-ernment, and research. However, growing depen-dence on proprietary models concentrated in a small number of jurisdictions poses risks to data sovereignty, national security, and cultural rep-resentation (Bondarenko et al., 2025; Shi et al., 2024). Sovereign LLMs, models developed or adapted under national oversight, offer enhanced data protection, safeguard security interests, and 
+
+> 1locailabs/Jupiter-N-120B
+> 2locailabs/jupiter-training-data
+
+contribute to maintaining international competitive-ness (Bondarenko et al., 2025). Yet pre-training frontier models from scratch remains out of reach for the majority of nations: the Llama 3.1 mod-els (Grattafiori et al., 2024) required 39 .3 million H100 GPU-hours across all model sizes ( 30 .84 Mfor the 405B alone) and produced 11 ,390 tonnes of CO 2eq in location-based greenhouse gas emis-sions (Patterson et al., 2022). This has driven grow-ing interest in developing sovereign capabilities through post-training existing open-weight mod-els, including language transfer (Alexandrov et al., 2024a; Pipatanakul and Taveekitworachai, 2026; Alexandrov et al., 2024b; Joshi et al., 2024) and cultural alignment (Shi et al., 2024; Xu et al., 2025; Masoud et al., 2025). At the same time, LLMs are shifting from passive question-answering toward agentic deployment: autonomous systems that exe-cute multi-step tasks, call tools, and interact with real-world environments (Yang et al., 2024; Wang et al., 2026; Merrill et al., 2026). Models serving these use cases must excel at precise instruction following and robust tool use, in addition to any domain-specific capabilities. We introduce Jupiter-N (where N denotes the Nemotron base), a post-trained variant of Nemotron 3 Super (NVIDIA, 2025). We select this base because it is, to our knowledge, the strongest fully open model at this parameter count: all weights are released under a permissive licence and all pre-training and post-training datasets are publicly disclosed. Full openness is a deliberate choice for sovereign deployment, where auditabil-ity of model behaviour and training provenance is essential for institutional trust and regulatory com-pliance (Bondarenko et al., 2025). Additionally, this model is a hybrid reasoner: structured thinking can be enabled or disabled at inference time via the chat template, and Jupiter-N preserves this capa-bility through post-training on both reasoning and non-reasoning traces. 
+
+> arXiv:2604.17429v1 [cs.CL] 19 Apr 2026
+
+Jupiter-N’s post-training targets three objectives: 1. Agentic. Improved terminal-use and instruction-following capability to support re-liable agentic deployment. 2. Multilingual. Welsh language support, a lan-guage absent from the base model’s seven sup-ported languages. 3. Cultural. UK cultural grounding aligned to British institutional and social norms. We build on our prior work with Locai L1-Large (Drayson, 2025), a post-trained Qwen 3235 B model (Yang et al., 2025), applying the same Forget-Me-Not methodology to mitigate catas-trophic forgetting (McCloskey and Cohen, 1989; French, 1999), the tendency for a machine learning model to lose prior capabilities after subsequent fine-tuning. The contributions of this work are threefold: (i) Data curation strategy. A nine-dataset mixture that balances reasoning and non-reasoning traces to preserve hybrid reasoning, mixes on-policy and off-policy data to miti-gate catastrophic forgetting, and introduces an entropy-based curation method for select-ing maximally informative training samples (Section 3). (ii) Training methodology. A LoRA-based post-training recipe on a LatentMoE architecture with experience replay and role-based loss masking, designed as a replicable template for sovereign post-training (Section 4). (iii) Comprehensive evaluation. Benchmarking across mathematical reasoning, instruction fol-lowing, Welsh-language knowledge, agentic capability, and safety (Section 5). 
+
+2 Base Model 
+
+Nemotron 3 Super (NVIDIA, 2025) (120B pa-rameter, 12B active) employs a Latent Mixture-of-Experts (LatentMoE) architecture, interleaving Mamba-2 (Dao and Gu, 2024) layers, sparse Mix-ture of Experts (MoE) layers, and Attention lay-ers. The model can support a context window of up to 1 million tokens and employs Multi-Token Prediction to improve throughput during inference through speculative decoding. We refer the reader to the original technical report (NVIDIA, 2025) for full details on pre-training and post-training.                     
+
+> Dataset NTokens
+> Self-cognition 2k0.2MWelsh legislation 17 .9k2.6MSenedd proceedings 19 .6k7.2MUK cultural alignment 1.41 k1.4MSynthetic replay 8.2k13 .3MExtended reasoning 2.06 k3.3MWelsh chat 20 k35 .9MNemotron IF Chat 15 k52 .0MTerminal trajectories 30 k595 .9M
+> Table 1: Training mixture, ordered by mean sequence length. Token counts use the Nemotron tokenizer (131k vocabulary).
+
+3 Data 
+
+We curate nine datasets spanning five domains: ter-minal/agentic capability, cultural alignment, Welsh language, model identity, and general instruction following. All datasets have been open-sourced 3.Table 1 summarises the training mixture and Fig-ure 1 depicts the sequence length distribution per dataset, which span three orders of magnitude, from self-cognition ( ∼10 2 tokens) to terminal tra-jectories ( ∼10 4 tokens). Two design principles guide the mixture. First, as the base model is a hybrid reasoner, we in-clude both reasoning and non-reasoning traces for each applicable dataset to preserve the model’s ability to toggle structured thinking at inference time. Second, following our Forget-Me-Not frame-work (Drayson, 2025), we mix on-policy data (generated by the unmodified Nemotron 3 Super base) with off-policy data (from external sources and other teacher models) to reduce the distribu-tion shift that leads to catastrophic forgetting (Mc-Closkey and Cohen, 1989). On-policy samples comprise 22 % of the mixture by sample count. We validated the mixture design and proportion of on-policy data through iterative experiments on the smallest Nemotron 3 variant, Nano 4B, before scal-ing up to the 120B model. See Appendix A for details. 
+
+3.1 Terminal and Agentic Data 
+
+The Terminal trajectories dataset is curated from NVIDIA’s Nemotron-Terminal-Corpus (Pi et al., 2026), a 366 k-sample Supervised Fine-Tuning (SFT) dataset designed to scale the terminal in-teraction capabilities of LLMs through multi-step terminal execution trajectories built using their Terminal-Task-Gen pipeline. We select from the     
+
+> 3locailabs/jupiter-training-data 10 100 1,000 10k 100k
+> Tokens per sample (log scale)
+> Self-cognition
+> Welsh legislation
+> Senedd proceedings
+> UK cultural alignment
+> Synthetic replay
+> Extended reasoning
+> Welsh chat
+> Nemotron IF Chat
+> Terminal trajectories
+
+Figure 1: Per-dataset sequence length distributions (kernel density estimates on log-scaled token counts). Datasets are ordered by mean length to match Table 1, spanning three orders of magnitude from self-cognition (∼10 2) to terminal trajectories ( ∼10 4). 
+
+dataset_adapters split ( 226 k samples) for its broad coverage across downstream tasks, curated by transforming maths, code, and software engi-neering datasets into multi-turn terminal trajecto-ries. 
+
+Uncertainty-based curation. Rather than filter-ing by task outcome, we select samples by infor-mation density relative to the target model. Each sample is scored by the unmodified base model: we concatenate the system message and first user message as a prompt, perform greedy decoding for T = 32 continuation tokens, and record the top-k = 20 log-probabilities at each generated po-sition; restricting to k=20 avoids materialising the full 131 k-token vocabulary distribution for every position across 226 k samples. We then compute the mean Shannon entropy (Shannon, 1948) over these positions. Formally, let ˆpt,i denote the renor-malised probability of the i-th most likely token at position t, with Pki=1 ˆpt,i = 1 . The per-position entropy is 
+
+Ht = −
+
+> k
+
+X
+
+> i=1
+
+ˆpt,i log ˆ pt,i (1) and the sample-level score is ¯H = 1
+
+> T
+
+PTt=1 Ht.As entropy is computed over the renormalised top-
+
+k rather than the full vocabulary, absolute values differ from full-distribution entropy; however, the ranking is preserved for selection purposes. High     
+
+> You are a British helpful assistant that provides culturally-aware advice about British culture and cus-toms. You have access to relevant cultural judgments that inform your responses. You should provide thoughtful, nuanced advice that considers both the questioner’s specific situation and the broader cultural context. Please provide a helpful, culturally-sensitive response to this question. Consider the person’s back-ground and situation, and draw insights from the relevant cultural judgments provided above. Your response should be practical, respectful, and demon-strate understanding of British cultural nuances. Do not directly quote the cultural judgments, but use them to inform your response. Do not directly quote the persona, but you can reference the country that the person is from. The user data is the following: Personal details: {user_persona}
+> Relevant Cultural Context: {cultural_context}
+
+Figure 2: System prompt used to generate UK cultural alignment training data. Cultural descriptors and per-sona information are injected at the placeholders. 
+
+¯H indicates that the model spreads probability across many plausible next tokens, signalling unfa-miliarity with the task. We rank all 226 k samples by ¯H and retain the top 30 ,000 , those for which the base model is most uncertain. While this criterion is distinct from task success, it is complementary to the original corpus authors’ finding that retaining unsuccessful trajectories improves robustness (Pi et al., 2026): hard tasks that the model finds unfa-miliar are also more likely to produce failures. 
+
+3.2 UK Cultural Alignment Data 
+
+We generate cultural alignment data using Culture-Bank (Shi et al., 2024), a community-driven knowl-edge base of social norms, values, and everyday practices validated by members of the respective cultural groups. Each training sample combines a user question, persona information describing the questioner’s cultural background, and relevant cul-tural descriptors from CultureBank. We use Qwen 
+
+3 235 B Instruct (Yang et al., 2025) to generate cul-turally aware responses in British English, drawing on the cultural knowledge without directly quoting it. We use a non-reasoning model because a think-ing trace would leak the cultural context from the system prompt. The system prompt is shown in Figure 2. 
+
+3.3 Self-Cognition Data 
+
+Fine-tuned models frequently hallucinate identi-ties inherited from base weights, prior instruction-tuning stages, or distillation from teacher models. We address this with the self-cognition dataset, a multilingual corpus of identity-related questions covering name, creator, capabilities, limitations, values, and organisational affiliation. From each multi-turn conversation in the source corpus, only the first user message is retained, reducing the task to single-turn question-answering and avoid-ing conversational dependencies that could conflate identity grounding with dialogue management. Responses are generated by Nemotron 3 Super with reasoning enabled and with reasoning dis-abled. A structured system prompt encodes Jupiter-N’s identity, Locai Labs’ organisational context, and technical provenance, but is excluded from saved training examples so that identity behaviour is learned implicitly rather than conditioned on a runtime system message. 
+
+3.4 Welsh Language Data 
+
+Nemotron 3 Super officially supports seven languages (English, French, German, Italian, Japanese, Spanish, Chinese) but no Celtic lan-guages. The Welsh Government’s Cymraeg 2050 
+
+strategy (Welsh Government, 2017) aims to achieve one million active Welsh speakers by 2050 , and the availability of capable Welsh-language digital tools is recognised as critical infrastructure for that goal. We add Welsh support through two complementary data sources. 
+
+3.4.1 Parallel corpora. 
+
+We curate two institutional Welsh–English paral-lel datasets published by Language Technologies Unit, Bangor University 4, both produced by pro-fessional translators within Welsh public sector in-stitutions: Senedd proceedings ( 105 k pairs of par-liamentary transcripts) and Welsh legislation ( 65 kpairs from legislation.gov.uk), totalling 170 k pairs before deduplication. The two domains are com-plementary, parliamentary Welsh provides natural, discursive prose covering argumentation and pol-icy discussion, while legal Welsh provides termino-logically precise text with consistent formal gram-matical constructions. Both are produced by pro-fessional translators, giving a substantially lower noise baseline than web-crawled corpora. Each dataset is processed independently through the fol-lowing stages, preserving source provenance for per-domain ablations. 
+
+> 4techiaith/machine-translation-datasets
+
+Cleaning. Remove pairs where either side has fewer than 20 characters; remove pairs containing URLs, emoji, or excessive character/word repeti-tion; remove standalone list items. We do not apply source/target length ratio filtering: Welsh morpho-logical inflection and initial consonant mutations produce systematic surface-form differences that inflate character-count ratios on well-formed pairs. 
+
+Deduplication. Deduplication is performed on the English side of each pair: near-duplicate En-glish sources indicate redundant training examples regardless of minor variation in the Welsh transla-tion. We apply a three-stage cascade in order of increasing computational cost so that each stage operates on a strictly smaller set, balancing re-call with efficiency: (a) exact deduplication via normalised hash set; (b) near-duplicate detection via MinHash Locality Sensitive Hashing (Broder, 1997) ( 1-gram, 128 permutations, Jaccard thresh-old 0.9), which catches pairs differing only in punc-tuation or minor word substitutions; (c) seman-tic deduplication via SemHash (van Dongen and Tulkens, 2025) (cosine threshold 0.85 ), which re-moves semantically equivalent pairs that differ in surface form. 
+
+Instruction formatting. Clean pairs are con-verted to chat format: single-turn ( ∼70 %) and multi-turn ( ∼30 %). Single-turn examples sam-ple uniformly from 21 instruction templates ( 11 
+
+en →cy, 10 cy →en, including Welsh-medium in-structions; see Appendix B), with a balanced 50/50 directional split. Multi-turn examples group 2–5
+
+consecutive pairs from the same document into con-versations, exposing the model to sustained transla-tion with shared context. 
+
+3.4.2 Synthetic Welsh chat. 
+
+We construct the Welsh chat dataset by translat-ing a portion of NVIDIA’s Instruction Following dataset used to train the original Nemotron model 5.We applied three preprocessing stages: conversa-tion flattening to extract the first user–assistant pair; content filtering to remove self-referential model identity examples ( 64 ,157 rows); and bilingual lan-guage detection via lingua-language-detector 
+
+to discard non-English sources ( 12 ,924 rows), re-taining 259 ,750 rows. Translation uses Qwen 3.535 B-A 3B (Yang et al., 2025) in non-thinking mode (using the recommended decoding parameters of           
+
+> 5nvidia/Nemotron-Instruction-Following-Chat-v1 System: You are an experienced translator that translates documents accurately into fluent text in the target language.
+> User: You need to translate the following
+> {source_lang} source text to {target_lang} , with the following exceptions: (1) If the source text contains XML tags, URLs, or math formulas, copy them as-is. (2) If the source text contains any computer code (e.g. C++ or Python), copy the content as-is. Wrap the translated text in tortoise shell brackets.
+> {source_lang} :{text}
+
+Figure 3: Prompt template for English →Welsh transla-tion of the synthetic Welsh chat dataset. Code, URLs, and mathematical notation are preserved verbatim. 
+
+temperature 0.7, top-p 0.8, top-k 20 , presence penalty 1.5). Both user and assistant fields are independently translated with the prompt shown in Figure 3, which preserves XML tags, URLs, mathematical formulas, and code blocks verbatim. 
+
+20 ,000 samples from the translated corpus are in-cluded in the training mixture. 
+
+3.5 Experience Replay 
+
+Catastrophic forgetting (McCloskey and Cohen, 1989; French, 1999) is a well-documented chal-lenge in machine learning in which models lose proficiency on previously learned tasks after subse-quent fine-tuning. In the case of LLMs, forget-ting can manifest as degraded general capabili-ties and reasoning, misalignment, or compromised safety (Qi et al., 2024). Replay, mixing data from the original training distribution into the fine-tuning set, is a simple and effective mitigation (Rolnick et al., 2019). Since Nemotron 3 Super is fully open and its post-training data is publicly available, we can combine direct experience replay from the original data with synthetic replay generated by the model itself. Synthetic replay has the additional benefit of being targeted: we can steer generation toward the specific capabilities we wish to preserve, such as chat, instruction following, and reasoning. Our Forget-Me-Not framework (Drayson, 2025) mitigates forgetting by carefully mixing on-policy replay data with the off-policy task-specific data in the training mixture. We include three replay components, each drawn from the base model’s own training data or generated by the unmodified Nemotron 3 Super: • Synthetic replay . We sample Nemotron 3 Su-per on chat and instruction-following prompts drawn from UltraChat (Ding et al., 2023), collecting both reasoning and non-reasoning traces to preserve hybrid reasoning capabil-ity. These examples anchor the model’s instruction-following and conversational com-petence during post-training. • Extended reasoning traces 6. Reasoning-mode outputs generated by Nemotron 3 Su-per, included to retain the model’s chain-of-thought reasoning capability. • Nemotron IF Chat 7. A subset of the base model’s original post-training data, provid-ing direct experience replay that reinforces instruction-following behaviour. 
+
+4 Training 
+
+All nine datasets are merged into a single shuffled corpus and used for 1-epoch Low Rank Adapta-tion (LoRA) (Hu et al., 2022) training. We use rank 16 , alpha 32 , with Mamba out_proj layers excluded (these use custom kernels incompatible with LoRA). Training uses FSDP2 with expert par-allelism across 8 H200 GPUs, activation check-pointing, a global batch size of 64 (local 8), se-quence length 2,048 , Adam optimiser ( β1=0 .9,
+
+β2=0 .999 ), and cosine learning rate decay from 
+
+1 × 10 −5 to 1 × 10 −6. We apply role-based loss masking in which the cross-entropy loss is com-puted only over assistant-role tokens, with system and user turns masked to zero weight. This ensures gradients flow exclusively from response genera-tion, preventing the model from wasting capacity learning to predict prompts or system instructions.        
+
+> 6Nemotron3-Super-Reasoning-2000x
+> 7nvidia/Nemotron-Instruction-Following-Chat-v1 0250 500 750 1000 1250 1500 1750
+> Training step
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> 1.4
+> Loss
+> Raw
+> Smoothed (w=50)
+
+Figure 4: Training loss over the single-epoch fine-tuning run. Reasoning off Reasoning on                                             
+
+> Benchmark Metric Jupiter-N Nemotron Jupiter-N Nemotron
+> IFEval prompt strict 80 .96 79 .85 90 .20 90 .20
+> IFBench prompt loose 41 .837 .473 .869 .7
+> AgentHarm harm ↓73 .478 .653 .855 .4
+> Terminal Bench 2 accuracy −−52 .743 .6
+> GSM8K accuracy −−94 .01 93 .56
+> Welsh ARC-Easy accuracy 72 .00 54 .00 −−
+> Welsh MMLU-Lite accuracy 61 .25 56 .00 −−
+> Table 2: Evaluation results (all values %). Nemotron denotes the unmodified Nemotron 3 Super base. Best result per benchmark for each reasoning mode is bolded . Both models use temperature 1.0, top-p0.95 .
+
+Figure 4 shows the training loss over the single epoch. 
+
+5 Evaluation 
+
+5.1 Benchmarks 
+
+We evaluate Jupiter-N and Nemotron 3 Super across the following benchmarks. IFEval and GSM8K are evaluated using LightEval 8; all other benchmarks use their official evaluation reposito-ries. 
+
+Instruction following. IFEval (Zhou et al., 2023) contains 541 prompts with 25 verifiable constraint types (e.g. word count, format, keyword inclusion); we report prompt-level strict accuracy, the standard metric used by the Open LLM Leaderboard and most prior work. IFBench (Pyatkin et al., 2025) extends this to compositional constraints, requiring models to satisfy multiple simultaneous require-ments within a single response; we report prompt-level loose accuracy, the primary metric recom-mended by the authors. To reflect real world usage, we evaluate in both reasoning and non-reasoning mode. 
+
+Mathematical reasoning. GSM8K (Cobbe et al., 2021) contains 1,319 grade-school maths word problems requiring multi-step arithmetic reason-ing. Following the Nemotron evaluation setup for mathematical benchmarks (NVIDIA, 2025), we report accuracy with reasoning enabled. 
+
+Agentic and terminal. Terminal Bench 2 (Mer-rill et al., 2026) evaluates multi-step terminal task execution, requiring models to plan, issue, and chain shell commands to accomplish file-system, package-management, and system-administration objectives. We report accuracy on the medium-difficulty subset ( 55 tasks). Following the original 
+
+> 8https://github.com/huggingface/lighteval
+
+Nemotron evaluation (NVIDIA, 2025), reasoning is enabled for agentic evaluation. 
+
+Safety. AgentHarm (Andriushchenko et al., 2025) presents 110 malicious agent tasks spanning 
+
+11 harm categories (fraud, cyberattack, disinforma-tion, etc.), developed by the UK AI Safety Institute. We report the harmful task completion rate (lower is better). To reflect real world usage we evaluate in both reasoning and non-reasoning mode. 
+
+Welsh language. Welsh MMLU-Lite ( 400 ques-tions) and Welsh ARC-Easy ( 50 questions) from Bangor University’s llm-evals-cy (Techiaith, Bangor University, 2026) are Welsh-language adap-tations of their English counterparts, testing factual knowledge and elementary science reasoning in Welsh. We evaluate with reasoning disabled to iso-late language proficiency from chain-of-thought effects. 
+
+5.2 Inference 
+
+We serve both Jupiter-N and Nemotron 3 Super with vLLM using tensor parallelism and expert par-allelism across 4 GPUs. The KV cache is stored in FP8 and the Mamba SSM state cache in float16. All evaluations use nucleus sampling with temperature 
+
+1.0 and top-p 0.95 .
+
+5.3 Results 
+
+Table 2 compares Jupiter-N against the unmodi-fied Nemotron 3 Super base. The clearest gains appear in the three domains we explicitly target. Welsh fluency improves greatly with +18 .00 on ARC-Easy and +5 .25 on MMLU-Lite, attributable to the parallel-corpus and synthetic-chat pipeline described in Section 3. Instruction following im-proves across both reasoning modes, with IFBench rising by +4 .4 (reasoning off) and +4 .1 (reasoning on), and IFEval by +1 .11 without reasoning while matching the base with reasoning. On Terminal Bench 2, Jupiter-N outperforms the base by +9 .1
+
+points, demonstrating the benefit of the entropy-based curation strategy that prioritises trajectories the base model finds most unfamiliar (Section 3.1). Critically, these gains do not come at the ex-pense of existing capabilities. GSM8K is retained at near-parity ( 94 .01 vs 93 .56 ), indicating that the Forget-Me-Not replay strategy successfully miti-gates catastrophic forgetting. Safety also improves, with AgentHarm harmful rates decreasing by −5.2
+
+(reasoning off) and −1.6 (reasoning on). 
+
+6 Conclusion 
+
+We have presented Jupiter-N, a post-trained variant of Nemotron 3 Super that adds Welsh language sup-port, improves agentic and instruction-following capability, and introduces UK cultural grounding. The key insight is that careful mixture design, com-bining on-policy experience replay with off-policy task data via our Forget-Me-Not framework, en-ables targeted capability injection while preserving the base model’s existing strengths. We addition-ally introduce an entropy-based curation strategy that selects training samples the base model finds most unfamiliar, improving sample efficiency for agentic training data. Evaluation confirms gains across all targeted domains with no meaningful regression on mathematical reasoning or safety. We frame this work as a reproducible template for sovereign post-training : substituting cultural knowledge bases, institutional corpora, and target languages produces an equivalent pipeline for any country. 
+
+7 Limitations 
+
+Welsh evaluation relies on Welsh-adapted ver-sions of English-origin benchmarks (ARC-Easy, MMLU), which test factual recall in Welsh but do not assess native Welsh natural language under-standing tasks. The benchmarks are also small ( 50 
+
+questions for ARC-Easy, 400 for MMLU-Lite), so individual results may exhibit high variance. The Welsh parallel corpora are drawn exclusively from formal institutional domains (parliamentary and le-gal), so the resulting model may underperform on colloquial or informal Welsh, and model outputs in Welsh have not yet undergone extensive human quality review. Additionally, the cultural grounding introduced via CultureBank-informed data has not been validated through human evaluation. Finally, the self-cognition data is generated by teacher mod-els and may not generalise to adversarial identity probing beyond the templates used. 
+
+8 Environmental Impact 
+
+Post-training completed in 9 hours 15 minutes on 
+
+8 H200 GPUs powered by 100 % renewable energy. This consumed an estimated 52 kWh of GPU en-ergy ( 8 × 700 W TDP × 9.25 h), or ∼57 kWh after applying a power usage effectiveness (PUE) of 1.1.As the data centre runs entirely on renewable elec-tricity, the location-based operational carbon foot-print is effectively zero (Patterson et al., 2022). We report these figures following recommendations for transparent energy accounting in machine learning research. 
+
+References               
+
+> Anton Alexandrov, Veselin Raychev, Dimitar I Dim-itrov, Ce Zhang, Martin Vechev, and Kristina Toutanova. 2024a. BgGPT 1.0: Extending english-centric LLMs to other languages. arXiv preprint arXiv:2412.10893 .Anton Alexandrov, Veselin Raychev, Mark Niklas Müller, Ce Zhang, Martin Vechev, and Kristina Toutanova. 2024b. Mitigating catastrophic forget-ting in language transfer via model merging. In Find-ings of the Association for Computational Linguistics: EMNLP 2024 , pages 17167–17186, Miami, Florida, USA. Association for Computational Linguistics. Maksym Andriushchenko, Alexandra Souly, Mateusz Dziemian, Derek Duenas, Maxwell Lin, Justin Wang, Dan Hendrycks, Andy Zou, J Zico Kolter, Matt Fredrikson, Yarin Gal, and Xander Davies. 2025. Agentharm: A benchmark for measuring harmful-ness of LLM agents. In The Thirteenth International Conference on Learning Representations .Mykhailo Bondarenko, Sviatoslav Lushnei, Yurii Paniv, Oleksii Molchanovsky, Mariana Romanyshyn, Yurii Filipchuk, and Artur Kiulian. 2025. Sovereign large language models: Advantages, strategy and regula-tions. arXiv preprint arXiv:2503.04745 .Andrei Z Broder. 1997. On the resemblance and con-tainment of documents. In Proceedings. Compres-sion and Complexity of SEQUENCES 1997 (Cat. No. 97TB100171) , pages 21–29. IEEE. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, and 1 others. 2021. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168 .Tri Dao and Albert Gu. 2024. Transformers are SSMs: Generalized models and efficient algorithms through
+
+structured state space duality. In Forty-first Interna-tional Conference on Machine Learning .Ning Ding, Yulin Chen, Bokai Xu, Yujia Qin, Shengding Hu, Zhiyuan Liu, Maosong Sun, and Bowen Zhou. 2023. Enhancing chat language mod-els by scaling high-quality instructional conversa-tions. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,pages 3029–3051, Singapore. Association for Com-putational Linguistics. George Drayson. 2025. Locai L1-Large: An open-source instruct model. https://locailabs.com/ blog/technical-blog . Blog post. Robert M French. 1999. Catastrophic forgetting in con-nectionist networks. Trends in cognitive sciences ,3(4):128–135. Aaron Grattafiori, Abhimanyu Dubey, Abhinav Jauhri, Abhinav Pandey, Abhishek Kadian, Ahmad Al-Dahle, Aiesha Letman, Akhil Mathur, Alan Schelten, Alex Vaughan, and 1 others. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 .Edward J Hu, yelong shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. 2022. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations .Raviraj Joshi, Kanishk Singla, Anusha Kamath, Raunak Kalani, Rakesh Paul, Utkarsh Vaidya, Sanjay Singh Chauhan, Niranjan Wartikar, and Eileen Long. 2024. Adapting multilingual LLMs to low-resource lan-guages using continued pre-training and synthetic corpus. arXiv preprint arXiv:2410.14815 .Reem I. Masoud, Ziquan Liu, Martin Ferianc, Philip Treleaven, and Miguel Rodrigues. 2025. Cultural alignment in large language models: An explanatory analysis based on hofstede’s cultural dimensions. In 
+
+Proceedings of the 31st International Conference on Computational Linguistics , pages 8474–8503, Abu Dhabi, UAE. Association for Computational Linguis-tics. Michael McCloskey and Neal J Cohen. 1989. Catas-trophic interference in connectionist networks: The sequential learning problem. In Psychology of learn-ing and motivation , volume 24, pages 109–165. Else-vier. Mike A Merrill, Alexander G Shaw, Nicholas Carlini, Boxuan Li, Harsh Raj, Ivan Bercovich, Lin Shi, Jeong Yeon Shin, Thomas Walshe, E Kelly Buchanan, and 1 others. 2026. Terminal-bench: Benchmarking agents on hard, realistic tasks in command line inter-faces. In The Fourteenth International Conference on Learning Representations .NVIDIA. 2025. Nvidia nemotron 3: Efficient and open intelligence. White Paper. David Patterson, Joseph Gonzalez, Urs Hölzle, Quoc Le, Chen Liang, Lluis-Miquel Munguia, Daniel Rothchild, David R So, Maud Texier, and Jeff Dean. 2022. The carbon footprint of machine learning train-ing will plateau, then shrink. Computer , 55(7):18– 28. Renjie Pi, Grace Lam, Mohammad Shoeybi, Pooya Jan-naty, Bryan Catanzaro, and Wei Ping. 2026. On data engineering for scaling llm terminal capabilities. 
+
+Preprint , arXiv:2602.21193. Kunat Pipatanakul and Pittawat Taveekitworachai. 2026. Typhoon-s: Minimal open post-training for sovereign large language models. arXiv preprint arXiv:2601.18129 .Valentina Pyatkin, Saumya Malik, Victoria Graf, Hamish Ivison, Shengyi Huang, Pradeep Dasigi, Nathan Lambert, and Hannaneh Hajishirzi. 2025. Generalizing verifiable instruction following. In The Thirty-ninth Annual Conference on Neural Informa-tion Processing Systems Datasets and Benchmarks Track .Xiangyu Qi, Yi Zeng, Tinghao Xie, Pin-Yu Chen, Ruoxi Jia, Prateek Mittal, and Peter Henderson. 2024. Fine-tuning aligned language models compromises safety, even when users do not intend to! In The Twelfth In-ternational Conference on Learning Representations .David Rolnick, Arun Ahuja, Jonathan Schwarz, Timo-thy Lillicrap, and Gregory Wayne. 2019. Experience replay for continual learning. Advances in neural information processing systems , 32. Claude Elwood Shannon. 1948. A mathematical theory of communication. The Bell system technical journal ,27(3):379–423. Weiyan Shi, Ryan Li, Yutong Zhang, Caleb Ziems, Sunny Yu, Raya Horesh, Rogério Abreu De Paula, and Diyi Yang. 2024. CultureBank: An online community-driven knowledge base towards cultur-ally aware language technologies. In Findings of the Association for Computational Linguistics: EMNLP 2024 , pages 4996–5025, Miami, Florida, USA. Asso-ciation for Computational Linguistics. Techiaith, Bangor University. 2026. llm-evals-cy: Welsh language evaluation suite for large lan-guage models. https://github.com/techiaith/ llm-evals-cy .Thomas van Dongen and Stephan Tulkens. 2025. Semhash: Fast multimodal semantic deduplication & filtering. Yinjie Wang, Xuyang Chen, Xiaolong Jin, Mengdi Wang, and Ling Yang. 2026. OpenClaw-RL: Train any agent simply by talking. arXiv preprint arXiv:2603.10165 .Welsh Government. 2017. Cymraeg 2050: A mil-lion welsh speakers. https://www.gov.wales/ cymraeg-2050-welsh-language-strategy .Shaoyang Xu, Yongqi Leng, Linhao Yu, and Deyi Xiong. 2025. Self-pluralising culture alignment for large language models. In Proceedings of the 2025 Con-ference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) ,pages 6859–6877, Albuquerque, New Mexico. Asso-ciation for Computational Linguistics. An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, and 1 others. 2025. Qwen3 technical report. arXiv preprint arXiv:2505.09388 .John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. 2024. SWE-agent: Agent-computer interfaces enable automated software engineering. Advances in Neural Information Processing Systems , 37:50528– 50652. Jeffrey Zhou, Tianjian Lu, Swaroop Mishra, Sid-dhartha Brahma, Sujoy Basu, Yi Luan, Denny Zhou, and Le Hou. 2023. Instruction-following evalu-ation for large language models. arXiv preprint arXiv:2311.07911 .
+
+A Proxy Experiments on Nemotron 4B 
+
+Before committing to the full 120 B training run, we used Nemotron 3 Nano 4B as a rapid prototyp-ing proxy to iteratively refine the data mixture. All runs include self-cognition and UK cultural align-ment data as a fixed baseline; the tables show only the components that vary between iterations. Hy-perparameters (learning rate, weight decay, batch size, epochs) were co-tuned between iterations, so individual rows should not be interpreted as single-variable ablations; the tables reflect the develop-ment trajectory rather than a controlled experiment. We report two sets of experiments evaluated under different reasoning modes. 
+
+A.1 Effect of Synthetic Replay 
+
+Table 3 isolates the impact of adding synthetic re-play to the task data. Synthetic replay partially recovered IFEval from 86 .1 to 88 .2, close to but not fully matching the base model’s 88 .7. The residual gap motivated two decisions for the fi-nal 120 B mixture: including direct experience re-play from the base model’s original training data, and adding on-policy instruction-following data (Nemotron IF Chat). Together, these not only recov-ered but improved instruction following at 120 Bscale (Table 2).         
+
+> Configuration IF Maths
+> Base (Nemotron 4B) 88 .785 .8
+> No synthetic replay 86 .181 .7
+> + synthetic replay 88 .281 .1
+
+Table 3: Effect of synthetic replay on Nemotron 3 Nano 4B. IF = IFEval prompt strict, Maths = GSM8K (all values %, reasoning enabled). 
+
+A.2 Effect of Welsh Data 
+
+Table 4 tracks the addition of Welsh data to the replay mixture, evaluated with reasoning disabled. Substituting parallel corpora for synthetic Welsh chat dramatically improved Welsh MMLU-Lite (+8 .25 ) while maintaining GSM8K, justifying the synthetic data strategy. The IFEval regression at 
+
+4B scale ( −6.8 with Welsh synthetic) underscored the importance of sufficient replay and on-policy instruction-following data when adding new task domains; in the final 120 B mixture, the combina-tion of direct experience replay and Nemotron IF Chat not only recovers but improves instruction following over the base (Table 2).                
+
+> Configuration IF Maths Welsh
+> Base (Nemotron 4B) 83 .784 .129 .25
+> Synthetic replay 80 .085 .0−−
+> + Welsh parallel 79 .984 .230 .75
+> + Welsh synthetic 76 .985 .437 .50
+
+Table 4: Effect of Welsh data on Nemotron 3 Nano 4B. IF = IFEval prompt strict, Maths = GSM8K, Welsh = Welsh MMLU-Lite (all values %, reasoning disabled). 
+
+B Welsh Translation Instruction Templates 
+
+Tables 5 and 6 list the instruction templates used to format Welsh parallel corpora into single-turn chat examples (Section 3). Each pair is assigned a template sampled uniformly at random, with a balanced 50/50 directional split. # English →Welsh template 
+
+1 Translate the following English text into Welsh: {text} 
+
+2 Translate to Welsh: {text} 
+
+3 What is the Welsh for the following? {text} 
+
+4 Please translate this into Welsh: {text} 
+
+5 Convert the following to Welsh: {text} 
+
+6 Provide a Welsh translation of: {text} 
+
+7 How would you say this in Welsh? {text} 
+
+8 Render the following in Welsh: {text} 
+
+9 Cyfieithwch y testun Saesneg canlynol i’r Gymraeg: {text} 
+
+10 Cyfieithwch i’r Gymraeg: {text} 
+
+11 Beth yw’r cyfieithiad Cymraeg o’r canlynol? {text} 
+
+Table 5: English →Welsh instruction templates ( n = 11 ). 
+
+# Welsh →English template 
+
+1 Translate the following Welsh text into English: {text} 
+
+2 Translate to English: {text} 
+
+3 What is the English for the following? {text} 
+
+4 Please translate this Welsh text into English: {text} 
+
+5 Convert the following Welsh to English: {text} 
+
+6 Provide an English translation of this Welsh text: {text} 
+
+7 How would you say this in English? {text} 
+
+8 Render the following Welsh text in English: {text} 
+
+9 Cyfieithwch y testun Cymraeg canlynol i’r Saesneg: {text} 
+
+10 Rhowch gyfieithiad Saesneg o’r testun Cymraeg canlynol: {text} 
+
+Table 6: Welsh →English instruction templates ( n = 10 ).

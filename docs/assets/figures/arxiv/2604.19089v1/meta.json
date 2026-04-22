@@ -1,0 +1,102 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-001.webp",
+      "caption": "Table 1: Comparison of methods on ZSRE, Counterfact, and RIPE. The highest score is bolded. AVG denotes the average of the Reliability, Generality, and Locality scores.",
+      "page": 6,
+      "index": 1,
+      "width": 937,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-002.webp",
+      "caption": "Figure 5: Scaling curves that represent editing performance based on the size of edits using GPT-J.",
+      "page": 15,
+      "index": 2,
+      "width": 943,
+      "height": 640
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-003.webp",
+      "caption": "Table 11: Comparison of the effect of the hyperparameter α using GPT-J.",
+      "page": 15,
+      "index": 3,
+      "width": 937,
+      "height": 185
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-004.webp",
+      "caption": "Figure 1: Experimental comparison with previous lifelong knowledge editing methods and the overall framework of LightEdit. (a) demonstrates that LightEdit significantly improves editing performance, while RECIPE suffers from substantial performance degradation when evaluated on datasets different from those used during training. (b) shows that LightEdit is also more efficient in terms of training time and data volume than existing methods. These advantages arise from the architecture illustrated in (c). We employ an edit-aware selector to retrieve the knowledge necessary for query editing. When modified knowledge is selected, we mitigate potential knowledge conflicts during inference by applying in-context decoding, which downweights the generation probability of outdated knowledge.",
+      "page": 2,
+      "index": 4,
+      "width": 933,
+      "height": 431
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-005.webp",
+      "caption": "Table 2: Comparison of the effect of the hyperparameter α.",
+      "page": 7,
+      "index": 5,
+      "width": 937,
+      "height": 185
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-006.webp",
+      "caption": "Figure 3: Scaling curves that represent editing performance based on the size of edits.",
+      "page": 7,
+      "index": 6,
+      "width": 923,
+      "height": 633
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-007.webp",
+      "caption": "Table 10: Comparison of methods on ZSRE, Counterfact, and RIPE using GPT-J.",
+      "page": 14,
+      "index": 7,
+      "width": 937,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-008.webp",
+      "caption": "Table 7: An example of the instruction used for incontext decoding.",
+      "page": 13,
+      "index": 8,
+      "width": 456,
+      "height": 304
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-009.webp",
+      "caption": "Table 5: Performance comparison across multiple LLM datasets.",
+      "page": 8,
+      "index": 9,
+      "width": 448,
+      "height": 270
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-010.webp",
+      "caption": "Table 15: Case study illustrating the difference between RECIPE and LightEdit.",
+      "page": 17,
+      "index": 10,
+      "width": 454,
+      "height": 477
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-011.webp",
+      "caption": "Figure 2: An illustration of in-context decoding. This figure depicts a knowledge conflict scenario where the original response (“Illinois Institute of Technology”) has a high probability. In-context decoding suppresses the influence of this prior knowledge, enabling the model to ultimately select the edited information (“University of Michigan”) provided in the context.",
+      "page": 5,
+      "index": 11,
+      "width": 451,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19089v1/fig-012.webp",
+      "caption": "Figure 6: Visualization of next-token distributions before and after applying in-context decoding. Each panel corresponds to one generated token (t = 1, . . . , 10), where blue points represent the Before distribution and orange points represent the After distribution. Point size is proportional to the square root of token probability, and the title of each panel indicates the Top-1 token for both sides (Before / After).",
+      "page": 16,
+      "index": 12,
+      "width": 943,
+      "height": 361
+    }
+  ]
+}

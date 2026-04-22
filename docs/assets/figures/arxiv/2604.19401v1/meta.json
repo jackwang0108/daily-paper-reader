@@ -1,0 +1,134 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-001.webp",
+      "caption": "Table 3",
+      "page": 11,
+      "index": 1,
+      "width": 977,
+      "height": 379
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-002.webp",
+      "caption": "Figure 1: UMAP representation of the embedding space of the ENTITY dataset [3] for the entities introduced in the first",
+      "page": 2,
+      "index": 2,
+      "width": 492,
+      "height": 465
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-003.webp",
+      "caption": "Table 1",
+      "page": 7,
+      "index": 3,
+      "width": 985,
+      "height": 473
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-004.webp",
+      "caption": "Table 7",
+      "page": 14,
+      "index": 4,
+      "width": 909,
+      "height": 318
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-005.webp",
+      "caption": "Table 8",
+      "page": 18,
+      "index": 5,
+      "width": 977,
+      "height": 378
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-006.webp",
+      "caption": "Table 9",
+      "page": 18,
+      "index": 6,
+      "width": 977,
+      "height": 368
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-007.webp",
+      "caption": "Table 10",
+      "page": 18,
+      "index": 7,
+      "width": 977,
+      "height": 440
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-008.webp",
+      "caption": "Table 6",
+      "page": 13,
+      "index": 8,
+      "width": 977,
+      "height": 337
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-009.webp",
+      "caption": "Figure 3: Illustration of where different catastrophic forgetting mitigation techniques are implemented in the learning cycle",
+      "page": 8,
+      "index": 9,
+      "width": 588,
+      "height": 336
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-010.webp",
+      "caption": "Figure 2: In (a) an initial correct TransE Link Prediction example. In (b), after a continual learning process the embeddings",
+      "page": 4,
+      "index": 10,
+      "width": 879,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-011.webp",
+      "caption": "Table 11",
+      "page": 19,
+      "index": 11,
+      "width": 977,
+      "height": 368
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-012.webp",
+      "caption": "Table 13",
+      "page": 19,
+      "index": 12,
+      "width": 977,
+      "height": 430
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-013.webp",
+      "caption": "Table 12",
+      "page": 19,
+      "index": 13,
+      "width": 977,
+      "height": 377
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-014.webp",
+      "caption": "Table 4",
+      "page": 12,
+      "index": 14,
+      "width": 977,
+      "height": 366
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-015.webp",
+      "caption": "Table 5",
+      "page": 12,
+      "index": 15,
+      "width": 977,
+      "height": 344
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19401v1/fig-016.webp",
+      "caption": "Table 2",
+      "page": 9,
+      "index": 16,
+      "width": 974,
+      "height": 279
+    }
+  ]
+}
