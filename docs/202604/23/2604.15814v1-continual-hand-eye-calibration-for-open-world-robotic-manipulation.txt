@@ -1,0 +1,842 @@
+Title: Continual Hand-Eye Calibration for Open-world Robotic Manipulation
+
+URL Source: https://arxiv.org/pdf/2604.15814v1
+
+Published Time: Mon, 20 Apr 2026 00:36:36 GMT
+
+Number of Pages: 13
+
+Markdown Content:
+> 1
+
+# Continual Hand-Eye Calibration for Open-world Robotic Manipulation 
+
+Fazeng Li, Gan Sun*, Chenxi Liu, Yao He, Wei Cong, and Yang Cong v  
+
+> v
+> vv
+> Kitchen
+> Scene
+> Calibration Model Robotic Manipulation Calibration Model
+> Living
+> Scene
+> Robotic Manipulation
+
+# …Bedroom  
+
+> Scene
+> Calibration Model Robotic Manipulation
+
+Fig. 1. Motivation of continual hand-eye calibration problem, where a single calibration model is sequentially trained on several open-world scenes ( e.g. ,Kitchen, Bedroom, · · · , Living Room). The attempt of this work is to maintain accurate camera pose estimation across all previously encountered scenes while adapting to new scene, supporting persistent robotic manipulation without recalibration. 
+
+Abstract —Hand-eye calibration through visual localization is a critical capability for robotic manipulation in open-world envi-ronments. However, most deep learning-based calibration models suffer from catastrophic forgetting when adapting into unseen data amongst open-world scene changes, while simple rehearsal-based continual learning strategy cannot well mitigate this issue. To overcome this challenge, we propose a continual hand-eye calibration framework, enabling robots to adapt to sequentially encountered open-world manipulation scenes through spatially replay strategy and structure-preserving distillation. Specifically, a Spatial-Aware Replay Strategy (SARS) constructs a geometri-cally uniform replay buffer that ensures comprehensive coverage of each scene pose space, replacing redundant adjacent frames with maximally informative viewpoints. Meanwhile, a Structure-Preserving Dual Distillation (SPDD) is proposed to decompose localization knowledge into coarse scene layout and fine pose precision, and distills them separately to alleviate both types of forgetting during continual adaptation. As a new manipulation scene arrives, SARS provides geometrically representative replay samples from all prior scenes, and SPDD applies structured distil-lation on these samples to retain previously learned knowledge. After training on the new scene, SARS incorporates selected samples from the new scene into the replay buffer for future rehearsal, allowing the model to continuously accumulate multi-scene calibration capability. Experiments on multiple public datasets show significant anti scene forgetting performance, 
+
+This work is supported by the National Key Research and Development Pro-gram of China (2022YFC2806101) and National Nature Science Foundation of China under Grant (62273333, 62225310, 62127807), and the Fundamental Research Funds for the Central Universities (2024ZYGXZR024). Fazeng Li, Gan Sun, Yao He and Yang Cong are with the School of Automation Science and Engineering, South China University of Tech-nology, Guangzhou 510641, China. (email: lifazeng818@gmail.com, sun-gan1412@gmail.com, heyao0293@gmail.com, congyang81@gmail.com) Chenxi Liu and Wei Cong are with the State Key Laboratory of Robotics, the Institutes for Robotics and Intelligent Manufacturing, Chinese Academy of Sciences, Shenyang 110169, China, and also with the Uni-versity of Chinese Academy of Sciences, Beijing 100049, China. (email: liuchenxi0101@gmail.com, congwei@sia.cn) 
+
+> ∗
+
+The corresponding author is Prof. Gan Sun .
+
+maintaining accuracy on past scenes while preserving adaptation to new scenes, confirming the effectiveness of the framework. 
+
+Index Terms —Hand-eye calibration, continual learning, robotics manipulation. 
+
+I. I NTRODUCTION 
+
+# VISUAL localization-based hand-eye calibration estimates the spatial transformation between a camera and a robot by regressing camera poses from images, enabling precise mapping from visual observations to physical actions [1]– [3]. This capability is indispensable across a broad spec-trum of robotic manipulation tasks. For instance, hand-eye calibration in industrial assembly task allows robots to align sub-millimeter components on production lines under varying lighting and tooling configurations [4]–[6]; reliable camera-to-robot pose estimation for autonomous grasping could enable robust object picking in cluttered and unstructured environ-ments ( e.g., warehouse logistics and bin sorting [7]–[9]); flex-ible manufacturing demands that hand-eye calibration general-ize across diverse scenes where product types and workspace layouts change frequently, maintaining manipulation accuracy without manual recalibration [10], [11]. Amongst all these above scenarios, calibration accuracy directly determines the success rate and precision of robotic manipulation. However, recent scene coordinate regression (SCR) methods for hand-eye calibration ( e.g., ACE [12] and GLACE [13]) are designed for fixed environments. They implicitly encode scene geometry into neural networks and achieve accurate camera pose estimation within individual scenes, which is hard to fit the new environments from open-world scenes flow without retraining. As shown in Figure 1, the scenes in open-world robotic applications could change continuously, most recently-proposed methods will fail to adapt to new scenes without forgetting previously learned ones. For example, the model 
+
+> arXiv:2604.15814v1 [cs.CV] 17 Apr 2026 2
+
+trained on kitchen scenes will get calibration result quickly even the position of the camera changed. However, when this service robot moves to a bedroom, the model will adapt to the new scene but forget the previous kitchen scene, which causes the robot to lose its calibration accuracy when it comes back to kitchen scene. This single-scene limitation fundamentally restricts the deployment of visual localization-based calibra-tion in open-world robotic applications where environments change continuously. Continual machine learning [14], [15] is a usually straightforward solution to the forgetting issue in visual localization, as it allows models to adapt to new scenes while retaining performance on previously learned scenes. For example, Wang et al. [16] introduce Buff-CS, a method that constructs a replay buffer targeting scene coverage by selecting images based on subscene divisions. However, the subscene division relies heavily on the 3D pseudo-labels constructed by HSCNet [17], resulting in computationally costly and difficult to transfer to more efficient SCR methods; Bahadir et al. [18] formulate the problem of continual hand-eye calibration by partitioning a single scene into multiple robot-centered regions and treating each region as a separate continual task. Although it is effective in handling viewpoint changes within a fixed environment, this setting remains gap from open-world manipulation. Inspired by this scenario, this paper aims to construct a con-tinual localization-based hand-eye calibration framework that enables a single model to sequentially learn new scenes with-out forgetting previously learned environments. To achieve this goal, we consider the challenges of continual hand-eye calibration framework from two perspectives:  
+
+> •
+
+Open-world Scene Forgetting : the calibration model tends to forget previously learned scenes after training on a new scene. For instance, after being deployed in the Bedroom scene, the model may forget the Kitchen scene learned earlier, which fails to meet the requirements of open-world applications. Reservoir sampling facilitates the construction of a replay buffer for revisiting previ-ously seen scenes, but it may neglect unsampled regions. Therefore, how to construct a replay buffer that captures rich structural information is an important challenge.  
+
+> •
+
+Pose Precision Degradation : the model may retain coarse scene awareness while losing fine-grained pose precision, leading to large camera pose errors. For exam-ple, the model may correctly recognize the Kitchen scene, yet estimate the camera pose in the coordinate system of the Bedroom scene, resulting in severe pose confusion. 
+
+Directly distilling the final outputs of the teacher model is a common strategy. Therefore, how to design an effective distillation pipeline remains a significant challenge. To address these challenges, we propose a continual hand-eye calibration framework by comprising spatial-based re-play buffer construction and structure-preserving knowledge distillation, which can achieve the robots manipulation in continuous open-world scenes. To achieve the goal of anti-forgetting in visual localization, we observe that the key is to maximize the geometric coverage of replay samples and separately preserve coarse pose knowledge and fine pose de-tails. Specifically, a Spatial-Aware Replay Strategy (SARS) is proposed to construct a geometrically diverse replay buffer via Poisson disk sampling in the joint position-orientation space, which ensures comprehensive coverage of each scene pose space, and further allivetes the open-world scene forgetting. Meanwhile, Structure-Preserving Dual Distillation (SPDD) explicitly decomposes localization knowledge into two compo-nents for separate distillation, which includes the coarse scene layout encoded in the cluster centers activation distribution and the fine pose precision encoded in the coordinate offset residuals. This module could provide structured knowledge retention beyond standard output distillation, and prevent the student model from conflating coarse and fine signals, thereby preserving predicted camera pose precision. When a robot ar-rives at a new open-world scene, the proposed continual hand-eye calibration framework can use replay samples from buffer constructed by SARS to offer information from prior scenes, and SPDD preserves the structure information by dual dis-tillation. Subsequently, the SARS samples the newest scenes by the geometric strategy for later replay phase. Experiments on two public visual localization benchmarks and a simulated robotic manipulation dataset demonstrate the effectiveness of our framework. Our method achieves 74.9% and 91.8% average localization accuracy on i7Scenes and i12Scenes after continually learning all the scenes, outperforming the strong continual learning baseline by +8.8% and +8.7%, respectively. The main contributions of this paper are as follows:  
+
+> •
+
+We propose a continual hand-eye calibration framework for open-world scene robotic manipulation, which enables a single calibration model to sequentially learn new scenes while retaining localization accuracy on previously encountered environments.  
+
+> •
+
+For “Open-world Scene Forgetting” issue, we design a Spatial-Aware Replay Strategy sampling in joint position-orientation space, which could maximize the geometric coverage of the replay buffer and significantly decrease scene-forgetting performance.  
+
+> •
+
+For “Pose Precision Degradation” issue, we propose a Structure-Preserving Dual Distillation mechanism, which decomposes localization knowledge for separate distil-lation and provides structured knowledge retention. Ex-perimental results on multiple benchmarks confirm the effectiveness of our method in maintaining accuracy across sequentially learned scenes. The remainder of this paper is organized as follows. Sec-tion. II reviews related work on hand-eye calibration and continual learning. Section III presents our proposed method and the training procedure. Section IV reports experimental results and ablation studies. Section V concludes the paper with a discussion of limitations and future directions. II. R ELATED WORK 
+
+We briefly review prior work on hand-eye calibration and continual learning. 
+
+A. Hand-Eye Calibration 
+
+Hand-eye calibration estimates the rigid transformation be-tween a robot and its camera, and is fundamental to robotic 3k-th Camera Calibration Scene 
+
+Replay Buffer 
+
+Student Model 
+
+Teacher Model 
+
+Structure -Preserving Dual Distillation 
+
+Replay Scenes 
+
+New Scenes 
+
+Weights 
+
+Offsets 
+
+Weights 
+
+Convex combination 
+
+Convex combination 
+
+Camera Pose 
+
+Camera Pose   
+
+> Concat
+> Concat
+> Global Encoder Query
+> Query
+
+Scene Stream  Spatial -Aware Replay Strategy  Replay Buffer 
+
+Spatial Sample Filter     
+
+> Camera Location Sampled Camera Location
+> New Sample
+> Local Encoder
+> Local Embedding
+> Global Embedding
+> Position
+> Decoder
+> Global Encoder
+> Local Encoder
+> Position
+> Decoder
+> Global Embedding
+> Local Embedding
+
+Camera Pose 
+
+Offsets     
+
+> Fig. 2. Overview of the proposed continual hand-eye calibration framework. Top : the Spatial-Aware Replay Strategy (SARS) filters incoming scene streams via Poisson disk sampling in the joint position-orientation space, retaining only geometrically diverse samples in the replay buffer. Bottom : during training on the k-th scene, a frozen teacher model and a trainable student model process replay and new scene images, respectively. The Structure-Preserving Dual Distillation (SPDD) module decomposes their outputs into cluster centers activation weights ( Lprior ) and coordinate offsets ( Lmetric ), distilling topological and metric knowledge separately to preserve localization accuracy on previously learned scenes.
+
+manipulation. Classical methods formulate this problem as 
+
+AX = XB and solve it by closed-form decomposition [19] or nonlinear optimization that minimizes ∥AX − XB ∥ or reprojection error. Recent learning-based methods directly estimate camera poses from images. CNN-based approaches detect robot keypoints and recover extrinsics via PnP, while differentiable rendering methods such as EasyHeC [20] opti-mize camera poses by minimizing contour mismatch between rendered and real robot images. EasyHeC++ [21] further improves automation with pretrained image models, and recent work also studies certifiably correct generalized robot-world and hand-eye calibration [22]. However, these methods are largely designed for fixed environments and typically require retraining when the scene changes. Scene coordinate regression (SCR) offers another paradigm for visual localization by predicting per-pixel 3D scene coordi-nates and estimating poses with PnP-RANSAC. DSAC [23], DSAC++ [24], and ESAC [25] establish and improve end-to-end SCR pipelines. ACE [12] and GLACE [13] remove the need for ground-truth 3D coordinates by training with reprojection loss only. HSCNet [17] introduces hierarchical classification and regression, while R-SCoRe [26], Reloc3r [27], and scene-agnostic pose regression [28] improve large-scene localization and cross-scene generalization. HVLF [29] trains the multiple scenes jointly, introducing multi-task learn-ing [30], [31] to SCR. Nevertheless, most of these methods focus on fixed-scene training or offline localization rather than continual adaptation under sequential scene changes. 
+
+B. Continual Learning 
+
+Continual learning (CL) aims to acquire knowledge from non-stationary data streams while reducing catastrophic forget-ting [32]–[34]. Existing methods are commonly grouped into replay-based, regularization-based, and parameter-isolation ap-proaches [14]. Replay methods store previous samples for rehearsal, as in iCaRL [35]. Regularization methods such as EWC [36] constrain updates to important parameters. Parameter-isolation methods [37], [38] reduce interference by assigning separate subnetworks to different tasks. More recent replay strategies improve memory selection beyond random sampling. GSS [39] promotes gradient diver-sity, MIR [40] replays samples most affected by the current update, Co 2L [41] combines replay with contrastive learn-ing, GEC [42] introduces an explicit forgetting tolerance, and GDR [43] uses leverage scores to select representative samples. However, most CL methods are developed for clas-sification or recognition, where the preserved knowledge is mainly semantic. In contrast, continual hand-eye calibration and localization require retaining structured geometric knowl-edge. Work on continual visual localization remains limited. Buff-CS [16] first applies CL to camera relocalization and shows that SCR models suffer severe forgetting across scenes. It builds replay buffers to improve scene coverage using sub-scene divisions. Bahadir et al. [18] extend this setting to continual hand-eye calibration by partitioning a scene into robot-centered regions and using reservoir replay. However, 4
+
+this setup mainly captures viewpoint variation within a single environment, rather than adaptation across distinct scenes with larger geometric changes. Overall, existing methods still lack a unified design that jointly enforces geometrically representative memory con-struction and preserves pose estimation accuracy during con-tinual adaptation, which motivates our approach. III. T HE PROPOSED METHOD 
+
+This section presents our continual hand-eye calibration framework. We first define the problem setting in Sec-tion III-A, then introduce Spatial-Aware Replay Strategy (SARS) in Section III-B and Structure-Preserving Dual Distil-lation (SPDD) in Section III-C, and finally describe the overall training procedure in Section III-D. 
+
+A. Problem Definition 
+
+We formulate continual hand-eye calibration as a sequential camera pose estimation task under a unified reference coor-dinate system. Let FB , FC , and FW denote the robot base frame, the camera optical frame, and the localization world frame, respectively. We define the world frame to coincide with the robot base frame, i.e. , FW ≡ FB . Under this convention, the camera pose estimated by visual localization directly corresponds to the desired camera-to-base transforma-tion. Given a monocular image I ∈ I , the visual localization model fθ predicts the camera pose ˆy = [ˆ p, ˆq] ∈ R3 × H1,where ˆp and ˆq denotes the translation and unit-quaternion orientation of the camera with respect to the base frame, fθ
+
+internally follows a scene coordinate regression pipeline, while the final output is the camera pose expressed in the robot base coordinate system. In the visual localization pipeline, the camera pose is represented as a rigid transoformation that converts a point oi in the camera frame FC into its corresponding 3D scene coordinate xi in the world frame 
+
+FW . The predicted pose can be equivalently represented by the homogeneous transformation: 
+
+ˆTBC =
+
+R(ˆ q) ˆp0⊤ 1
+
+
+
+∈ SE(3) , (1) which maps points from FC to FB . Therefore, estimating the camera pose in the unified world/base frame is equivalent to estimating the eye-to-hand calibration result. Open-world deployment is modeled as a sequence of scene tasks T = {T1, T 2, . . . , T N } arriving sequentially. The training set of the i-th scene is denoted by Di = {(I(i) 
+
+> j
+
+, y(i) 
+
+> j
+
+)}ni
+
+> j=1
+
+,where each sample consists of an RGB image and its ground-truth camera pose. During the i-th training stage, the model has access to the current dataset Di and a replay memory 
+
+M that contains samples from previously learned scenes. At inference time, the model receives an image from any previously observed scene, and it predicts an accurate camera pose using a single shared parameters. This setting captures the practical requirement of open-world robotic manipulation, where environments change continuously but re-training from scratch is infeasible. Ideally, after learning the first i scenes, the model should minimize the average pose estimation error over all scenes observed so far: 
+
+min 
+
+> θ
+
+1
+
+i
+
+> i
+
+X
+
+> k=1
+
+E(I, y)∼Dk [Lpose (fθ (I), y)] , (2) where Lpose denotes the GLACE [13]-style reprojection loss used by the underlying scene-coordinate-regression localizer. Under this formulation, continual hand-eye calibration must satisfy two coupled requirements. Firstly, the model should maintain plasticity, i.e. , rapidly adapt to the newly arrived scene Ti. Secondly, it should maintain stability, i.e., pre-serve localization accuracy on all previously learned scenes 
+
+{T1, . . . , T i−1}. More specifically, forgetting in our problem occurs at two levels. “Open-world Scene Forgetting” refers to losing coarse scene-level or region-level geometric association, causing the model to confuse previously learned environments. “Pose Precision Degradation” refers to losing pose precision even when the coarse scene association is still correct, which leads to inaccurate camera-to-base transformations. The pro-posed SARS and SPDD are designed precisely to address these two failure modes. 
+
+B. Spatial-Aware Replay Strategy 
+
+In visual localization tasks, training data arrives as video streams with strong spatial correlation: consecutive frames share similar viewpoints, and adjacent segments often cover overlapping spatial regions. When conventional replay strate-gies such as random sampling or reservoir sampling are ap-plied, the resulting buffer is dominated by temporally adjacent, geometrically redundant frames. This redundancy wastes the limited buffer capacity and fails to cover the spatial structure of scenes, causing the model to remember only a narrow subset of viewpoints while forgetting under-represented regions, leading to the problem of open-world scene forgetting. To address this issue, we model the replay buffer as a sparse geometric approximation of the historical pose distribution, aiming to uniformly cover the camera pose of each scene. Each sample Si in the buffer is defined as a tuple Si = {Ii, pi, qi},where Ii is the image, pi ∈ R3 is the camera position, and 
+
+qi ∈ H is the orientation quaternion. To jointly account for both translational and rotational proximity, we define a hybrid distance metric in the normalized pose space: 
+
+D(Sa, S b) = ∥pa − pb∥2 + λ · Ang (qa, qb), (3) where Ang (qa, qb) = 2 · arccos( |qa · qb|) computes the geodesic angular difference between two quaternions, and λ is a weighting factor that balances position and orientation con-tributions. This metric ensures that two samples are considered close only when they share both similar positions and similar viewing directions. Building on this distance metric, SARS operates as an online Poisson disk sampling [44] process with an exclusion radius r. For each incoming training sample Snew , the system computes its minimum distance to all existing samples in the buffer M:
+
+dmin = min   
+
+> Sj∈M
+
+D(Snew , S j ). (4) 5
+
+Algorithm 1 SARS: Spatial-Aware Replay Buffer Update 
+
+Require: New sample Snew = ( I, p, q), buffer M, capacity 
+
+Nb, weight λ, fixed radius r;
+
+Ensure: Updated buffer M; 
+
+> 1:
+
+Use the fixed exclusion radius r; 
+
+> 2:
+
+if |M| = 0 then  
+
+> 3:
+
+M ← { Snew }; 
+
+> 4:
+
+return M 
+
+> 5:
+
+end if  
+
+> 6:
+
+dmin ← min Sj ∈M (∥p − pj ∥2 + λ · ANG (q, qj )) ; 
+
+> 7:
+
+if dmin < r then  
+
+> 8:
+
+return M /* reject redundant sample */  
+
+> 9:
+
+end if  
+
+> 10:
+
+if |M| < N b then  
+
+> 11:
+
+M ← M ∪ { Snew }; 
+
+> 12:
+
+return M 
+
+> 13:
+
+end if  
+
+> 14:
+
+Srm ← SELECT DENSE SAMPLE (M); 
+
+> 15:
+
+M ← (M \ { Srm }) ∪ { Snew }; 
+
+> 16:
+
+return M
+
+If dmin < r , the new sample is geometrically redundant with respect to the current buffer and is rejected. If dmin ≥ r, the sample occupies a previously uncovered region of the pose space and is accepted. When the buffer reaches its capacity limit Nb, instead of random eviction, we remove the sample in the densest local neighborhood, defined as 
+
+Srm = arg min  
+
+> Sj∈M
+
+
+
+min    
+
+> Sk∈M\{ Sj}
+
+D(Sj , S k)
+
+
+
+. (5) This density-based replacement ensures that the buffer always maintains a maximally dispersed distribution across the entire explored trajectory. In the current implementation, SARS uses a fixed exclusion radius r throughout training. Although occupancy-dependent scheduling is possible, a constant radius is sufficient in prac-tice to suppress replay redundancy while maintaining broad geometric coverage under a bounded memory budget. Overall, SARS produces a replay set with reduced redun-dancy and broader spatial-angular coverage than naive replay under the same memory budget. This is particularly beneficial for continual visual localization, where preserving viewpoint diversity is more important than preserving the temporal den-sity of the original acquisition stream. The complete procedure is summarized in Algorithm 1. 
+
+C. Structure-Preserving Dual Distillation 
+
+While SARS ensures high-quality replay samples, the replay alone cannot fully prevent forgetting without appropriate train-ing constraints. Existing continual learning methods typically apply simple output-level distillation, which treats the predic-tion of model as a monolithic signal. However, forgetting in visual localization manifests in two structurally distinct pat-terns: incorrect coarse region assignment and degraded local metric refinement. To address this, we propose a structure-aware distillation strategy that constrains coarse spatial priors and fine metric details separately. Our distillation design builds on a GLACE-inspired cluster-center parameterization [13]. We use a fixed set of cluster centers C = {ci}Ki=1 ⊂ R3, which is constructed once as a preprocessing step and kept unchanged throughout all continual training stages. For an input image I, the output of the localization model defines an implicit two-stage localization process. The first stage produces a logit vector z ∈ RK whose softmax distri-bution encodes a probabilistic assignment over cluster centers, representing the coarse location in the scene. The second stage produces an offset tensor ˙d ∈ RK×3 with associated scale weights ˆw ∈ RK , aimint to refine the coarse cluster-center location to a precise 3D coordinate. The final scene-coordinate prediction is: 
+
+ˆx = ˙d
+
+ˆw +
+
+> k
+
+X
+
+> i=1
+
+ezi
+
+P 
+
+> j
+
+ezj ci, (6) 
+
+w = min( 1
+
+Qmin 
+
+, β −1 log(1 + exp( β ˆw)) + 1
+
+Qmax 
+
+), (7) where Qmin , Q max represent the lower and upper bounds of the scale, and β = log 2 1−Q−1max 
+
+is the parameter of softplus. A key observation is that for any given input image, only a small number of cluster centers are geometrically relevant. The offset predictions at distant, inactive centers carry no meaningful geometric information with random noise. Blindly distilling all K offset vectors would force the student to learn the noise of teacher on irrelevant centers, wasting model capacity and degrading learning efficiency on new scenes. Therefore, we restrict distillation to the set of active centers 
+
+A, defined as the top-Ma centers ranked by the activation of teacher probability. All subsequent distillation losses are computed only over A.
+
+Topological Prior Distillation. To preserve the coarse scene layout learned from previous scenes, we constrain the student distribution to match that of the teacher distribution over the active set. Specifically, we re-normalize both distributions to the active distributions over A and apply KL divergence: 
+
+pAT ,i = exp( zAT ,i /τ )Σj∈A exp( zAT ,j /τ ) , pAS,i = exp( zAS,i /τ )Σj∈A exp( zAS,j /τ ) ,
+
+(8) 
+
+Lprior = τ 2KL  pAT ∥ pAS
+
+ , (9) where pAT and pAS are the re-normalized teacher and student activation probabilities over A. This loss locks the multi-peak probabilistic prior of student for old scenes, helping to maintain the correct topological assignment, understanding which cluster center region the input belongs to. 
+
+Metric Offset Distillation. To preserve fine pose precision, we constrain the coordinate offsets of student to match that of the teacher at each active cluster center. Following GLACE [13], the effective offset is computed in homogeneous form as ∆ = ˙d/ ˆw. We apply an L1 loss on these residuals: 
+
+Lmetric = ˙dS [A]ˆwS [A] − ˙dT [A]ˆwT [A] 1
+
+. (10) This term directly regularizes the local metric refinement stage of localization. 6
+
+Algorithm 2 SPDD: Distillation Loss on a Replay Batch 
+
+Require: Replay batch B, teacher T , student S, temperature 
+
+τ , active size Ma, weights α, β, γ ;
+
+Ensure: Distillation loss LSPDD ; 
+
+> 1:
+
+Lprior ← 0, Lmetric ← 0, Lout ← 0; 
+
+> 2:
+
+for all image I ∈ B do  
+
+> 3:
+
+(zT , ˙dT , ˆwT , ˆxT ) ← T (I); /* stop-grad */  
+
+> 4:
+
+(zS , ˙dS , ˆwS , ˆxS ) ← S (I); 
+
+> 5:
+
+pT ← Softmax (zT /τ ); 
+
+> 6:
+
+pS ← Softmax (zS /τ ); 
+
+> 7:
+
+A ← TopM (pT , M a); 
+
+> 8:
+
+pAT ← Normalize (pT [A]) ; 
+
+> 9:
+
+pAS ← Normalize (pS [A]) ; 
+
+> 10:
+
+Lprior ← L prior + τ 2 KL  pAT ∥ pAS
+
+; 
+
+> 11:
+
+∆T ← ˙dT [A] / ˆwT [A]; 
+
+> 12:
+
+∆S ← ˙dS [A] / ˆwS [A]; 
+
+> 13:
+
+Lmetric ← L metric + ∥∆S − ∆T ∥1; 
+
+> 14:
+
+Lout ← L out + ∥ˆxS − ˆxT ∥1; 
+
+> 15:
+
+end for  
+
+> 16:
+
+Lprior ← L prior /|B|; 
+
+> 17:
+
+Lmetric ← L metric /|B|; 
+
+> 18:
+
+Lout ← L out /|B|; 
+
+> 19:
+
+return αLprior + βLmetric + γLout .
+
+Output Consistency Constraint. As a global safeguard, we additionally constrain the final scene coordinate prediction ˆy
+
+in Euclidean space: 
+
+Lout = ∥ˆxS − ˆxT ∥1. (11) While Lprior and Lmetric target the decomposed intermediate representations, Lout ensures end-to-end consistency of the final output, preventing error accumulation from the separate distillation channels. 
+
+Total Distillation Loss. The three losses are combined with weighting coefficients: 
+
+LSPDD = αLprior + βLmetric + γLout , (12) where α, β, and γ control the relative importance of topo-logical preservation, metric precision, and output consistency. By explicitly separating these supervisory signals, SPDD pro-vides a structurally richer regularization signal than monolithic output distillation. When the student learns a new scene, the cluster centers distribution of old scenes is supervised by Lprior ,while the offset precision is maintained through Lmetric . The complete distillation procedure is summarized in Algorithm 2. 
+
+D. Training Procedure 
+
+The overall continual learning procedure proceeds sequen-tially over the scene sequence {T1, T 2, . . . , T N }. For the first scene T1, the model fθ is trained from scratch using only D1
+
+with the standard reprojection-based pose loss Lpose , following the GLACE training protocol [13]. Simultaneously, SARS processes all incoming training samples from D1 to construct the initial replay buffer M.For each subsequent scene Ti (i ≥ 2), the training consists of two interleaved objectives. First, a frozen copy of the model parameters from the end of scene Ti−1 is stored as the teacher model T . The student model S, initialized from T , is then trained on the new scene data Di using Lpose . In each training iteration, a mini-batch of replay samples is drawn from M
+
+and the SPDD distillation loss LSPDD is computed against the teacher. The total training loss for scene Ti is: 
+
+Ltotal = Lpose + LSPDD . (13) After training on Ti converges, the replay buffer M is updated with new samples from Di via SARS, and the trained student is frozen to serve as the teacher for the next stage. In this way, SARS and SPDD work in a complementary manner: SARS determines which past observations are retained under the memory budget, while SPDD determines how the retained knowledge is preserved during adaptation. IV. E XPERIMENTS 
+
+In this section, we evaluate the proposed continual hand-eye calibration framework on two challenging indoor localization benchmarks and own-build simulation dataset for robotic ma-nipulation. We compare the method with several representative continual learning baselines adapted to the same visual local-ization backbone [13], and perform extensive ablation studies to validate the contributions of SARS and SPDD modules. 
+
+A. Experimental Setup 
+
+Datasets. We conduct experiments on two public continual-localization benchmarks based on 7Scenes [45] and 
+
+12Scenes [46]. Following [16], i7S and i12S are obtained by registering the original 7Scenes and 12Scenes sequences into unified coordinate systems, yielding two multi-scene continual-learning environments. i7S contains seven indoor scenes and covers approximately 125 m 3, whereas i12S con-tains 12 scenes across four larger indoor environments and covers approximately 520 m 3.To validate our method on robotic manipulation scenarios, we additionally construct a Sim dataset using Isaac Sim. We utilize three photorealistic indoor environments (Bed-room, Kitchen, and Living room) equipped with Franka. By constructing camera trajectories with controlled observation directions, we collect approximately 10,000 RGB-D frames with ground-truth camera poses across the three scenes for continual learning evaluation. 
+
+Baselines. We compare the proposed method with six base-lines. Joint trains a single model on all scenes simultane-ously, serving as the performance upper bound. Fine-tune represents training sequentially without any anti-forgetting mechanism, providing the lower bound. iCaRL [35] combines exemplar replay with knowledge distillation using herding-based sample selection. Buff-CS [16] constructs a replay buffer that explicitly targets spatial scene coverage by selecting images spanning different spatial regions; we re-implement its core replay strategy on the GLACE backbone for a fair comparison using the preprocessed dataset provided by the original authors. However, on our own-built Sim dataset, the 7
+
+TABLE I MEDIAN ERROR OF CAMERA POSE , AND LOCALIZATION ACCURACY AT THE 5◦5 cm THRESHOLD ON THE i7Scenes DATASET . DARK GREEN DENOTES THE BEST RESULT UNDER JOINT TRAINING , WHILE LIGHT GREEN DENOTES THE BEST RESULT UNDER CONTINUAL LEARNING .Scenes Methods Joint Fine-tune iCaRL [35] Buff-CS [16] GEC [42] GDR [43] Ours 
+
+t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc Chess 1.8 0.6 98.8 1180.7 111.8 0.0 2.2 0.8 91.5 2.1 0.7 92.8 4.2 1.3 59.5 2.3 0.8 92.3 2.1 0.7 91.8 Fire 1.7 0.7 92.3 1254.8 96.6 0.0 2.8 1.1 84.8 2.5 1.0 91.3 9.2 3.0 30.3 2.6 1.0 89.1 2.4 0.9 85.0 Heads 1.0 0.7 99.6 1549.2 118.8 0.0 2.3 1.6 70.5 1.3 0.9 95.8 22.1 13.0 3.6 4.6 3.1 51.9 1.1 0.7 97.4 Office 2.6 0.7 90.1 671.9 98.8 0.0 3.2 1.0 75.5 4.0 1.0 64.7 11.1 2.7 16.7 4.0 1.1 63.9 3.1 0.9 81.8 Pumpkin 3.8 1.1 61.1 1020.1 126.9 0.0 4.5 1.2 54.9 5.0 1.3 50.0 35.3 7.9 0.5 5.4 1.5 44.0 4.6 1.1 55.4 Redkitchen 3.5 1.1 70.9 1313.0 110.8 0.0 5.0 1.5 49.7 6.0 1.6 36.5 21.6 4.3 4.2 5.7 1.7 43.2 4.5 1.3 56.7 Stairs 4.4 1.3 59.7 16.2 2.0 8.3 6.8 1.5 29.6 6.9 1.5 31.3 5.4 1.3 44.6 6.5 1.5 32.7 4.6 1.2 56.2 Accuracy (↑) 81.7 1.12 65.2 66.1 26.5 59.6 74.9 TFR (↓) - - 11.37 13.03 62.67 12.25 6.65 TABLE II MEDIAN ERROR OF CAMERA POSE , AND LOCALIZATION ACCURACY AT THE 5◦5 cm THRESHOLD ON THE i12 Scenes DATASET . DARK GREEN DENOTES THE BEST RESULT UNDER JOINT TRAINING , WHILE LIGHT GREEN DENOTES THE BEST RESULT UNDER CONTINUAL LEARNING .Scenes Methods Joint Fine-tune iCaRL [35] Buff-CS [16] GEC [42] GDR [43] Ours 
+
+t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc Kitchen-1 0.8 0.5 99.2 1937.2 129.5 0.0 1.6 0.9 93.8 1.5 0.9 88.8 243.4 20.2 0.0 1.3 0.8 93.8 1.5 0.8 92.7 Living-1 1.1 0.4 100.0 1495.4 114.3 0.0 1.8 0.7 90.9 1.4 0.6 95.7 16.1 5.5 17.8 1.4 0.5 95.9 1.5 0.6 97.2 Bed 1.1 0.5 99.5 1215.3 121.9 0.0 4.5 1.9 53.9 1.9 0.8 95.6 135.8 37.3 3.9 2.2 1.0 92.2 1.4 0.6 93.6 Kitchen-2 1.0 0.5 99.9 1074.9 130.9 0.0 2.1 1.0 87.6 2.1 0.9 81.0 395.1 18.1 0.0 2.4 1.0 81.0 1.1 0.5 97.6 Living-2 1.0 0.4 98.9 1691.3 126.4 0.0 6.1 2.4 41.8 1.7 0.7 95.7 351.6 43.2 0.9 2.0 0.7 90.3 1.5 0.6 98.9 Luke 1.3 0.6 100.0 1299.4 117.9 0.0 6.2 2.2 42.6 3.3 1.4 67.3 58.9 19.0 5.4 3.5 1.5 65.7 2.3 1.0 86.5 Gate362 1.0 0.4 98.0 888.2 127.8 0.0 1.5 0.6 100.0 2.1 0.9 87.8 36.7 4.6 0.8 2.0 0.9 87.3 1.7 0.8 97.9 Gate381 1.5 0.7 76.1 603.2 119.1 0.0 4.9 2.2 51.3 3.3 1.5 68.6 13.2 5.3 16.8 5.7 2.7 44.8 3.2 1.5 71.9 Lounge 1.3 0.4 99.1 1525.1 123.2 0.0 4.0 1.2 56.6 2.5 0.8 87.8 16.7 6.1 5.8 3.2 1.1 73.1 2.2 0.8 93.9 Manolis 1.2 0.5 97.5 1156.5 120.5 0.0 3.7 1.5 66.2 3.5 1.5 66.8 642.2 53.9 6.4 3.5 1.5 63.7 2.5 1.0 85.8 Floor.5a 1.5 0.6 95.2 837.1 104.0 0.0 11.2 3.5 20.5 3.8 1.5 62.6 381.9 56.1 4.8 4.2 1.6 57.5 2.7 1.1 85.7 Floor.5b 1.5 0.5 100.0 2.8 0.9 75.1 1.7 0.5 95.6 1.5 0.5 99.8 1.5 0.4 99.8 1.7 0.5 99.3 1.6 0.5 99.8 Accuracy (↑) 96.9 6.2 66.0 83.1 13.5 78.7 91.8 TFR (↓) - - 33.3 15.7 88.9 21.9 8.1 TABLE III MEDIAN ERROR OF CAMERA POSE , AND LOCALIZATION ACCURACY AT THE 1◦1 cm THRESHOLD ON THE Simulation DATASET . DARK GREEN DENOTES THE BEST RESULT UNDER JOINT TRAINING , WHILE LIGHT GREEN DENOTES THE BEST RESULT UNDER CONTINUAL LEARNING .Scenes Methods Joint Fine-tune iCaRL [35] Buff-CS [16] GEC [42] GDR [43] Ours 
+
+t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc t, cm r, ◦ Acc Bedroom 0.6 0.2 97.3 479.9 111.3 0.0 1.1 0.2 40.2 - 0.5 0.1 91.7 0.7 0.2 91.2 0.6 0.1 96.2 Kitchen 0.5 0.1 99.8 774.6 109.8 0.0 0.7 0.2 68.8 - 0.6 0.1 94.7 0.6 0.1 94.7 0.4 0.1 99.4 Living 0.2 0.1 100.0 0.3 0.1 100.0 0.4 0.1 99.6 - 0.4 0.1 96.3 0.4 0.1 100.0 0.3 0.1 99.6 Accuracy (↑) 99.0 33.3 69.5 - 94.2 95.3 98.4 TFR (↓) - - 44.9 - 5.1 6.5 1.6 
+
+preprocessed data is not available, so the Buff-CS results are not reported for Sim dataset. GEC [42] introduces gradient-guided ϵ-forgetting tolerance constraints to adaptively balance stability and plasticity. GDR [43] uses SVD-based leverage scores to select globally representative replay samples. 
+
+Evaluation Metrics. Following [16], we use localization accuracy as the primary metric, defined as the percentage of query images whose translation and rotation errors are below 
+
+5 cm and 5◦ on i7S/i12S, and below 1 cm and 1◦ on Sim. We additionally report the median translation error, the median rotation error, the final accuracy after learning the complete scene sequence, and the total forgetting rate (TFR) [47], which measures the average drop from the best historical accuracy of each scene to its final accuracy. Higher accuracy and lower TFR indicate better continual adaptation. 
+
+Implementation Details. All methods are built on the GLACE [13] as the visual localization backbone and follow its training protocol. We train with 6 GPUs and set the iteration steps to 15K per scene on i7S and i12S datasets, and 5K iterations on Sim. We use the AdamW optimizer with an initial learning rate of 0.005. For our method, the replay buffer capacity Nb is set to 10% samples per scene, the exclusion 80            
+
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> Accuracy (%)
+> i7Scenes
+> iCaRL Buff-CS GEC GDR Ours
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> Accuracy (%)
+> i12Scenes
+> iCaRL Buff-CS GEC GDR Ours
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> Accuracy (%)
+> Simulation Scenes
+> iCaRL Buff-CS GEC GDR Ours
+
+Fig. 3. Per-scene localization accuracy comparison across all three datasets. Each group shows the final accuracy of all continual learning methods on individual scenes after training on the complete scene sequence. Yellow arrows highlight scenes where our method achieves the largest improvement over baselines. 0           
+
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Kitchen -1           
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Living -1           
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Bed            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Kitchen -2           
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Living -2           
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Luke            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Gate 362            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Gate 381            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Lounge            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Manolis            
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 12345678910 11 12
+> Accuracy (%)
+> Number of Learned Scenes
+
+Floor. 5a
+
+iCaRL 
+
+Buff -CS 
+
+GEC 
+
+GDR 
+
+Ours 
+
+Fig. 4. Task forgetting rate comparisons on the i12S dataset. 
+
+radius r is 0.5 in the normalized pose space, and the distance weighting factor λ is 1.0. All baseline methods follow the same training setup. For SPDD, the distillation loss weights are set to α = 1 .0, β = 1 .0, γ = 1 .0, the softmax temperature 
+
+τ = 2 .0, and the active cluster centers size Ma = 50 .
+
+B. Comparison with State-of-the-Arts 
+
+Tables I, II, and III report the per-scene median pose error and localization accuracy for all methods on the i7S, i12S, and Sim datasets, respectively. 
+
+Upper and lower bounds. Joint training establishes a strong upper bound, achieving 81.7% on i7S, 96.9% on i12S, and 99.0% on Sim. In contrast, naive fine-tuning degrades to 1.12%, 6.2%, and 33.3%, respectively, showing that SCR-based calibration suffers severe forgetting under sequential scene adaptation. 
+
+Baseline analysis. Among continual learning baselines, meth-ods directly borrowed from classification show clear limita-tions in the localization setting. Buff-CS is competitive on i7S and i12S because it explicitly promotes scene coverage during buffer construction. GDR is relatively strong on Sim, suggesting that globally representative replay already helps in the smaller three-scene setting. By contrast, GEC performs poorly on i7S and i12S, with final accuracies of only 26.5% and 13.5%, respectively, indicating that a generic gradient-constrained strategy is insufficient for preserving the structured geometric knowledge required in pose estimation. iCaRL remains a reasonable replay-based baseline but shows large cross-scene variance, especially on the larger i12S benchmark. 
+
+Results on i7S. On the i7S dataset (Table I), our method achieves a final accuracy of 74.9%, substantially outper-forming iCaRL (65.2%), Buff-CS (66.1%), GDR (59.6%), 955                                          
+
+> 65
+> 75
+> 85
+> 95
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Chess
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Fire
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Heads
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Office
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Pumpkin
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> 1234567
+> Accuracy (%)
+> Number of Learned Scenes
+> Redkitchen
+> iCaRL Buff -CS GEC GDR Ours
+> Fig. 5. Task forgetting rate comparisons on the i7S dataset.
+
+and GEC (26.5%). The corresponding TFR is 6.65, which is lower than all competing continual-learning baselines, in-cluding 11.37 for iCaRL, 13.03 for Buff-CS, and 12.25 for GDR. Relative to Buff-CS, which is the strongest baseline in final accuracy on this dataset, our method improves the final accuracy by 8.8 percentage points while reducing forgetting by roughly half. The remaining gap to Joint is only 6.8 points. These results suggest that improving both replay coverage and replay-time knowledge preservation is beneficial even in the shorter seven-scene sequence. As shown in Fig. 3 (left), our method achieves the highest or near-highest accuracy on every scene. The most striking gains occur on the difficult scenes, such as Office , Redkitchen ,and Stairs , where baselines suffer the most severe forgetting. On Office , our method reaches 81.8% while the next best (iCaRL at 75.5%) lags by over 6%. On Stairs , our method achieves 56.2%, nearly doubling the performance of Buff-CS (31.3%) and GDR (32.7%). These scenes share characteristics that make replay quality critical: strong viewpoint similarity, repetitive textures, and complex spatial layouts that cause naive buffers to over-represent a narrow set of viewpoints. On the easier scenes, such as Chess , Fire , and Heads , our method remains competitive with the baselines, confirming that SARS and SPDD do not sacrifice performance on well-covered scenes. 
+
+Results on i12S. The advantage becomes even more pro-nounced on the i12S dataset as shown in Table II. Our method reaches 91.8% final accuracy, compared with 83.1% for Buff-CS, 78.7% for GDR, 66.0% for iCaRL, and 13.5% for GEC. The corresponding TFR is 8.1, again the lowest among all continual-learning methods. The gap to Joint narrows to only 5.1 points, which is notable given that i12S contains twelve scenes and much larger spatial extent than i7S. The result suggests that the proposed framework scales well to longer scene sequences and larger spatial coverage. As shown in Fig. 3 (middle), the pattern is consistent but more pronounced due to the larger scale. Our method dominates on the most forgetting-prone scenes: Bed , Luke ,
+
+Gate381 , Lounge , Manolis , and Floor.5a all show substantial improvements over baselines. On Luke , our method achieves 86.5% while Buff-CS reaches only 67.3% and iCaRL drops to 42.6%. GEC again fails catastrophically on most scenes, confirming that classification-style regularization does not transfer to pose regression at this scale. Notably, our method maintains near-perfect accuracy on scenes where all baselines also perform well, such as Kitchen-2 , Living-2 , Floor.5b ,demonstrating that our gains on difficult scenes do not come at the cost of easy ones. 30   
+
+> 40
+> 50
+> 60
+> 70
+> 80
+> 90
+> 100
+> 123
+> Accuracy (%)
+> Number of Learned Scenes
+
+Bedroom   
+
+> 65
+> 70
+> 75
+> 80
+> 85
+> 90
+> 95
+> 100
+> 123
+> Accuracy (%)
+> Number of Learned Scenes
+
+Kitchen      
+
+> iCaRL Buff -CS GEC GDR Ours
+> Fig. 6. Task forgetting rate comparisons on the Simulation dataset.
+
+Results on Sim. On the simulated robotic manipulation dataset (Table III), our method achieves 98.4% average accuracy with a TFR of only 1.6% under the stricter 1 cm/ 1◦ criterion, closely approaching the joint-training upper bound of 99.9%. Compared to GEC (95.0%) and GDR (95.3%), which are the competitive baselines on this dataset, our method provides con-sistent improvements across all three scenes while achieving substantially lower forgetting. This result validates that our framework generalizes effectively to the hand-eye calibration domain with robotic manipulation scenarios. As shown in Fig. 3 (right), our method achieves near-ceiling performance across all three scenes, with the smallest variance between scenes. iCaRL shows a dramatic accuracy drop from Living (99.6%) to Bedroom (40.2%), revealing that its herding-based selection fails to construct geometrically representative buffers for the robotic manipulation setting. Our method maintains 96.2% even on the most challenging Bedroom scene, confirming the effectiveness of SARS in the robotic hand-eye calibration domain. 
+
+C. Forgetting Rate Analysis 
+
+Fig. 4, 5, and 6 visualize the evolution of per-scene accuracy as the number of learned scenes increases, thereby visualizing forgetting over the whole sequence. The final scene in each 10 Chess  Fire  Heads  Office  Pumpkin  Redkitchen  Stairs 
+
+Ours 
+
+GDR 
+
+Buff -CS 
+
+iCaRL  
+
+> Fig. 7. Qualitative localization results on the i7S dataset. For each scene, the left image shows the 3D model rendered using the estimated camera pose (grayscale), and the right image shows the corresponding query image. Accurate alignment between rendered contours and real scene structures indicates precise pose estimation.
+
+benchmark is omitted because it has no subsequent tasks and therefore no meaningful forgetting trajectory. Across all three datasets, the curves of the proposed method degrade more slowly and remain flatter after new scenes are in-troduced. On the i7S dataset, the advantage is especially clear on Heads , Office , and Redkitchen , where several baselines ex-hibit sharp accuracy drops after later scenes are learned. On the i12S dataset, the benefit becomes even more pronounced on scenes such as Living-1 , Luke , Lounge , Manolis , and Floor.5a ,for which the proposed method maintains substantially higher accuracy throughout the remainder of the sequence. On the Sim dataset, the trajectories are nearly flat after each scene update, consistent with the low final TFR of 1.6%. Together with the TFR summaries in Tables I, II, and III, these plots show that the proposed framework reduces both immediate post-update forgetting and cumulative long-term drift. 
+
+D. Qualitative Visualization 
+
+Fig 7, 8, and 9 provide qualitative evidence of localization accuracy by overlaying 3D model renderings with query im-ages. For each scene, the left image shows the ground-truth 3D model rendered from the estimated camera pose (grayscale), and the right image shows the corresponding real query image. When the estimated pose is accurate, the rendered contours align precisely with the real scene structures. On the i7S dataset, as shown in Fig. 7, the renderings show alignment across all seven scenes. On the easier scenes such as Chess , Fire , and Heads , the contours are nearly indistinguishable from the ground truth, confirming that our method achieves near-joint performance on these scenes. On the more difficult scenes such as Office , Redkitchen , and Stairs ,although the result of our method shows alignment error, the camera pose median error of our method is lower compared to the continual learning baselines.           
+
+> TABLE IV ABLATION STUDY ON I 7S AND I 12S. E ACH ROW ADDS ONE MODULE TO THE I CARL BASELINE .Methods \Datasets i7S i12S iCaRL (baseline) 65.2 66.0 + SARS 72.0 ↑6.890.9 ↑24 .9
+> + SARS + SPDD 74.9 ↑2.991.8 ↑0.9
+
+On the i12S dataset, Fig. 8 shows that our method is able to maintain consistent alignment across 12 diverse indoor environments. Even in scenes with relatively complex spatial structures, such as Luke , Gate362 , and Lounge , the rendered contours largely agree with the real scene geometry, indicating that the framework can scale to longer continual learning sequences without obvious degradation in pose quality On the Sim dataset, Fig. 9 provides qualitative evidence for the hand-eye calibration objective. In the Bedroom , Kitchen ,and Living environments, the rendered robotic arms and scene objects remain broadly aligned with the ground-truth images, suggesting that the estimated camera-to-robot transformations are reasonably preserved after sequential scene updates. 
+
+E. Ablation Study 
+
+Table IV analyzes the contribution of the two proposed components by incrementally adding them to the replay-based baseline used in the ablation protocol. 
+
+Effect of SARS. Adding SARS to the baseline improves average accuracy from 65.2% to 72.0% (+6.8%) on i7S and from 66.0% to 90.9% (+24.9%) on i12S. The dramatic gain on i12S, which contains more scenes and a larger spatial extent, confirms that geometric coverage of camera poses is far more critical than sample randomness for anti-forgetting in localization. 11 Kitchen -1 Living -1 Bed  Kitchen -2          
+
+> Living -2Luke Gate362 Gate381
+> Lounge Manolis Floor.5a Floor. 5b
+> Fig. 8. Qualitative localization results on the i12S dataset. Each pair shows the rendered 3D model (left, grayscale) overlaid with the query image (right) using the estimated pose after continual learning across all 12 scenes. Bedroom Kitchen Living
+> Ours
+> GDR
+> GEC
+> iCaRL
+> Fig. 9. Visualization of localization results on the Simulation dataset. The query image (right) with a rendered image (left, grayscale) using the estimated pose and the ground truth 3D model.
+
+Effect of SPDD. Adding SPDD on top of SARS further improves performance to 74.9% on i7S and 91.8% on i12S, corresponding to gains of +2.9% and +0.9% over the SARS-only variant. Although the incremental gain is smaller than that of SARS, it is consistent across both datasets. This suggests that once the replay buffer becomes more representa-tive, structured distillation could alleviates the pose precision degradation by preserving the internal geometry of localization predictions during rehearsal. A useful observation from Table IV is that the dominant gain comes from the spatial-aware replay design, while the structured distillation term provides a further refinement. This is consistent with the broader empirical trend of the paper: continual hand-eye calibration benefits most when the replay mechanism respects the structure of pose space, and when the supervision applied to replayed samples preserves more than a single pose output. V. C ONCLUSION 
+
+We present a continual hand-eye calibration framework for open-world robotic manipulation. By combining geometry-aware replay with structure-preserving distillation, the pro-posed method enables a single visual localization model to adapt to new scenes while retaining accurate pose estima-tion on previously learned environments. Across two public continual-localization benchmarks and a simulated manipu-lation dataset, the method consistently outperformed strong continual-learning baselines and reduced forgetting throughout the sequential learning process. These results suggest that effective continual calibration requires both representative 12 
+
+pose-space memory and preservation of structured localization knowledge during replay. A current limitation is that the evaluation is mainly restricted to indoor scenes and simulation. Extending the framework to real-robot deployment and larger-scale, less structured environments is an important direction for future work. REFERENCES [1] F.-P. Tian, W. Feng, Q. Zhang, X. Wang, J. Sun, V. Loia, and Z.-Q. Liu, “Active camera relocalization from a single reference image without hand-eye calibration,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 41, no. 12, pp. 2791–2806, 2018. [2] S. Li, X. Wang, H. Liang, and Y. Zheng, “Automatic robot hand-eye calibration enabled by learning-based 3D vision,” J. Intell. Robot. Syst. ,vol. 110, no. 2, p. 60, 2024. [3] G. Jin, X. Yu, Y. Chen, and J. Li, “Nonsingular hand-eye and robot-world calibration for scara-type robots: A comparative study,” IEEE Trans. Ind. Informat. , vol. 21, no. 4, pp. 3057–3066, 2025. [4] X. Luo, Z. Li, W. Yue, and S. Li, “A calibrator fuzzy ensemble for highly-accurate robot arm calibration,” IEEE Trans. Neural Netw. & Learn. Syst. , vol. 36, no. 2, pp. 2169–2181, 2024. [5] A. Stefanov, M. Zorman, S. ˇ Slajpah, J. Podobnik, M. Mihelj, and M. Mu-nih, “From perception to precision: Vision-based mobile robotic ma-nipulation for assembly screwdriving,” Robot. Comput.-Integr. Manuf. ,vol. 98, p. 103148, 2026. [6] D. Ma, C. Zhang, Q. Xu, and G. Zhou, “Large and small-scale models’ fusion-driven proactive robotic manipulation control for human-robot collaborative assembly in industry 5.0,” Robot. Comput.-Integr. Manuf. ,vol. 97, p. 103078, 2026. [7] P. Raj, L. Behera, and T. Sandhan, “Scalable and time-efficient bin-picking for unknown objects in dense clutter,” IEEE Trans. Autom. Sci. Eng. , vol. 21, no. 3, pp. 2289–2301, 2023. [8] B. Ai, S. Tian, H. Shi, Y. Wang, T. Pfaff, C. Tan, H. I. Christensen, H. Su, J. Wu, and Y. Li, “A review of learning-based dynamics models for robotic manipulation,” Sci. Robot. , vol. 10, no. 106, p. eadt1497, 2025. [9] J. Huang, H. Lin, T. Wang, Y. Fu, Y.-G. Jiang, and X. Xue, “You only estimate once: Unified, one-stage, real-time category-level articulated object 6d pose estimation for robotic grasping,” in Proc. IEEE Int. Conf. Robot. Autom. IEEE, 2025, pp. 14 044–14 051. [10] M. Yang, Z. Huang, Y. Sun, Y. Zhao, R. Sun, Q. Sun, J. Chen, B. Qiang, J. Wang, and F. Sun, “Digital twin driven measurement in robotic flexible printed circuit assembly,” IEEE Trans. Instrum. Meas. , vol. 72, pp. 1–12, 2023. [11] Y. Liu, W. Chen, Y. Bai, X. Liang, G. Li, W. Gao, and L. Lin, “Aligning cyber space with physical world: A comprehensive survey on embodied ai,” IEEE/ASME Trans. Mechatronics , 2025. [12] E. Brachmann, T. Cavallari, and V. A. Prisacariu, “Accelerated coordi-nate encoding: Learning to relocalize in minutes using RGB and poses,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2023, pp. 5044– 5053. [13] F. Wang, X. Jiang, S. Galliani, C. Vogel, and M. Pollefeys, “Glace: Global local accelerated coordinate encoding,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2024, pp. 21 562–21 571. [14] L. Wang, X. Zhang, H. Su, and J. Zhu, “A comprehensive survey of continual learning: Theory, method and application,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 46, no. 8, pp. 5362–5383, 2024. [15] S. Li, T. Su, X.-Y. Zhang, and Z. Wang, “Continual learning with knowledge distillation: A survey,” IEEE Trans. Neural Netw. & Learn. Syst. , vol. 36, no. 6, pp. 9798–9818, 2024. [16] S. Wang, Z. Laskar, I. Melekhov, X. Li, and J. Kannala, “Continual learning for image-based camera localization,” in Proc. IEEE/CVF Int. Conf. Comp. Vis. , 2021, pp. 3252–3262. [17] X. Li, S. Wang, Y. Zhao, J. Verbeek, and J. Kannala, “Hierarchical scene coordinate classification and regression for visual localization,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2020, pp. 11 983–11 992. [18] O. Bahadir, J. P. Siebert, and G. Aragon-Camarasa, “Continual learning approaches to hand–eye calibration in robots,” Mach. Vis. Appl. , vol. 35, no. 4, p. 97, 2024. [19] R. Y. Tsai, R. K. Lenz et al. , “A new technique for fully autonomous and efficient 3 d robotics hand/eye calibration,” IEEE Trans. Robot. Autom. ,vol. 5, no. 3, pp. 345–358, 1989. [20] L. Chen, Y. Shi, A. Yang, L. Zhang, J. Wang, and H. Lu, “EasyHeC: Accurate and automatic hand-eye calibration via differentiable rendering and space exploration,” in IEEE Robot. Autom. Lett. , vol. 8, no. 10, 2023, pp. 6301–6308. [21] Z. Hong, K. Zheng, and L. Chen, “Easyhec++: Fully automatic hand-eye calibration with pretrained image models,” in IEEE/RSJ Int. Conf. Intell. Robots Syst. IEEE, 2024, pp. 816–823. [22] E. Wise, P. Kaveti, Q. Cheng, W. Wang, H. Singh, J. Kelly, D. M. Rosen, and M. Giamou, “A certifiably correct algorithm for gener-alized robot-world and hand-eye calibration,” Int. J. Robot. Res. , p. 02783649261420308, 2026. [23] E. Brachmann, A. Krull, S. Nowozin, J. Shotton, F. Michel, S. Gumhold, and C. Rother, “DSAC–differentiable RANSAC for camera localization,” in Proc. IEEE Conf. Comp. Vis. Patt. Recogn. , 2017, pp. 6684–6692. [24] E. Brachmann and C. Rother, “Learning less is more–6D camera localization via 3D surface regression,” in Proc. IEEE Conf. Comp. Vis. Patt. Recogn. , 2018, pp. 4654–4662. [25] E. Brachmann and C. Rother, “Expert sample consensus applied to camera re-localization,” in Proc. IEEE/CVF Int. Conf. Comp. Vis. , 2019, pp. 7525–7534. [26] X. Jiang, F. Wang, S. Galliani, C. Vogel, and M. Pollefeys, “R-score: Revisiting scene coordinate regression for robust large-scale visual localization,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2025, pp. 11 536–11 546. [27] S. Dong, S. Wang, S. Liu, L. Cai, Q. Fan, J. Kannala, and Y. Yang, “Reloc3r: Large-scale training of relative camera pose regression for generalizable, fast, and accurate visual localization,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2025, pp. 16 739–16 752. [28] J. Zheng, R. Liu, Y. Chen, Z. Chen, K. Yang, J. Zhang, and R. Stiefel-hagen, “Scene-agnostic pose regression for visual localization,” in Proc. IEEE/CVF Conf. Comp. Vis. Patt. Recogn. , 2025, pp. 27 092–27 102. [29] K. Dai, Z. Jiang, F. Qiu, D. Liu, T. Xie, K. Wang, R. Li, and L. Zhao, “Hvlf: A holistic visual localization framework across diverse scenes,” 
+
+IEEE Trans. Neural Netw. & Learn. Syst. , 2025. [30] C. Fifty, E. Amid, Z. Zhao, T. Yu, R. Anil, and C. Finn, “Efficiently identifying task groupings for multi-task learning,” Advances in Neural Inf. Process. Syst. , vol. 34, pp. 27 503–27 516, 2021. [31] G. Sun, Y. Cong, J. Dong, Q. Wang, L. Lyu, and J. Liu, “Data poisoning attacks on federated machine learning,” IEEE Internet Things J. , vol. 9, no. 13, pp. 11 365–11 375, 2021. [32] M. De Lange, R. Aljundi, M. Masana, S. Parisot, X. Jia, A. Leonardis, G. Slabaugh, and T. Tuytelaars, “A continual learning survey: Defying forgetting in classification tasks,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 44, no. 7, pp. 3366–3385, 2021. [33] G. Sun, W. Liang, J. Dong, J. Li, Z. Ding, and Y. Cong, “Create your world: Lifelong text-to-image diffusion,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 46, no. 9, pp. 6454–6470, 2024. [34] W. Liang, G. Sun, Y. He, Y. Ren, J. Dong, and Y. Cong, “Never-ending behavior-cloning agent for robotic manipulation,” arXiv preprint arXiv:2403.00336 , 2024. [35] S.-A. Rebuffi, A. Kolesnikov, G. Sperl, and C. H. Lampert, “icarl: Incremental classifier and representation learning,” in Proc. IEEE Conf. Comp. Vis. Patt. Recogn. , 2017, pp. 2001–2010. [36] J. Kirkpatrick, R. Pascanu, N. Rabinowitz, J. Veness, G. Desjardins, A. A. Rusu, K. Milan, J. Quan, T. Ramalho, A. Grabska-Barwinska 
+
+et al. , “Overcoming catastrophic forgetting in neural networks,” in Proc. Natl. Acad. Sci. U.S.A. , vol. 114, no. 13, 2017, pp. 3521–3526. [37] H. Jin and E. Kim, “Helpful or harmful: Inter-task association in continual learning,” in Proc. Eur. Conf. Comp. Vis. Springer, 2022, pp. 519–535. [38] H. Jin, H. J. Chang, and E. Kim, “Instruction-grounded visual projectors for continual learning of generative vision-language models,” in Proc. IEEE/CVF Int. Conf. Comp. Vis. , 2025, pp. 3466–3476. [39] R. Aljundi, M. Lin, B. Goujaud, and Y. Bengio, “Gradient based sample selection for online continual learning,” in Advances in Neural Inf. Process. Syst. , vol. 32, 2019. [40] R. Aljundi, E. Belilovsky, T. Tuytelaars, L. Charlin, M. Caccia, M. Lin, and L. Page-Caccia, “Online continual learning with maximal interfered retrieval,” in Advances in Neural Inf. Process. Syst. , vol. 32, 2019. [41] H. Cha, J. Lee, and J. Shin, “Co 2L: Contrastive continual learning,” in 
+
+Proc. IEEE/CVF Int. Conf. Comp. Vis. , 2021, pp. 9516–9525. [42] S. Lai, C. Ma, F. Zhu, Z. Zhao, X. Lin, G. Meng, and Q. Zhang, “Gradient-guided epsilon constraint method for online continual learn-ing,” in Advances in Neural Inf. Process. Syst. , 2025. [43] Z. Qi, Y.-P. Tang, L. Meng, H. Yu, X. Li, and X. Meng, “Class-wise balancing data replay for federated class-incremental learning,” in 
+
+Advances in Neural Inf. Process. Syst. , 2025. 13 
+
+[44] L.-Y. Wei, “Parallel poisson disk sampling,” ACM Trans. Graph. , vol. 27, no. 3, pp. 1–9, 2008. [45] J. Shotton, B. Glocker, C. Zach, S. Izadi, A. Criminisi, and A. Fitzgib-bon, “Scene coordinate regression forests for camera relocalization in RGB-D images,” in Proc. IEEE Conf. Comp. Vis. Patt. Recogn. , 2013, pp. 2930–2937. [46] J. Valentin, A. Dai, M. Nießner, P. Kohli, P. Torr, S. Izadi, and C. Keskin, “Learning to navigate the energy landscape,” in Proc. Int. Conf. 3D Vis. 
+
+IEEE, 2016, pp. 323–332. [47] N. D´ ıaz-Rodr´ ıguez, V. Lomonaco, D. Filliat, and D. Maltoni, “Don’t forget, there is more than forgetting: new metrics for continual learning,” in Proc. NeurIPS Workshop on Continual Learning , 2018.

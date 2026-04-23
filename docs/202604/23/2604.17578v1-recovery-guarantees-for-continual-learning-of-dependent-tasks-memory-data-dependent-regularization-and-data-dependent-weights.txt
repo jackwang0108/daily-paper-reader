@@ -1,0 +1,6707 @@
+Title: Recovery Guarantees for Continual Learning of Dependent Tasks: Memory, Data-Dependent Regularization, and Data-Dependent Weights
+
+URL Source: https://arxiv.org/pdf/2604.17578v1
+
+Published Time: Tue, 21 Apr 2026 01:34:06 GMT
+
+Number of Pages: 39
+
+Markdown Content:
+# Recovery Guarantees for Continual Learning of Dependent Tasks: Memory, Data-Dependent Regularization, and Data-Dependent Weights 
+
+Liangzu Peng ∗ Uday Kiran Reddy Tadipatri ∗ Ziqing Xu Eric Eaton Ren´ e Vidal 
+
+University of Pennsylvania 
+
+## Abstract 
+
+Continual learning (CL) is concerned with learn-ing multiple tasks sequentially without forgetting previously learned tasks. Despite substantial em-pirical advances over recent years, the theoret-ical development of CL remains in its infancy. At the heart of developing CL theory lies the challenge that the data distribution varies across tasks, and we argue that properly addressing this challenge requires understanding this variation– dependency among tasks. To explicitly model task dependency, we consider nonlinear regres-sion tasks and propose the assumption that these tasks are dependent in such a way that the data of the current task is a nonlinear transformation of previous data. With this model and under nat-ural assumptions, we prove statistical recovery guarantees (more specifically, bounds on estima-tion errors) for several CL paradigms in practi-cal use, including experience replay with data-independent regularization and data-independent weights that balance the losses of tasks, re-play with data-dependent weights, and contin-ual learning with data-dependent regularization (e.g., knowledge distillation). To the best of our knowledge, our bounds are informative in cases where prior work gives vacuous bounds. 
+
+## 1 Introduction 
+
+Continual learning (CL) aims to learn multiple tasks pre-sented sequentially, with a key goal to address the situation of catastrophic forgetting (McCloskey and Cohen, 1989): learning new tasks risks performance degradation on pre-viously learned tasks. To reduce forgetting, memory-based methods store some past data, to be used with new data for training the new task (Robins, 1993; Shin et al., 2017; Aljundi et al., 2019; Dokania et al., 2019; Prabhu et al., 2020; Verwimp et al., 2021; Bang et al., 2021; Wang et al., 
+
+> ∗: Equal contribution.
+
+2022); regularization-based methods optimize the current task with a regularization term that encourages proxim-ity to the model previously learned (Li and Hoiem, 2017; Kirkpatrick et al., 2017; Zenke et al., 2017; Rebuffi et al., 2017; Park et al., 2019; Buzzega et al., 2020); constrained optimization methods enforce non-forgetting requirements as optimization constraints while solving the current task (Lopez-Paz and Ranzato, 2017; Chaudhry et al., 2019; Peng et al., 2023a; Elenter et al., 2023; Li et al., 2024). In contrast to the abundance of empirical advances, theo-retical investigations in CL are relatively scarce. Existing theoretical contributions are of at least two types. The first type considers linear models or the kernel regime (Ben-nani and Sugiyama, 2020; Doan et al., 2021; Heckel, 2022; Evron et al., 2022; Lin et al., 2023; Li et al., 2023; Swart-worth et al., 2023; Goldfarb et al., 2024; Zhao et al., 2024; Ding et al., 2024; Banayeeanzade et al., 2025; Evron et al., 2025). With such specific settings, it is possible to de-rive meaningful and even tight bounds, but the resulting theory might not apply to existing CL methods that are specifically designed for deep networks or general nonlin-ear models. The other type of work considers general mod-els (e.g., within a PAC-Bayes framework or based on the Rademacher complexity) (Pentina and Lampert, 2015; Yin et al., 2020; Ye and Bors, 2022; Friedman and Meir, 2024). With such general settings, it is possible to derive CL guar-antees by leveraging tools from classic (PAC) learning the-ory (Shalev-Shwartz and Ben-David, 2014; Mohri et al., 2018; Alquier et al., 2024), but the resulting theory often fails to capture the benefits of learning multiple tasks se-quentially, or the resulting bound does not necessarily tend to zero even in the presence of infinitely many samples. In light of the above, we are motivated to seek a middle ground that combines the best of both worlds: derive mean-ingful error bounds for general nonlinear models and com-monly used CL paradigms. 
+
+Importance of Task Dependency. We argue that attaining the above goal requires modeling how tasks are related to each other. We illustrate this by way of examples. 
+
+Example 1. The error bounds (specifically, generalization bounds) of Ye and Bors (2022); Friedman and Meir (2024); 
+
+> arXiv:2604.17578v1 [cs.LG] 19 Apr 2026 Recovery Guarantees for Continual Learning of Dependent Tasks
+
+Mansour et al. (2009) grow linearly with the “ distance ” be-tween the data distributions of two tasks. For two zero-mean Gaussian distributions with variances 1 and s2, re-spectively, this distance is proportional to |s2 − 1|, and thus grows unbounded as s increases (cf. Remark 3). These are two basic distributions related in a simple way, i.e., one is a scalar multiple of the other, yet the bound depending linearly on s2 becomes vacuous even for a mildly large s.
+
+Example 2. In the work of Peng et al. (2023a), the data within each task are i.i.d., and data across tasks are depen-dent. The proof of Peng et al. (2023a) reduces from a com-plicated CL situation to the standard scenario of learning a single task from i.i.d. data. As a side effect of this reduc-tion, the bound of every task in Peng et al. (2023a) depends logarithmically on the total number T of seen tasks and thus worsens as T grows; this is somehow counterintuitive as it indicates learning more tasks enlarges the error bound of every task. In hindsight, analyzing dependent data ap-pears to be intractable under the general setting of Peng et al. (2023a) as they do not specify how the tasks depend on each other. This leaves open the challenge of identify-ing task dependency that avoids degrading, or ideally im-proves, continual learning performance. 
+
+The Proposed CL Model With Task Dependency. In or-der to address issues pertaining to Examples 1 and 2 and to furthermore develop meaningful error bounds, we pro-pose a CL framework with explicit modeling of task de-pendency. Specifically, we consider the problem of contin-ual noisy nonlinear regression : learn a function f ∗ from a sequence of noisy nonlinear regression tasks with f ∗ as-sumed to be the shared true predictor of all these tasks. This is a setting that generalizes previous works on con-tinual linear regression to the nonlinear, noisy case. Rec-ognizing that directly analyzing such continual nonlinear regression model might lead to unsatisfactory bounds (Ex-amples 1 and 2), we then arm this model with task depen-dency , which posits that the data of the present task are obtained as a nonlinear yet unknown transformation of the data from previous tasks. This task dependency is moti-vated from several perspectives (Section 2.2). For example, it draws inspiration from the rotated MNIST and permuted MNIST datasets that have benchmarked many fundamen-tal CL methods; there, the transformation is either some rotation or permutation. Also, it finds inspiration from dy-namical systems , where the current state is obtained as a transformation of the previous state. 
+
+Implications of Our CL Model and Task Dependency. 
+
+We now sketch how the issues in Examples 1 and 2 are re-solved with the proposed model and task dependency. For the two tasks in Example 1, the nonlinear transformation is simply a scaling function that multiplies its input by s;and s is the Lipschitz constant of this transformation. Cru-cially, we find that all our theorems exhibit only a logarith-mic dependency on s in the context of Example 1, thereby allowing s to grow polynomially with problem size (e.g., dimension, sample size), without drastically affecting our bounds. This is a significant improvement over the linear dependency of s2 in Example 1 (Mansour et al., 2009; Ye and Bors, 2022; Friedman and Meir, 2024). Unlike Example 2, our task dependency assumption makes the analysis tractable, though still non-trivial (cf. Fig. 2). In particular, it enables us to prove concentration bounds for dependent data, and it suffices to apply the bounds only once. By doing so, we eliminate the logarithmic depen-dency on T as discussed in Example 2 where the concen-tration inequalities are invoked T times. More importantly, the proposed model and task depen-dency allow us to develop theoretical guarantees under a unifying framework and in a systematic fashion. Under basic assumptions, we bound the estimation errors of re-covering f ∗ for the aforementioned CL paradigms, includ-ing memory-based methods, regularization-based methods, and constrained optimization methods. In more detail: • We begin by analyzing weighted experience replay with data-independent regularizers , where the weights balance contributions of each task (Section 3.2). With a non-uniform choice of weights, our bound on the weighted es-timation error is inversely proportional to the total num-ber of available data; such a bound is optimal. With uni-form weights, our bound is also optimal if the replay buffer stores a constant fraction of the full data of each task. • Then, we analyze regularization-based methods with a 
+
+knowledge distillation regularizer (Section 3.3). While such regularizer is data-dependent , we can still prove es-timation error bounds via a non-trivial recursive argument, resulting in improvements over prior work in terms of gen-erality (Heckel, 2022; Li et al., 2023; Zhao et al., 2024; Zhu et al., 2025) and tightness (Yin et al., 2020) (cf. Remark 5). • Lastly, we draw motivations from the constrained learn-ing framework (Chamon et al., 2022; Elenter et al., 2023) and derive error bounds for replay with data-dependent weights , where the weights might now be thought of as dual variables in primal dual optimization (Section 3.4). We ob-tain error bounds of a similar flavor by extending our previ-ous results to account for the fact that the weights are now random variables as well, depending on the data. 
+
+## 2 Problem Setup 
+
+In Section 2.1, we introduce our data model with the task dependency specified in an autoregressive fashion, based upon which we will develop our theorems. In Section 2.2 we provide justifications and motivations on our proposed task dependency model. Peng, Tadipatri, Xu, Eaton, Vidal 
+
+x1
+
+x2
+
+x3
+
+g1
+
+g2
+
+x11 x12 x13 x14 
+
+x21 x22 x23 x24 
+
+x31 x32 x33 x34 
+
+
+
+  
+
+> task 1has i.i.d. samples
+
+x11 x13 
+
+x22 x23 x24 
+
+x31 x32 x33 x34 
+
+
+
+               
+
+> R1={1,3}
+> R2={2,3,4}
+> R3={1,2,3,4}
+> (a) data dependency (b) full data (c) training data available at task 3
+
+Figure 1: Example setup ( T = 3 , m = 4 ). Fig. 1a: task dependency (2); Fig. 1b: full data in a matrix, where each column is generated as per (2) and each row represents data of each task; Fig. 1c: index sets Rt and data available at task 3.
+
+2.1 Data Model, Task Dependency, and Samples Data Model with Autoregressive Task Dependency. Let 
+
+T be the number of tasks seen thus far. Let [T ] := 
+
+{1, . . . , T }. We consider a nonlinear regression setting, where each task t shares a true predictor f ∗ : Rdx → Rdy
+
+that maps input xt to output yt up to some random noise 
+
+vt, similarly to prior work (Evron et al., 2022; Peng et al., 2023a; Li et al., 2023; Zhao et al., 2024; Elenter et al., 2023; Zhu et al., 2025). In addition, we specify the task de-pendency in an autoregressive manner through some deter-ministic, nonlinear transformation gt : R(t−1) ×dx → Rdx .Concretely, we consider the model 
+
+yt = f ∗(xt) + vt, ∀t ≥ 1; (1) 
+
+xt = gt(x1, . . . , x t−1), ∀t > 1. (2) Here, x1 ∈ Rdx is a random vector drawn from some prob-ability distribution D1. Thus, (1) and (2) implicitly specify the distribution of yt (conditioned on xt) and of xt (con-ditioned on x1, . . . , x t−1). By defining the relationship be-tween data of different tasks, the transformation gt captures the dependency among these tasks (cf. Fig. 1a). While we interpret (1) and (2) as a task dependency model in the CL context, our main motivation is from the control literature: (1) and (2) define a nonlinear dynamical system where xt’s are system states and f ∗ consists of system parameters to be identified. Different from standard dynamical systems, our model has no control input and (2) is in the absence of noise. This is for the sake of simplicity, and it is not difficult to extend our results to the case of noisy task dependency where xt is equal to gt(x1, . . . , x t−1) up to additive ran-dom noise. One more difference is that in (2) we require 
+
+xt to depend on all the past x1, . . . , x t−1, while a common special case is of the Markov type xt = gt(xt−1). We dis-cuss more examples and motivations in Section 2.2. 
+
+Samples and Memory. For task 1, we sample m i.i.d. in-put data points {x1,i }mi=1 from distribution D1, that is 
+
+{x1,i }mi=1 
+
+> i.i.d.
+
+∼ D 1. (3) We will omit the comma and write x1i for x1,i if it does not cause confusion. For task t > 1, we generate input-output pairs ( xti , y ti ) as per (1) and (2), that is we have 
+
+xti = gt(x1i, . . . , x t−1,i ), ∀t > 1, i ∈ [m], (4) and yti = f ∗(xti ) + vti for some noise vti . Fig. 1b visual-izes the input samples {xti }t∈[T ],i ∈[m] in a matrix form. Motivated by memory-based methods in CL, we further-more assume the availability of only part of the samples indexed by some fixed subset M of [T ] × [m]. That is, 
+
+(xti , y ti ) is available for training if and only if (t, i ) ∈ M .The available inputs (xti )(t,i )∈M can be arranged into a 
+
+T × m partial matrix (cf. Fig. 1c). The t-th row of this matrix corresponds to the stored data {(xti , y ti )}i∈R t of task t; we index them by Rt, a subset of [m] (Fig. 1c). Let 
+
+nt := |R t|. We have nt ≤ m. We have |R T | = m, as we assume full access to the samples of the current task T .Given the above problem setup, our goal is to learn f ∗ from the available samples indexed by M.
+
+Remark 1. Constructing M is to select samples to store and is an interesting CL topic. This can be done via some information-theoretical criterion or optimization (Borsos et al., 2020; Sun et al., 2022; Elenter et al., 2023). On the other hand, simple strategies such as random sampling or 
+
+reservoir sampling (Vitter, 1985) actually work very well (Dokania et al., 2019; Araujo et al., 2022). We assume M
+
+is fixed, while our results apply directly to the case where 
+
+M is constructed via random or reservoir sampling. 
+
+Comparison to Other Modeling Assumptions. To high-light the advantages of our modeling assumptions, we first consider the following alternatives: • A common setting is that the samples within each task are i.i.d., but the samples across tasks be dependent in an arbitrary way; namely, xti depends on xτ j for any t̸ = τ
+
+and any i, j (cf. Fig. 2a). This is a practical and general setup as considered in Example 2, but it is also a challeng-ing situation for which prior work does not shed light on the benefits of learning from multiple dependent tasks. • In another setting, one has T distributions {D t}t∈[T ]. For each t, one draws i.i.d. samples xti from Dt. Thus, the samples of all tasks are independent, though not identically distributed (cf. Fig. 2b). This setting is intuitive but of less Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+x11 x12 x13 
+
+x21 x22 x23 
+
+(c) 
+
+x11 x12 x13 
+
+x21 x22 x23 
+
+(a) 
+
+x11 x12 x13 
+
+x21 x22 x23 
+
+(b) 
+
+Figure 2: Illustrating the sample-level dependency assump-tions on 3 tasks, each with 3 samples. In (a, b, c), sam-ples are i.i.d. within each task (i.e., no horizontal edges), and samples across tasks are distributed differently; (a): samples across different tasks are dependent; (b): samples across tasks are independent; (c) samples across tasks ex-hibit one-to-one dependency, as specified by (2). technical interest, as the proof of estimation error bounds is significantly simplified due to the full independence. In comparison, our proposed setting strikes a balance by assuming that the data across tasks are dependent in a spe-cific way (cf. Fig. 2c). While the proof is still nontrivial under our setting, the intuitive benefit is clear: it reduces the potential dependency across tasks, making it possible to derive better bounds (Fig. 2a versus Fig. 2c). 
+
+Comparison to Task Dependency Assumptions. Learn-ing from the full data (or partial data) as shown in Fig. 1 can be viewed as a multitask learning problem where each task 
+
+t has m (or nt) samples (Maurer et al., 2016; Tripuraneni et al., 2020, 2021; Du et al., 2021). The differences from recent multitask learning papers are twofold: Our samples across tasks are dependent , as specified in (2); our defini-tion of task dependency is different. In fact, pursuing a suitable definition of task dependency has led to fruitful developments in multitask learning and transfer learning .Ben-David and Borbely (2008) capture the notion of task dependency by an equivalence relation between functions in the hypothesis space. This allows empirical risk min-imization to be conducted in a smaller (quotient) space, which translates to a tighter theoretical bound. But this benefit is compromised as optimization over such a space is difficult. A practical task dependency assumption, as con-sidered by Maurer et al. (2016); Tripuraneni et al. (2020, 2021); Du et al. (2021) and even in earlier work (Caruana, 1997; Baxter, 2000; Argyriou et al., 2006), posits that each task t admits a predictor of the form ft ◦ϕ, where ϕ is called the shared representation and ft a task-specific predictor often assumed to be linear. Applications of this setting in-clude deep networks with a shared backbone representing ϕ
+
+and multiple task-specific heads representing ft. However, such a network needs knowledge of the task corresponding to an input in order to select the corresponding head, which makes it inapplicable to some CL scenarios where no such task identity is available at test time (e.g., class-incremental 
+
+or domain-incremental learning) (van de Ven et al., 2022; Ramesh and Chaudhari, 2022). 
+
+2.2 Motivation and Context 
+
+We now discuss several lines of prior work that motivate our problem settings and task dependency assumptions. 
+
+CL Context. Our nonlinear transformation gt in (2) covers as special cases the rotations or permutations that arise in CL datasets known respectively as rotated MNIST and per-muted MNIST, where task 1 is to classify the MNIST im-ages x1, and the images xt of subsequent tasks are obtained by rotating or permuting the pixels of x1. While these datasets appear artificial, they have been used to benchmark many CL methods, which make themselves practically sig-nificant. The task dependency with rotations was theo-retically analyzed recently by Goldfarb and Hand (2023); Goldfarb et al. (2024) in the case of two linear regression tasks. In these works, the rotation acts only on the input data and does not change the labels, similarly to the setting of Ben-David and Borbely (2008). 
+
+Motivation from Machine Learning and Control. Note that gt defines a type of autoregressive models which have played major roles in machine learning for computing with sequential data (Bishop, 2006, Chapter 13). Classic such models include (hidden) Markov models and linear dynamical systems, and they find ample applications in speech recognition, language modeling, and control sys-tems where gt is often to be learned. Furthermore, re-cent empirical research shows that deep generative models such as diffusion models can transform one distribution or dataset into another. In diffusion models the transformation between consecutive time steps is of the type identity-plus-noise . Different from our deterministic gt, this is a random transformation due to the use of random noise. Our data generation protocol (1) and (2) also find motiva-tions in recent research on learning from many trajectories 
+
+or dependent data (Tu et al., 2024; Ziemann et al., 2023; Ziemann and Tu, 2022; Tadipatri et al., 2025). A major dif-ference is that these works assume the availability of full data (Fig. 1b). Instead, we are motivated by CL scenar-ios (memory-based methods), and consider a more general situation of learning from many incomplete or partial tra-jectories (Fig. 1c). At a technical level, we build upon the proof ideas of Ziemann et al. (2023); Tadipatri et al. (2025) but also make extensions for cases such as partial trajec-tories, weighted objectives, data-dependent regularization, and data-dependent weights (cf. Section 3). 
+
+Geometric Vision Context. In geometric vision (Hartley and Zisserman, 2004), gt also arises. There, a classical sce-nario is point cloud registration (Arun et al., 1987): Given two point clouds {x1i}i∈[m] and {x2i}i∈[m] of the same Peng, Tadipatri, Xu, Eaton, Vidal 
+
+scene captured by a moving camera, the goal is to find some Euclidean transformation g2 that aligns them; ideally we have x2i = g2(x1i) for all i ∈ [m], while it is possible that not all points of the scene are captured and some points are missing (cf. Fig. 1c). Here, g2 models how the cam-era moves and is independent of the point clouds. Finally, a sequence of multiple point clouds arise naturally, as the camera moves and continually measures the scene. 
+
+## 3 Theoretical Contributions 
+
+We first describe the notations and technical assump-tions (Section 3.1). Then we introduce our theory for weighted experience replay with regularization (Sec-tion 3.2), data-dependent regularization (Section 3.3), and 
+
+data-dependent weights (Section 3.4). 
+
+3.1 Notations and Technical Assumptions Notations. Let Bs(d) be the ball centered at 0 in Rd of radius s > 0, that is Bs(d) := {z ∈ Rd : ∥z∥2 ≤ s}.Denote by poly (·) some polynomial function of its input. The notation ˜O(·) suppresses additive lower-order terms and multiplicative logarithmic terms of the form ln( ·). In any inequality of the form a ≲ b, the symbol ≲ means that the inequality holds up to a constant; define ≳ similarly. We work with the class of functions F := {fθ : θ ∈ Θ}
+
+parameterized by elements of Θ. With q ≥ 1 we assume 
+
+F is in the Lq space with respect to the joint distribution of 
+
+x1, . . . , x T . Let ∥ · ∥ F be the q-norm of a function; namely, for f ∈ F we define ∥f ∥F := 1
+
+> T
+
+P  
+
+> t∈[T]
+
+Ext [∥f (xt)∥qq ]1/q 
+
+(where xt is independent of f ). Since the precise values of q are not very relevant to our development, we hide the dependency on q in the notation ∥ · ∥ F .
+
+Data. We now describe our assumptions (see Table 1 for a summary). First, we assume our input x1 and noise vt are 
+
+sub-Gaussian (see the appendix): 
+
+Assumption 1. x1 is a dx-dimensional sub-Gaussian 
+
+vector with independent coordinates and proxy variance 
+
+σ2/d x. Furthermore, noise vt, when conditioned on 
+
+x1, . . . , x t, is a dy -dimensional sub-Gaussian vector with independent coordinates and proxy variance ν2.Bounded random variables and Gaussian random variables are all sub-Gaussian. It is harmless, though less general, to think of x1 (resp. vt) as a vector with i.i.d. Gaussian entries, each with mean 0 and variance σ2/d x (resp. ν2). 
+
+Parameter and Function Space. We assume f ∗ is realiz-able in a bounded parameter space Θ:
+
+Assumption 2. Parameter space Θ ⊂ Rp is bounded with 
+
+diam(Θ) := sup {∥ θ − θ′∥2 : θ, θ ′ ∈ Θ} = ˜O(poly (p)) ,and the true predictor f ∗ is realizable in Θ, that is f ∗ ∈ F .
+
+Direct Difference Map. In (1), yt is a function of input xt.In (2), we have xt as a function of x1. We now describe the function that maps x1 directly to yt. With the identity mapping g1, write gt ◦ gt−1 ◦ · · · ◦ g1 for the function that maps x1 to xt; this is for convenience and should not cause confusion, even though the output dimension of gi−1 does not match the input dimension of gi. Then, the composition 
+
+f ∗ ◦ gt ◦ gt−1 ◦ · · · ◦ g1 is the direct input-output map in our model. Since we are interested in finding some function 
+
+f that is close to f ∗, we consider the following function, which we call direct difference map :
+
+Gf,t := ( f − f ∗) ◦ gt ◦ gt−1 ◦ · · · ◦ g1. (5) It maps x1 to xt and then takes the difference f (xt) −
+
+f ∗(xt). Note that if all gi’s are such that x1 = · · · = xt,then Gf,t is simply the difference f − f ∗. More generally, 
+
+Gf,t takes task relationship into account as it is defined with respect to gi’s. This Gf,t is crucial to our analysis, and we assume it has the following properties: 
+
+Assumption 3. We have E ∥Gf,t (x1)∥42
+
+ < ∞ and 
+
+E ∥Gf,t (x1)∥22
+
+ > 0 (∀f ∈ F \{ f ∗}, t ∈ [T ]). 
+
+Assumption 4. For constants LF > 0, LG > 0 we have 
+
+∥fθ − fθ′ ∥F ≤ LF · ∥ θ − θ′∥2, ∀θ, θ ′ ∈ Θ; (6) 
+
+∥Gf,t (z) − Gf,t (z′)∥2 ≤ LG · ∥ z − z′∥2, ∀z, z ′ ∈ Rdx ;
+
+There is a sufficiently large number rx such that for every 
+
+f, f ′ ∈ F the following hold with KG = ˜O(poly (rx)) :
+
+sup  
+
+> z∈Brx (dx)
+
+∥Gf,t (z) − Gf ′,t (z)∥2 ≤ KG · ∥ f − f ′∥F ;sup  
+
+> z∈Brx (dx)
+
+∥Gf,t (z)∥22 − ∥ Gf ′,t (z)∥22 ≤ KG∥f − f ′∥F .
+
+Assumptions 1 to 3 are standard. Assumption 4 imposes Lipschitz-type conditions on our parameterized function fθ
+
+and direct difference map Gf,t and it requires rx to be suf-ficiently large ; we will show the precise values of rx in the full version of our theorems in the appendix. Roughly speaking, (6) holds for deep networks with bounded pa-rameters and bounded inputs, while the rest inequalities hold true as soon as all f and gt’s are Lipschitz continu-ous. Note that rotations and permutations aforementioned are Lipschitz continuous. 
+
+3.2 Recovery Guarantee 1: Weighted Replay With Data-Independent Regularization 
+
+In this and next two sections, we introduce our main theo-rems (see Table 2 for a summary). Inspired by memory-based and regularization-based meth-ods, we formulate the following problem: 
+
+min 
+
+> θ∈Θ
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· L 
+
+
+
+yti , f θ (xti )
+
+
+
++ λ · ΩT (θ). (7) Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Table 1: Summary of assumptions that we describe in Section 3.1 and use throughout the paper. 
+
+Assumption Description 
+
+Assumption 1 Input and noise are sub-Gaussian with independent coordinates Assumption 2 The parameter space is bounded and true predictor is realizable Assumption 3 The direct difference map (5) has bounded and nondegenerate moments Assumption 4 The direct difference map and parametrized predictors satisfy Lipschitz-type conditions In (7), we use the squared loss L(y, ˆy) = ∥ˆy − y∥22, as it is empirically useful in CL practice (McDonnell et al., 2023; Peng et al., 2025) and is a common objective of in-terest in CL theory. The factor 1/n t normalizes the loss of each task. Each wt is some non-negative weight for task 
+
+t, and we assume wT > 0, as we have full data for the current task T . Moreover, we assume that wt’s are hyper-parameters, chosen by a user and independent of data. The function ΩT (·) serves the purpose of regularization, and it is weighted by some non-negative number λ. Thus, (7) amounts to minimizing a multitask loss with regularization 
+
+ΩT (·). The generality of (7) stems from its flexibility to choose weights wt and regularization ΩT (·). For exam-ple, experience replay or rehearsal amounts to solving (7) with λ = 0 , while regularization-based methods often set 
+
+wT = 1 and set all previous weights to 0. Here, we assume 
+
+ΩT (θ) is independent of data and noise, as is often the case in machine learning (Goodfellow et al., 2016, Chapter 7), and as considered in some CL algorithms (Kumar et al., 2025; Lewandowski et al., 2025). For our results on data-dependent regularizers, see Section 3.3. 
+
+Remark 2. To unify memory-based and regularization-based methods, Wang et al. (2024) considers a general for-mulation similar to (7). Wang et al. (2024) has a specific algorithmic focus and its formulation is not leveraged in full generality for theoretical developments, while we de-velop statistical recovery results for (7) and its variants. We are ready to state our main result of this section: 
+
+Theorem 1. Fix δ ∈ (0 , 1) . Suppose Assumptions 1 to 4 hold. Recall that noise vt is conditionally sub-Gaussian with proxy variance ν2. Let ˆθT ∈ Θ ⊂ Rp be a global minimizer of (7) with regularization parameter λ satisfying 
+
+λ ≲ 1 
+
+> T
+
+max t∈[T ] wt 
+
+> nt
+
+. Define 
+
+κ := sup   
+
+> f∈F \{ f∗}
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥42
+
+1/2
+
+E [∥Gf,t (x1)∥22] . (8) 
+
+Assume nt ≥ κ2 · ˜O (p ln( T ) + ln(1 /δ )) for all t ∈ [T ].With probability at least 1−δ the weighted estimation error 
+
+> 1
+> T
+
+P  
+
+> t∈[T]
+
+wt · E∥f ∗(xt) − fˆθT (xt)∥22 is bounded above by 
+
+˜O
+
+ ν2(p + ln(1 /δ )) + poly (σ)
+
+T · max  
+
+> t∈[T]
+
+wt
+
+nt
+
+
+
+. (9) Theorem 1 is a finite sample guarantee with bound (9) de-pending on variances of data ( poly (σ)) and noise ( ν2), the number of tasks T , the number of of available samples nt
+
+and weight wt of task t (note that the bounds hides depen-dency on the dimensions dx, d y among other terms). We discuss these quantities next. 
+
+Proxy Variance of Data. Since both xit ’s and vit ’s are random, the estimation error depends on their proxy vari-ances σ2 and ν2. First, the dependency on σ is poly (σ),which is because Assumption 4 introduces a polynomial dependency of rx whose precise values depend on σ.
+
+Weights and Sample Complexity. While prior work sets uniform weights w1 = · · · = wT > 0 to derive statistical bounds in their CL settings (Lin et al., 2023; Friedman and Meir, 2024), we prove our bound in (9) with arbitrary non-negative weights wt (independent of data). This allows us to set different weights and acquire different theoretical in-sights. For example, if we set all weights but wt to 0, then (9) becomes a single-task bound 
+
+E∥f ∗(xt) − fˆθT (xt)∥22 ≤
+
+( ˜O  1
+
+> m
+
+ T = t, 
+
+˜O  1
+
+> nt
+
+ T > t. 
+
+The case T = t holds as we have m samples at task t. We now see that when transiting from task t to task t+1 , forget-ting occurs as the bound transits from ˜O(1 /m ) to ˜O(1 /n t).However, starting from task t + 1 , the bound remains the same, thus no significant forgetting is furthermore entailed. If we set w1 = · · · = wT > 0, then Theorem 1 upper bounds the average error 1
+
+> T
+
+P  
+
+> t∈[T]
+
+E∥f ∗(xt) − fˆθT (xt)∥22
+
+by ˜O
+
+ 1   
+
+> T·min t∈[T]nt
+
+
+
+. For this bound to be informative, we need a balanced memory that stores approximately the same number of samples for each task, which is indeed the case when we construct the memory by random sam-pling or reservoir sampling (Remark 1). Furthermore, this is in agreement with common CL practice, where balanced memory tends to perform better than the imbalanced ones (Dokania et al., 2019; Prabhu et al., 2020; Araujo et al., 2022). Then, given balanced memory and as T increases, our result gets better, partly because the upper bound de-creases, and partly because it provides bounds on the av-erage error of more tasks. Finally, we note that, with non-uniform weights wt = T n t 
+
+> n1+··· +nT
+
+that sum to 1, Theorem 1 gives the bound ˜O
+
+ 1
+
+> n1+··· +nT
+
+
+
+, which is with the optimal sample complexity ˜O(1 /(n1 + · · · + nT )) .Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Are the above bounds too good to be true? Indeed, we have at most m samples starting (the samples of all tasks are deterministic transformations of the m samples from task 1); at first glance one might conclude that the sam-ple complexity lower bound would be ˜O(1 /m ), but The-orem 1 gives a tighter result. This is not a contradiction, the reason being that Theorem 1 assumes sufficiently many samples with m ≥ nt ≥ κ2 · ˜O (p ln( T ) + ln(1 /δ )) , all tasks share a common predictor f ∗, and we consider the regression formulation. For example, if f ∗ is linear, then with m ≥ p linearly independent (random) samples the re-gression problem has a unique global minimizer f ∗. In this case, we can recover the true f ∗ exactly, which gives us the zero bound instead of ˜O(1 /m ).
+
+Condition on Sufficiently Many Samples. Theorem 1 assumes nt ≥ κ2 · ˜O (p ln( T ) + ln(1 /δ )) , that is, every task stores sufficiently many samples. To understand what this assumption imposes, it suffices to analyze the role of 
+
+κ. While computing the numerical values of κ is difficult, from Assumption 3 we know κ is finite. More can be said if we make extra assumptions on how tasks are dependent (note that κ depends on Gf,t and Gf,t encodes the infor-mation about task dependency): 
+
+Example 3. Assume the function class F consists of linear functions and all entries of x1 are i.i.d. Gaussian, sampled from N (0 , 1) . Consider two tasks with g2 : x1 7 → 10 10 x1.With two functions f, f ∗ ∈ F fixed and parameterized by 
+
+θ, θ ∗, respectively, we have Gf,t (x1) = ( θ−θ∗)⊤x1. Since 
+
+Gf,t (x1) is also a zero-mean Gaussian, a standard calcula-tion of its fourth and second moments gives κ2 = 3 . Note that the scaling factor 10 10 has no effect in κ.We have κ2 ≤ 3 if Gaussianity of Example 3 is replaced with strict sub-Gaussianity . Finally, we note that κ is upper bounded by some universal constant for sub-Gaussian data. 
+
+Robustness to Distant Distributions. Example 3 general-izes to multiple tasks with gt’s being of the form x1 7 → stxt
+
+for some st. Such a simple example of gt’s can in fact make a difficult case for analysis. Indeed, it affects the Lipschitz parameter LG and radius rx in Assumption 4. That said, all of our bounds exhibit only a logarithmic dependency on LG, rx, so our theorems allow st to be a polynomial function of problem parameters. The second difficulty Ex-ample 3 brings manifests itself, not in our theorem, but in prior work. Indeed, for large st, the data distributions of two tasks, N (0 , I dx ) and N (0 , s 2 
+
+> t
+
+Idx ), could be very dis-tant ; here Idx is the dx × dx identity matrix. This distance has fundamental impacts on many statistical bounds that depend linearly on this distance: 
+
+Remark 3. The theory of Mansour et al. (2009) on domain adaptation bounds statistical errors of the second task (i.e., 
+
+target task ) by the discrepancy distance between distribu-tions π1, π 2 of the first task ( source task ) and the second task. The discrepancy dist( π1, π 2), defined as 
+
+sup 
+
+> θ1,θ 2∈Θ
+
+|Eπ1 L (fθ1 (z), f θ2 (z)) − Eπ2 L (fθ1 (z), f θ2 (z)) | ,
+
+measures the similarities between π1, π 2. If dist( π1, π 2)
+
+is small, we might expect some benefits of learning task 1 prior to task 2 (e.g., small errors on task 2). This basic intuition is extended to various settings, including online multitask learning, transfer learning, and continual learn-ing (Mohri and Mu˜ noz Medina, 2012; Wang et al., 2023; Ye and Bors, 2022). That said, the discrepancy can be large in Example 3 with the squared loss L(·, ·). Indeed, set π1 = N (0 , I dx ) and π2 = N (0 , s 2Idx ) with s ≫ 1, an-done verifies dist( π1, π 2) = ( s2 −1) ·diam(Θ) 2, that is, the distance grows unbounded as s increases; their correspond-ing bound is vacuous in this scenario. In consequence, the proof based on such a discrepancy is unable to handle sim-ple yet distant tasks. For a similar reason, the recent PAC-Bayes bound of Friedman and Meir (2024) easily becomes vacuous due to the presence of a similar discrepancy term. Our final note on Theorem 1 is a comparison to the experi-ence replay theory of Peng et al. (2023a). 
+
+Remark 4. Theorem 3 of Peng et al. (2023a) provides the bound ˜O( 1 
+
+> nt
+
+) on the excess risk of (7) with λ =0 for each task t. This directly implies the bound 
+
+˜O( log TT
+
+P   
+
+> t∈[T]1
+> nt
+
+) for the average joint loss. This bound becomes ˜O(log T /n t) when all nt’s are of the same order. In contrast, we directly work with the average estimation error, and our bound has an ˜O(1 /T ) dependency on T .
+
+3.3 Recovery Guarantee 2: Data-Dependent Regularization and Knowledge Distillation 
+
+Theorem 1 in Section 3.2 assumes the regularizer is inde-pendent of data. On the other hand, it is not uncommon to utilize data-dependent regularizers for CL. A typical data-dependent regularizer used in CL is knowledge distillation ,that is to match the (intermediate) outputs of the current network fθ and the previously learned network fˆθt at stored samples. This motivates the following CL method: • ( Step 1 ) Set hyperparameter βT > 0. Then solve 
+
+ˆθT ∈ argmin 
+
+> θ∈Θ
+
+βT
+
+X
+
+> i∈[m]
+
+L
+
+
+
+yT i , f θ (xT i )
+
+
+
++ Ω T (θ), (10) where ΩT (·) is either of the following two regularizers: 
+
+ΩT (θ) = X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt · ∥ fθ (xti ) − fˆθT −1 (xti )∥22 (11) 
+
+ΩT (θ) = X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt · ∥ fθ (xti ) − fˆθt (xti )∥22 (12) • ( Step 2) Choose indices RT ⊂ [m]. Store 
+
+{(xT i , y T i )}i∈R T . Increase T . Go back to Step 1 .Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+The above method are with regularizer (11) or (12) to compute ˆθ1, . . . , ˆθT continually. Regularizer (11) aims to match fθ and fˆθT −1 on all previous tasks, while regularizer (12) aims to match fθ and fˆθt on each task t (∀t ∈ [T − 1] ). In both cases, it is understood that task 1 is solved without regularization and that the algorithm consistently chooses either (11) or (12). Computationally, for (12) we can store 
+
+fˆθt (xti ) after training task t, while for (11) we need to com-pute fˆθT −1 (xti ) after training task T − 1. For both regular-izers, we have the following theorem. 
+
+Theorem 2. Fix δ ∈ (0 , 1) . Let κ be as in (8). Sup-pose Assumptions 1 to 4 hold. Recall that noise vt is conditionally sub-Gaussian with proxy variance ν2. As-sume nt ≥ κ2 · ˜O (p ln( T ) + ln(1 /δ )) for all t ∈ [T ].If ˆθ1, . . . , ˆθT ∈ Θ ⊂ Rp are global minimizers of (11) with βt = 1 /4T −t. With probability at least 1 − δ the weighted error P    
+
+> t∈[T]
+> βtntP
+> t∈[T]βtnt
+
+· E∥f ∗(xt) − fˆθT (xt)∥22
+
+is bounded above by 
+
+˜O ν2(pT + ln(1 /δ )) + poly (σ)
+
+P  
+
+> t∈[T]
+
+βtnt
+
+!
+
+. (13) 
+
+If ˆθ1, . . . , ˆθT are solutions to (12), then with probability at least 1 − δ we have (13) holds as well. 
+
+In Theorem 2, the error term that we bound has its weights on distances ∥f ∗(xt) − fˆθT (xt)∥22 decay exponentially as 
+
+t decreases, meaning that (13) carries exponentially less control over the distances on past tasks. Therefore, The-orem 2 is informative for a small number of the most recent tasks, and to some extent, it illuminates the lim-its of regularization-based methods in combating forget-ting. In fact, this bound is worse than that of Theo-rem 1 for experience replay. This aligns with empirical observations that experience replay typically outperforms regularization-based approaches; for example, see Table 4 of (Prabhu et al., 2020), which compares LwF (Li and Hoiem, 2017) and GDumb (Prabhu et al., 2020). On a technical note, bound (13) itself could be sub-optimal for two reasons. First, since the algorithm analyzed in-volves all predictors fˆθ1 , . . . , f ˆθT , all of which depend on data, we have to run an ε-net argument on the product space 
+
+ΘT in RpT , which brings the dependency pT . Second, the exponential forgetting phenomenon is due to our choice 
+
+βt = 1 /4T −t. This choice is crucial, as it prevents the bound from getting exponentially large. Improving Theo-rem 2 in these aspects is left for future work. We finish the section by remarking on existing theoretical contributions on regularization-based methods: 
+
+Remark 5. The analysis of Heckel (2022); Li et al. (2023); Zhao et al. (2024); Levinstein et al. (2025) relies on lin-ear models or the kernel regime. The analysis of Zhu et al. (2025) relies on either the assumption of shared global min-imizers or a noisy linear regression model. The setting of Yin et al. (2020) is general, but the error bound of their Theorem 4 contains the distance of the form ∥ˆθT − ˆθt∥2.This is a random variable whose dependency on problem parameters is unclear. In contrast, our bound in (13) con-tains only parameters related to the problem configuration. We achieve this via several key inequalities that give rise to a recurrence relation, which we unroll to eliminate all random variables related to ˆθt.
+
+3.4 Recovery Guarantee 3: Data-Dependent Weights and Constrained Optimization 
+
+Our formulation (7) in Section 3.2 assumes the weights are independent of data. Here, we consider 
+
+ˆθT ∈ argmin 
+
+> θ∈Θ
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+˜wt
+
+nt
+
+· L 
+
+
+
+yti , f θ (xti )
+
+
+
+, (14) where weight ˜wt is a random variable depending on all data and noise. While we allowed zero weights in Section 3.2 to study regularization-based methods without replay, here we assume ˜wt̸ = 0 (∀t ∈ [T ]), or otherwise formulation (14) reduces to a case with fewer tasks. Then, dividing the smallest weight if necessary, we assume ˜wt ∈ [1 , W ].There are multiple ways to choose ˆwt in a data-dependent fashion. For example, set ˆwt to be proportional (or in-versely proportional) to the loss of task t (in light of 
+
+boosting (Schapire, 1990; Ramesh and Chaudhari, 2022; Wang et al., 2023) or iteratively reweighted least-squares 
+
+(Daubechies et al., 2010; K¨ ummerle et al., 2021; Peng et al., 2022, 2023b)), or solve a bilevel program in weight variables that represent coresets (Borsos et al., 2020), or set the weights to the values of dual variables which arise in primal-dual methods for constrained learning (Lopez-Paz and Ranzato, 2017; Chamon et al., 2022; Peng et al., 2023a; Elenter et al., 2023; Li et al., 2024). We now give recovery guarantees for (14): 
+
+Theorem 3. Fix δ ∈ (0 , 1) . Let κ be as in (8). Suppose As-sumptions 1 to 4 hold. Recall that noise vt is conditionally sub-Gaussian with proxy variance ν2 and that ˜wt ∈ [1 , W ].Let ˆθT ∈ Θ ⊂ Rp be a global minimizer of (14). As-sume nt ≥ κ2 · ˜O (p ln( T ) + ln(1 /δ )) for all t ∈ [T ] and 
+
+W ≤ 1 + 1 
+
+> T n t
+
+. With probability at least 1 − δ, the av-erage estimation error 1
+
+> T
+
+P  
+
+> t∈[T]
+
+E∥f ∗(xt) − fˆθT (xt)∥22 is bounded above by 
+
+˜O
+
+ ν2(p + ln(1 /δ )) + max {poly (σ), ln( σT )}
+
+T min t∈[T ] nt
+
+
+
+. (15) The bound of Theorem 3 follows from that of Theorem 1, and in fact they are identical except assumption W ≤
+
+1 + 1 
+
+> T n t
+
+. This extra condition is what we pay for the case of data-dependent weights. Due to a number of differences in the settings, Theorem 3 is not directly comparable to Peng, Tadipatri, Xu, Eaton, Vidal 
+
+theoretical results of Li et al. (2024); Peng et al. (2023a); Chamon et al. (2022). However, a distinguishing aspect is that, as T gets large, our bound would in general get better, while their bounds deteriorate. This is because we explic-itly model the dependency between tasks and take advan-tage of it in the proofs, while their proofs do not consider task dependency and need instead to apply T concentration inequalities, one for each task (Example 2). 
+
+## 4 Conclusion 
+
+Inspired by nonlinear dynamical systems and several other topics, we formalized a notion of task dependency for continual learning of nonlinear regression tasks. Build-ing upon it, we developed some recovery guarantees for commonly used CL methods that involve replay, regular-ization (e.g., knowledge distillation), and data-dependent weighting. The estimation error bounds we derived are well-behaved, as they diminish as the number of samples tends to infinity or for sufficiently small noise. The key to proving our theorems is a careful balance we maintain between the generality of the problem formulation and the tightness of the resulting bounds; put differently, this can also be viewed as a limitation: our proof framework does not support deriving stronger guarantees for more general scenarios where different tasks are dependent arbitrarily (Fig. 2). The other limitation is this: Our results are based on the assumption that the number of stored samples per task exceeds the dimension of the parameter space. It will be of interest to relax this assumption and furthermore ex-tend our results to the overparameterized regime. In the future, we plan to improve the bounds for regularization-based methods (Theorem 2) by exploring more specific settings such as linear models (cf. Remark 5), to extend our Theorem 3 with data-dependent weights within the constrained learning framework of Chamon et al. (2022) that guarantees the feasibility of constraints, and to extend the insights of the paper here for other CL paradigms (e.g., expansion-based methods). Also, note that our analysis is independent of the algorithmic choice, and in the future we plan to analyze the effect of the algorithm on the recovery errors as well. 
+
+## Acknowledgement 
+
+This work is supported by the National Science Foundation (grants 2031985), the Simons Foundation (grant 814201), and the Office of Naval Research (grant 503405-78051). 
+
+References 
+
+Aljundi, R., Lin, M., Goujaud, B., and Bengio, Y. (2019). Gra-dient based sample selection for online continual learning. In 
+
+Advances in Neural Information Processing Systems . 1 Alquier, P. et al. (2024). User-friendly introduction to PAC-Bayes bounds. Foundations and Trends® in Machine Learn-ing , 17(2):174–303. 1 Araujo, V., Balabin, H., Hurtado, J., Soto, A., and Moens, M.-F. (2022). How relevant is selective memory population in lifelong language learning? In Conference of the Asia-Pacific Chapter of the Association for Computational Linguistics and International Joint Conference on Natural Language Process-ing (Volume 2: Short Papers) . 3, 6 Argyriou, A., Evgeniou, T., and Pontil, M. (2006). Multi-task feature learning. Advances in Neural Information Processing Systems . 4 Arun, K. S., Huang, T. S., and Blostein, S. D. (1987). Least-squares fitting of two 3D point sets. IEEE Transactions on Pattern Analysis and Machine Intelligence , (5):698–700. 4 Banayeeanzade, M., Soltanolkotabi, M., and Rostami, M. (2025). Theoretical insights into overparameterized models in multi-task and replay-based continual learning. Transactions on Ma-chine Learning Research . 1 Bang, J., Kim, H., Yoo, Y., Ha, J.-W., and Choi, J. (2021). Rain-bow memory: Continual learning with a memory of diverse samples. In IEEE/CVF Conference on Computer Vision and Pattern Recognition . 1 Baxter, J. (2000). A model of inductive bias learning. Journal of Artificial Intelligence Research , 12:149–198. 4 Ben-David, S., Blitzer, J., Crammer, K., Kulesza, A., Pereira, F., and Vaughan, J. W. (2010). A theory of learning from different domains. Machine learning , 79:151–175. 33 Ben-David, S. and Borbely, R. S. (2008). A notion of task re-latedness yielding provable multiple-task learning guarantees. 
+
+Machine Learning , 73(3):273–287. 4 Bennani, M. A. and Sugiyama, M. (2020). Generalisation guar-antees for continual learning with orthogonal gradient descent. In 4th Lifelong Machine Learning Workshop at ICML 2020 . 1 Bishop, C. M. (2006). Pattern Recognition and Machine Learn-ing . Springer. 4 Borsos, Z., Mutny, M., and Krause, A. (2020). Coresets via bilevel optimization for continual learning and streaming. Ad-vances in Neural Information Processing Systems . 3, 8 Buzzega, P., Boschini, M., Porrello, A., Abati, D., and Calderara, S. (2020). Dark experience for general continual learning: a strong, simple baseline. Advances in Neural Information Pro-cessing Systems . 1 Caruana, R. (1997). Multitask learning. Machine Learning ,28(1):41–75. 4 Chamon, L. F., Paternain, S., Calvo-Fullana, M., and Ribeiro, A. (2022). Constrained learning with non-convex losses. IEEE Transactions on Information Theory . 2, 8, 9 Chaudhry, A., Ranzato, M., Rohrbach, M., and Elhoseiny, M. (2019). Efficient lifelong learning with A-GEM. In Interna-tional Conference on Learning Representations . 1 Cucker, F. and Smale, S. (2002). On the mathematical foundations of learning. Bulletin of the American Mathematical Society ,39(1):1–49. 39 Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Dar, Y., LeJeune, D., and Baraniuk, R. G. (2024). The common intuition to transfer learning can win or lose: Case studies for linear regression. SIAM Journal on Mathematics of Data Sci-ence , 6(2):454–480. 14 Daubechies, I., DeVore, R., Fornasier, M., and G¨ unt¨ urk, C. S. (2010). Iteratively reweighted least squares minimization for sparse recovery. Communications on Pure and Applied Math-ematics , 63(1):1–38. 8 Ding, M., Ji, K., Wang, D., and Xu, J. (2024). Understanding forgetting in continual learning with linear regression. In In-ternational Conference on Machine Learning . 1 Doan, T., Bennani, M. A., Mazoure, B., Rabusseau, G., and Alquier, P. (2021). A theoretical analysis of catastrophic for-getting through the NTK overlap matrix. In International Con-ference on Artificial Intelligence and Statistics . 1 Dokania, P., Torr, P., and Ranzato, M. (2019). Continual learning with tiny episodic memories. In Workshop on Multi-Task and Lifelong Reinforcement Learning . 1, 3, 6 Du, S. S., Hu, W., Kakade, S. M., Lee, J. D., and Lei, Q. (2021). Few-shot learning via learning the representation, provably. In 
+
+International Conference on Learning Representations . 4 Elenter, J., NaderiAlizadeh, N., Javidi, T., and Ribeiro, A. (2023). Primal dual continual learning: Balancing stability and plas-ticity through adaptive memory allocation. Technical report, arXiv:2310.00154v2 [cs.LG]. 1, 2, 3, 8, 14 Evron, I., Levinstein, R., Schliserman, M., Sherman, U., Koren, T., Soudry, D., and Srebro, N. (2025). From continual learning to SGD and back: Better rates for continual linear models. In 
+
+Fourth Conference on Lifelong Learning Agents - Workshop Track . 1 Evron, I., Moroshko, E., Ward, R., Srebro, N., and Soudry, D. (2022). How catastrophic can catastrophic forgetting be in lin-ear regression? In Conference on Learning Theory . 1, 3, 14 Friedman, L. and Meir, R. (2024). Data-dependent and oracle bounds on forgetting in continual learning. Technical report, arXiv:2406.09370v2 [cs.LG]. 1, 2, 6, 7 Goldfarb, D., Evron, I., Weinberger, N., Soudry, D., and Hand, P. (2024). The joint effect of task similarity and overparame-terization on catastrophic forgetting — an analytical model. In 
+
+International Conference on Learning Representations . 1, 4 Goldfarb, D. and Hand, P. (2023). Analysis of catastrophic forget-ting for random orthogonal transformation tasks in the overpa-rameterized regime. In International Conference on Artificial Intelligence and Statistics . 4 Goodfellow, I., Bengio, Y., and Courville, A. (2016). Deep Learn-ing . MIT Press. 6 Hartley, R. and Zisserman, A. (2004). Multiple View Geometry in Computer Vision . Cambridge University Press. 4 Heckel, R. (2022). Provable continual learning via sketched Jaco-bian approximations. In International Conference on Artificial Intelligence and Statistics . 1, 2, 8 Kirkpatrick, J., Pascanu, R., Rabinowitz, N., Veness, J., Des-jardins, G., Rusu, A. A., Milan, K., Quan, J., Ramalho, T., Grabska-Barwinska, A., et al. (2017). Overcoming catas-trophic forgetting in neural networks. Proceedings of The Na-tional Academy of Sciences , 114(13):3521–3526. 1 Kumar, S., Marklund, H., and Van Roy, B. (2025). Maintaining plasticity in continual learning via regenerative regularization. In Conference on Lifelong Learning Agents , pages 410–430. PMLR. 6 K¨ ummerle, C., Mayrink Verdun, C., and St¨ oger, D. (2021). It-eratively reweighted least squares for basis pursuit with global linear convergence rate. Advances in Neural Information Pro-cessing Systems . 8 Levinstein, R., Attia, A., Schliserman, M., Sherman, U., Soudry, D., Koren, T., and Evron, I. (2025). Optimal rates in con-tinual linear regression via increasing regularization. In The Thirty-ninth Annual Conference on Neural Information Pro-cessing Systems . 8 Lewandowski, A., Bortkiewicz, M., Kumar, S., Gy¨ orgy, A., Schu-urmans, D., Ostaszewski, M., and Machado, M. C. (2025). Learning continually by spectral regularization. In Interna-tional Conference on Learning Representations . 6 Li, G., Yu, W., Yao, Y., Tong, W., Liang, Y., Lin, Q., and Yang, T. (2024). Model developmental safety: A retention-centric method and applications in vision-language models. Technical report, arXiv:2410.03955 [cs.LG]. 1, 8, 9 Li, H., Wu, J., and Braverman, V. (2023). Fixed design analysis of regularization-based continual learning. In Conference on Lifelong Learning Agents . 1, 2, 3, 8, 14 Li, Z. and Hoiem, D. (2017). Learning without forgetting. IEEE Transactions on Pattern Analysis and Machine Intelligence ,40(12):2935–2947. 1, 8 Lin, S., Ju, P., Liang, Y., and Shroff, N. (2023). Theory on forget-ting and generalization of continual learning. In International Conference on Machine Learning . 1, 6 Lopez-Paz, D. and Ranzato, M. (2017). Gradient episodic mem-ory for continual learning. Advances in Neural Information Processing Systems . 1, 8 Mansour, Y., Mohri, M., and Rostamizadeh, A. (2009). Domain adaptation: Learning bounds and algorithms. In Proceedings of The 22nd Annual Conference on Learning Theory (COLT 2009) , Montr´ eal, Canada. 2, 7 Matni, N. and Tu, S. (2019). A tutorial on concentration bounds for system identification. In 2019 IEEE 58th conference on decision and control (CDC) , pages 3741–3749. IEEE. 33 Maurer, A. and Pontil, M. (2021). Concentration inequalities un-der sub-gaussian and sub-exponential conditions. Advances in Neural Information Processing Systems , 34:7588–7597. 33 Maurer, A., Pontil, M., and Romera-Paredes, B. (2016). The ben-efit of multitask representation learning. Journal of Machine Learning Research , 17(81):1–32. 4 McCloskey, M. and Cohen, N. J. (1989). Catastrophic interfer-ence in connectionist networks: The sequential learning prob-lem. In Psychology of Learning and Motivation , volume 24, pages 109–165. Elsevier. 1 McDonnell, M. D., Gong, D., Parvaneh, A., Abbasnejad, E., and van den Hengel, A. (2023). RanPAC: Random projections and pre-trained models for continual learning. Advances in Neural Information Processing Systems . 6 Mohri, M. and Mu˜ noz Medina, A. (2012). New analysis and algo-rithm for learning with drifting distributions. In International Conference on Algorithmic Learning Theory . 7, 34 Mohri, M., Rostamizadeh, A., and Talwalkar, A. (2018). Founda-tions of Machine Learning . MIT Press. 1 Park, D., Hong, S., Han, B., and Lee, K. M. (2019). Contin-ual learning by asymmetric loss approximation with single-side overestimation. In IEEE/CVF International Conference on Computer Vision . 1 Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Peng, B. and Risteski, A. (2022). Continual learning: A feature extraction formalization, an efficient algorithm, and fundamen-tal obstructions. In Advances in Neural Information Processing Systems . 14 Peng, L., Elenter, J., Agterberg, J., Ribeiro, A., and Vidal, R. (2025). TSVD: Bridging theory and practice in continual learn-ing with pre-trained models. In International Conference on Learning Representations . 6 Peng, L., Giampouras, P., and Vidal, R. (2023a). The ideal con-tinual learner: An agent that never forgets. In International Conference on Machine Learning . 1, 2, 3, 7, 8, 9, 14 Peng, L., K¨ ummerle, C., and Vidal, R. (2022). Global linear and local superlinear convergence of IRLS for non-smooth robust regression. In Advances in Neural Information Processing Sys-tems . 8 Peng, L., K¨ ummerle, C., and Vidal, R. (2023b). On the conver-gence of IRLS and its variants in outlier-robust estimation. In 
+
+IEEE/CVF Conference on Computer Vision and Pattern Recog-nition . 8 Peng, L. and Vidal, R. (2025). Mathematics of continual learning. Technical report, arXiv:2504.17963 [cs.LG]. 14 Pentina, A. and Lampert, C. H. (2015). Lifelong learning with non-iid tasks. Advances in Neural Information Processing Sys-tems . 1 Prabhu, A., Torr, P. H., and Dokania, P. K. (2020). GDumb: A simple approach that questions our progress in continual learn-ing. In European Conference on Computer Vision . 1, 6, 8 Ramesh, R. and Chaudhari, P. (2022). Model zoo: A growing brain that learns continually. In International Conference on Learning Representations . 4, 8 Rebuffi, S.-A., Kolesnikov, A., Sperl, G., and Lampert, C. H. (2017). iCaRL: Incremental classifier and representation learn-ing. In IEEE Conference on Computer Vision and Pattern Recognition . 1 Rigollet, P. and H¨ utter, J.-C. (2023). High-dimensional statistics. Technical report, arXiv:2310.19244 [math.ST]. 37 Robins, A. (1993). Catastrophic forgetting in neural networks: The role of rehearsal mechanisms. In The First New Zealand International Two-Stream Conference on Artificial Neural Net-works and Expert Systems . 1 Schapire, R. E. (1990). The strength of weak learnability. Ma-chine learning , 5:197–227. 8 Shalev-Shwartz, S. and Ben-David, S. (2014). Understanding Machine Learning: From Theory to Algorithms . Cambridge University Press. 1 Shin, H., Lee, J. K., Kim, J., and Kim, J. (2017). Continual learn-ing with deep generative replay. Advances in Neural Informa-tion Processing Systems . 1 Shui, C., Abbasi, M., Robitaille, L.- ´ E., Wang, B., and Gagn´ e, C. (2019). A principled approach for learning task similarity in multitask learning. In Proceedings of the 28th International Joint Conference on Artificial Intelligence , pages 3446–3452. 33 Sun, S., Calandriello, D., Hu, H., Li, A., and Titsias, M. (2022). Information-theoretic online memory selection for continual learning. In International Conference on Learning Represen-tations . 3 Swartworth, W., Needell, D., Ward, R., Kong, M., and Jeong, H. (2023). Nearly optimal bounds for cyclic forgetting. Advances in Neural Information Processing Systems . 1 Tadipatri, U. K. R., Haeffele, B. D., Agterberg, J., Ziemann, I., and Vidal, R. (2025). Nonconvex linear system identification with minimal state representation. In Ozay, N., Balzano, L., Panagou, D., and Abate, A., editors, Proceedings of the 7th An-nual Learning for Dynamics &amp; Control Conference , vol-ume 283 of Proceedings of Machine Learning Research , pages 1286–1299. PMLR. 4 Tripuraneni, N., Jin, C., and Jordan, M. (2021). Provable meta-learning of linear representations. In International Conference on Machine Learning . 4 Tripuraneni, N., Jordan, M., and Jin, C. (2020). On the theory of transfer learning: The importance of task diversity. Advances in Neural Information Processing Systems . 4 Tu, S., Frostig, R., and Soltanolkotabi, M. (2024). Learning from many trajectories. Journal of Machine Learning Research ,25(216):1–109. 4 van de Ven, G. M., Tuytelaars, T., and Tolias, A. S. (2022). Three types of incremental learning. Nature Machine Intelligence ,4(12):1185–1197. 4 Vershynin, R. (2018). High-Dimensional Probability: An Intro-duction with Applications in Data Science . Cambridge Univer-sity Press. 37, 38, 39 Verwimp, E., De Lange, M., and Tuytelaars, T. (2021). Rehearsal revealed: The limits and merits of revisiting samples in contin-ual learning. In IEEE/CVF International Conference on Com-puter Vision . 1 Vitter, J. S. (1985). Random sampling with a reservoir. ACM Transactions on Mathematical Software , 11(1):37–57. 3 Wainwright, M. J. (2019). High-Dimensional Statistics: A Non-Asymptotic Viewpoint . Cambridge University Press. 37 Wang, B., Mendez, J. A., Shui, C., Zhou, F., Wu, D., Xu, G., Gagn´ e, C., and Eaton, E. (2023). Gap minimization for knowl-edge sharing and transfer. Journal of Machine Learning Re-search , 24(33):1–57. 7, 8, 34 Wang, L., Zhang, X., Yang, K., Yu, L., Li, C., Hong, L., Zhang, S., Li, Z., Zhong, Y., and Zhu, J. (2022). Memory replay with data compression for continual learning. In International Con-ference on Learning Representations . 1 Wang, Z., Li, Y., Shen, L., and Huang, H. (2024). A unified and general framework for continual learning. In International Conference on Learning Representations . 6 Ye, F. and Bors, A. G. (2022). Task-free continual learning via online discrepancy distance learning. In Advances in Neural Information Processing Systems . 1, 2, 7 Yin, D., Farajtabar, M., Li, A., Levine, N., and Mott, A. (2020). Optimization and generalization of regularization-based con-tinual learning: a loss approximation viewpoint. Technical re-port, arXiv:2006.10974v3 [cs.LG]. 1, 2, 8 Zenke, F., Poole, B., and Ganguli, S. (2017). Continual learning through synaptic intelligence. In International Conference on Machine Learning . 1 Zhao, X., Wang, H., Huang, W., and Lin, W. (2024). A statistical theory of regularization-based continual learning. In Interna-tional Conference on Machine Learning . 1, 2, 3, 8, 14 Zhu, F., Liu, Y., Liu, W., and Zhang, Z. (2025). Global conver-gence of continual learning on non-iid data. Technical report, arXiv:2503.18511 [cs.LG]. 2, 3, 8, 14 Ziemann, I., Tsiamis, A., Lee, B., Jedra, Y., Matni, N., and Pap-pas, G. J. (2023). A tutorial on the non-asymptotic theory of system identification. In IEEE Conference on Decision and Control . 4 Recovery Guarantees for Continual Learning of Dependent Tasks     
+
+> Ziemann, I., Tsiamis, A., Lee, B., Jedra, Y., Matni, N., and Pap-pas, G. J. (2024a). A Tutorial on the Non-Asymptotic Theory of System Identification. arXiv:2309.03873. 27 Ziemann, I. and Tu, S. (2022). Learning with little mixing. Ad-vances in Neural Information Processing Systems . 4 Ziemann, I., Tu, S., Pappas, G. J., and Matni, N. (2024b). Sharp rates in dependent learning theory: Avoiding sample size de-flation for the square loss. In Salakhutdinov, R., Kolter, Z., Heller, K., Weller, A., Oliver, N., Scarlett, J., and Berkenkamp, F., editors, Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pages 62779–62802. PMLR. 33
+
+## Checklist 
+
+1. For all models and algorithms presented, check if you include: (a) A clear description of the mathematical setting, assumptions, algorithm, and/or model. [Yes] (b) An analysis of the properties and complexity (time, space, sample size) of any algorithm. [Not Applicable] (c) (Optional) Anonymized source code, with spec-ification of all dependencies, including external libraries. [Not Applicable] 2. For any theoretical claim, check if you include: (a) Statements of the full set of assumptions of all theoretical results. [Yes] (b) Complete proofs of all theoretical results. [Yes] (c) Clear explanations of any assumptions. [Yes] 3. For all figures and tables that present empirical results, check if you include: (a) The code, data, and instructions needed to repro-duce the main experimental results (either in the supplemental material or as a URL). [Not Appli-cable] (b) All the training details (e.g., data splits, hyperpa-rameters, how they were chosen). [Not Applica-ble] (c) A clear definition of the specific measure or statistics and error bars (e.g., with respect to the random seed after running experiments multiple times). [Not Applicable] (d) A description of the computing infrastructure used. (e.g., type of GPUs, internal cluster, or cloud provider). [Not Applicable] 4. If you are using existing assets (e.g., code, data, mod-els) or curating/releasing new assets, check if you in-clude: (a) Citations of the creator If your work uses existing assets. [Not Applicable] (b) The license information of the assets, if applica-ble. [Not Applicable] (c) New assets either in the supplemental material or as a URL, if applicable. [Not Applicable] (d) Information about consent from data providers/curators. [Not Applicable] (e) Discussion of sensible content if applicable, e.g., personally identifiable information or offensive content. [Not Applicable] 5. If you used crowdsourcing or conducted research with human subjects, check if you include: (a) The full text of instructions given to participants and screenshots. [Not Applicable] (b) Descriptions of potential participant risks, with links to Institutional Review Board (IRB) ap-provals if applicable. [Not Applicable] (c) The estimated hourly wage paid to participants and the total amount spent on participant com-pensation. [Not Applicable] Recovery Guarantees for Continual Learning of Dependent Tasks: Memory, Data-Dependent Regularization, and Data-Dependent Weights: Supplementary Materials 
+
+In this material, we will present proofs of results, examples, related work, extra discussion on extensions, and preliminaries for the main draft. The below is the table of contents of this material: 
+
+# Contents 
+
+1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12 Problem Setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22.1 Data Model, Task Dependency, and Samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32.2 Motivation and Context . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43 Theoretical Contributions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53.1 Notations and Technical Assumptions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53.2 Recovery Guarantee 1: Weighted Replay With Data-Independent Regularization . . . . . . . . . . . . . . 53.3 Recovery Guarantee 2: Data-Dependent Regularization and Knowledge Distillation . . . . . . . . . . . . 73.4 Recovery Guarantee 3: Data-Dependent Weights and Constrained Optimization . . . . . . . . . . . . . . 84 Conclusion . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13 A Extra Details on Main Paper . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 A.1 Extra Notations and Figures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 A.2 On Task-Specific Predictors . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 14 A.3 On Assumption 4 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 B Full Statement of Theorem 1 and Its Proof . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 B.1 Proposition 1 and Its Proof . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21 B.2 Proposition 2 and Its Proof . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25 C Full Statement of Theorem 2 and Its Proof (Data-Dependent Regularization) . . . . . . . . . . . . . . . . . . . 28 C.1 Proposition 3 and Its Proof . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32 D Discussion on Extension of Results . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 E Related Work on Distance Measures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 33 F Basic Definitions and Auxiliary Lemmas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 F.1 Notations and Lemmas . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 34 F.2 Definitions and Lemmas from High-Dimensional Statistics . . . . . . . . . . . . . . . . . . . . . . . . . 37 13 Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Table 2: Summary of theorems that we describe in Sections 3.2 to 3.4. 
+
+Theorem Description 
+
+Theorem 1 Recovery error bound for weighted replay with data-independent regularization Theorem 2 Recovery error bound for data-dependent regularization Theorem 3 Recovery error bound for data-dependent weights 
+
+m x1
+
+x2
+
+x3
+
+g1
+
+g2
+
+x11 x12 x13 x14 
+
+x21 x22 x23 x24 
+
+x31 x32 x33 x34 
+
+
+
+  
+
+> task 1has i.i.d. samples
+
+x11 x13 
+
+x22 x23 x24 
+
+x31 x32 x33 x34 
+
+
+
+                            
+
+> M1={1,3}M3={1,2,3}
+> M2=M4={2,3}
+> R1={1,3}
+> R2={2,3,4}
+> R3={1,2,3,4}
+> (a) data dependency (b) full data (c) training data available at task 3
+
+Figure 3: Example of our setup ( T = 3 , m = 4 ): 1a shows m i.i.d. trajectories generated by xt = gt(x1, . . . , x t−1); 1b shows full data in a matrix, where columns represent trajectories and each row represents data of each task; 1c shows the index sets Rt, Mi and data available at task 3.
+
+## A Extra Details on Main Paper 
+
+A.1 Extra Notations and Figures 
+
+In our proof, we will need to index our data by columns, thus we extend Fig. 1 and include examples of the index sets 
+
+Mi ⊂ [T ] for each column i. Specifically, the i-th column of this partial matrix in Fig. 3c corresponds to a partial trajectory 
+
+of samples {(xti , y ti )}t∈M i .
+
+A.2 On Task-Specific Predictors 
+
+At first glance, (1) seems to ask all tasks to share a common true predictor f ∗, similarly to prior work (Evron et al., 2022; Peng and Risteski, 2022; Peng et al., 2023a; Li et al., 2023; Zhao et al., 2024; Elenter et al., 2023; Zhu et al., 2025). But the extra presence of (2) on top of (1) recovers a case where each task t possesses its own predictor f ∗ 
+
+> t
+
+:
+
+Example 4. Consider the following model: 
+
+yt = f ∗ 
+
+> t
+
+(xt) + vt, xt = gt(x1, . . . , x t−1),f ∗ 
+
+> t
+
+= f ∗ 
+
+> t−1
+
+◦ ht. (16) In (16), the first two equations are identical to (1) and (2), despite the different notations xt and gt. Moreover, (16) contains an extra equation f ∗ 
+
+> t
+
+= f ∗ 
+
+> t−1
+
+◦ ht, where ht is some known invertible mapping capturing a relationship be-tween the predictors of two consecutive tasks. Let h1 be the identity mapping, and write h1: t := h1 ◦ · · · ◦ ht and 
+
+xt := h1: t(xt). By basic algebra we eliminate the presence of f ∗ 
+
+> t
+
+, x t in (16), and obtain yt = f ∗ 
+
+> 1
+
+(xt) + vt and 
+
+xt = h1: t(gt(h−11 (x1), . . . , h −11: t−1(xt−1))) . The former equation is identical to (1) with f ∗ = f ∗ 
+
+> 1
+
+, and the latter equa-tion on xt defines gt in (2). Thus, estimating f ∗ 
+
+> 1
+
+in (16) reduces to estimating f ∗ in (1) and (2) with a particular choice of 
+
+gt. Moreover, once f ∗ 
+
+> 1
+
+is estimated, we estimate all other ft’s via f ∗ 
+
+> t
+
+= f ∗ 
+
+> t−1
+
+◦ ht. Conversely, our model reduces to (16) when ht’s are all identity mappings. Thus, when ht is known and invertible, imposing task dependency on predictors (16) is equivalent to imposing such dependency on input samples (2). 
+
+Remark 6. Consider two tasks with linear predictors f ∗ 
+
+> 1
+
+, f ∗ 
+
+> 2
+
+parameterized by θ∗ 
+
+> 1
+
+, θ ∗ 
+
+> 2
+
+respectively, and assume they are related by some invertible matrix H2, that is θ∗ 
+
+> 2
+
+= H2θ∗ 
+
+> 1
+
+. Since such H2 always exists, if H2 is unknown, then the relationship θ∗ 
+
+> 2
+
+= H2θ∗ 
+
+> 1
+
+gives us no extra information for learning either θ∗ 
+
+> 1
+
+or θ∗ 
+
+> 2
+
+. Thus, to understand the benefit of having θ∗ 
+
+> 2
+
+= H2θ∗ 
+
+> 1
+
+, we consider H2 is known. Furthermore, in Peng and Vidal (2025); Dar et al. (2024), the relationship 
+
+θ∗ 
+
+> 2
+
+= H2θ∗ 
+
+> 1
+
+is assumed to hold up to some additive Gaussian noise. In Peng and Vidal (2025), it is shown that Kalman filtering and smoothing improve the performance on task 1 after learning task 2, an example of positive backward transfer .In Dar et al. (2024), a transfer learning setup is considered, and it is shown that learning task 1 would benefit learning task 2 in the underparameterized case but might hurt otherwise (Dar et al., 2024, Fig. 1). Peng, Tadipatri, Xu, Eaton, Vidal 
+
+A.3 On Assumption 4 
+
+We claimed in the main paper that Assumption 4 holds true as soon as all f and gt’s are Lipschitz continuous. A more precise statement of it is shown below in Lemma 1. 
+
+Lemma 1. Suppose that each transformation gi is Lipschitz continuous with constant Lg,i (i ∈ [T ]) . Assume F consist of functions f : Rdx → Rdy such that f (z) < ∞ for any finite input z. Consider the ball Br′ (dx) of radius r′ := 
+
+r · max t∈[T ]
+
+Qti=1 Lg,i . Suppose Assumption 2 and (6) hold with Lipschitz parameter LF and with the following norm 
+
+∥ · ∥ F :
+
+∥f ∥F := sup  
+
+> z∈Br′(dx)
+
+∥f (z)∥2.
+
+Furthermore, assume f is Lipschitz continuous with respect to its input with also constant LF . Then rest conditions in Assumption 4 hold with 
+
+LG = 2 LF max  
+
+> t∈[T]
+> t
+
+Y
+
+> i=1
+
+Lg,i , KG = max (1 , 2rL G + 2 Cmax ) .
+
+Proof. First note that we have (for all z, z ′ ∈ Rdx , for all f ∈ F , and for all t ∈ [T ])
+
+∥Gf,t (z) − Gf,t (z′)∥2 = ∥(f − f ∗) ◦ gt ◦ · · · ◦ g1(z) − (f − f ∗) ◦ gt ◦ · · · ◦ g1(z′)∥2
+
+≤ 2LF · ∥ gt ◦ · · · ◦ g1(z) − gt ◦ · · · ◦ g1(z′)∥2
+
+≤ 2LF Lg, 1 · ∥ gt−1 ◦ · · · ◦ g1(z) − gt−1 ◦ · · · ◦ g1(z′)∥2
+
+≤ 2LF
+
+> t
+
+Y
+
+> i=1
+
+Lg,i · ∥ z − z′∥2 .
+
+(17) Therefore, LG = 2 LF max t∈[T ]
+
+Qti=1 Lg,i in this case. On the other hand, for any f, f ′ ∈ F parametrized by θ, θ ′ respectively, and for any z ∈ Br (dx), we have gt ◦ · · · ◦ g1(z) ∈
+
+Br′ (dx) and thus 
+
+sup  
+
+> z∈Br(dx)
+
+∥Gf,t (z) − Gf ′,t (z)∥2 = sup  
+
+> z∈Br(dx)
+
+∥fθ ◦ gt ◦ · · · ◦ g1(z) − fθ′ ◦ gt ◦ · · · ◦ g1(z)∥2
+
+≤ ∥ fθ − fθ′ ∥F
+
+Finally, to bound ∥Gf,t (z)∥22 − ∥ Gf ′,t (z)∥22 , let us define 
+
+Cmax = max 
+
+
+
+sup 
+
+> θ∈Θ
+
+∥fθ ◦ gt ◦ · · · ◦ g1(0) ∥2, ∥f ∗ ◦ gt ◦ · · · ◦ g1(0) ∥2
+
+
+
+.
+
+Since Θ is bounded, sup θ∈Θ ∥fθ ◦ gt ◦ · · · ◦ g1(0) ∥2 is finite, and thus Cmax is a finite constant. It then follows from the triangular inequality and (17) that 
+
+∥Gf,t (z)∥2 ≤ ∥ Gf,t (z) − Gf,t (0) ∥2 + ∥Gf,t (z)∥2 ≤ LG · ∥ z∥2 + Cmax .
+
+We then obtain 
+
+sup  
+
+> z∈Br(dx)
+
+∥Gf,t (z)∥22 − ∥ Gf ′,t (z)∥22
+
+≤ sup  
+
+> z∈Br(dx)
+
+∥Gf,t (z) − Gf ′,t (z)∥2 · ∥ Gf,t (z) + Gf ′,t (z)∥2
+
+≤ sup  
+
+> z∈Br(dx)
+
+∥f − f ′∥F · (2 LG · ∥ z∥2 + 2 Cmax )= ∥f − f ′∥F · (2 rL G + 2 Cmax )
+
+Set KG = max (1 , 2rL G + 2 Cmax ) and we finish the proof. Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+## B Full Statement of Theorem 1 and Its Proof 
+
+Note that the values of KG depend on rx in Assumption 4. Sometimes we make this dependency explicit by writing KG(r)
+
+for any radius r > 0.
+
+Theorem 4 (Full Version of Theorem 1) . Recall the definitions of M2 and κ in (65) and (8): 
+
+M2 = sup  
+
+> f∈F
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥22
+
+ , κ = sup   
+
+> f∈F \{ f∗}
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥42
+
+1/2
+
+E [∥Gf,t (x1)∥22] .
+
+Let δ ∈ (0 , 1] . Let wavg := 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt. Let C be some constant with C > 1. Define rx := σ
+
+3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+ , rv := 2 ν
+
+hpdy + 8 p2 ln(4 m/δ )
+
+i
+
+.
+
+Define n′ := min t∈[T ] nt, and n′′ := min t:wt>0(nt/w t). Suppose Assumptions 1 to 4 hold and let σ, ν, r x, K G, L G be defined therein. Let KG(r) ≤ kGrα for some α > 0 and kG > 0. Assume that 
+
+n′ ≥ 2κ2C2
+
+C − 1
+
+
+
+ln(4 /δ ) + p ln 
+
+
+
+1 + 2B(C + 1) 
+
+C(1 + rv ) T n ′′ 
+
+ 
+
+,m ≥√2LGσδ p(dx + 64) 
+
+edx/256 √M2
+
+.
+
+(18) 
+
+Let ˆθT ∈ Θ ⊂ Rp be a global minimizer of (7) with the regularization parameter λ ≤ 4ν2/T n ′′ . Then, with probability at least 1 − δ the quantity E
+
+h 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − fˆθT (xt)∥22
+
+i
+
+is upper bounded by 
+
+n
+
+2αCw avg kG
+
+
+
+1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i h 3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 116 αdα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 
+
+dx
+
+ln 32 LG
+
+√2M2
+
+α16 α(C + 1) wavg kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1 m2
+
+!
+
+, 0
+
+)! α/ 2 io σα
+
+T n ′′ 
+
++ 8 Cν 2
+
+p ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+8 ν
+> h
+> 1+8
+
+√2 ln(4 m/δ ) 
+
+> i
+> )
+
+T n ′′ 
+
+
+
++ Ω T (f ∗)
+
+T n ′′ + 8 Cν 2 ln(4 /δ )
+
+T n ′′ .
+
+(19) 
+
+Corollary 1. Under the setting of Theorem 4, if ν = 0 and 
+
+n′ > 2κ2CC − 1
+
+ln(4 /δ ) + p ln 
+
+1 + 2B(C + 1) 
+
+C(1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i
+
+)
+
+T n ′′ 
+
+ ,m ≥√2LGσδ p(dx + 64) 
+
+edx/256 √M2
+
+,
+
+(20) 
+
+then with probability at least 1 − δ the quantity E
+
+h 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − fˆθT (xt)∥22
+
+i
+
+is upper bounded by 
+
+n
+
+2αCw avg kG
+
+h 3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 116 αdα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 
+
+dx
+
+ln 32 LG
+
+√2M2
+
+α16 α(C + 1) wavg kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1 m2
+
+!
+
+, 0
+
+)! α/ 2 io σα
+
+T n ′′ .
+
+(21) Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Corollary 2. Under the setting of Theorem 4, if σ = 0 and 
+
+n′ > 2κ2C2
+
+C − 1
+
+ln(4 /δ ) + p ln 
+
+1 + 2B(C + 1) 
+
+C(1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i
+
+)
+
+T n ′′ 
+
+ , (22) 
+
+then with probability at least 1 − δ the quantity E
+
+h 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − fˆθT (xt)∥22
+
+i
+
+is upper bounded by 
+
+8C ν2
+
+T n ′′ 
+
+p ln 
+
+1 + 2B(C + 1) 
+
+C(1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i
+
+)
+
+T n ′′ 
+
+ + Ω T (f ∗) + ln(4 /δ )
+
+ . (23) 
+
+Corollary 3. Under the setting of Theorem 4, and if T or nt is large enough such that n′ > κ 2Cp ln( T n ′′ )/(C − 1) , then with probability at least 1 − δ we have 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − fˆθT (xt)∥22
+
+ ≤ ˜O
+
+
+
+ν2 p + Ω T (f ∗) + ln(4 /δ )
+
+T n ′′ + σα 1
+
+T n ′′ 
+
+
+
+. (24) 
+
+Proof of Theorem 4. First note that κ and M2 are finite under Assumption 3 (see Lemma 12). We then derive some basic inequalities. Suppose ˆf := fˆθT is a global minimizer for (7). Since f ∗ is realizable by Assumption 2, the optimality of ˆf
+
+implies 
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· L 
+
+
+
+yti , ˆf (xti )
+
+
+
++ λΩT ( ˆf ) ≤ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· L 
+
+
+
+yti , f ∗(xti )
+
+
+
++ λΩT (f ∗)
+
+⇔ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ yti − ˆf (xti )∥22 + λΩT ( ˆf ) ≤ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ yti − f ∗(xti )∥22 + λΩT (f ∗).
+
+Using the fact yti = f ∗(xti ) + vti , expanding the terms, and simplifying, we obtain 
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ f ∗(xti ) + vti − ˆf (xti )∥22 + λΩT ( ˆf ) ≤ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ vti ∥22 + λΩT (f ∗),
+
+which is equivalent to 
+
+X
+
+> (t,i )∈M
+
+wt
+
+T n t
+
+· ∥ f ∗(xti ) − ˆf (xti )∥22 ≤ X
+
+> (t,i )∈M
+
+2wt
+
+T n t
+
+· ⟨ vti , ˆf (xti ) − f ∗(xti )⟩ + λ
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+.
+
+Multiplying both sides by 2, rearranging the terms, and with the definition 
+
+M (f ) := 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+4 · ⟨ vti , f (xti ) − f ∗(xti )⟩ − ∥ f ∗(xti ) − f (xti )∥22
+
+ , (25) we obtain 
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ f ∗(xti ) − ˆf (xti )∥22 ≤ M ( ˆf ) + 2 λ
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+.
+
+Multiplying both sides by C (recall C > 1) yields 
+
+C · 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ f ∗(xti ) − ˆf (xti )∥22 ≤ C · M ( ˆf ) + 2 Cλ 
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+.
+
+We can furthermore rewrite the above inequality with the definition 
+
+Q(f, C ) := 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+ E ∥f (xt) − f ∗(xt)∥22
+
+ − C · ∥ f (xti ) − f ∗(xti )∥22
+
+ , (26) Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+arriving at 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − ˆf (xt)∥22
+
+ ≤ Q( ˆf , C ) + C · M ( ˆf ) + 2 Cλ 
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+. (27) Taking any rx, r v , ε, u > 0, and combining Propositions 1 and 2, we see that 
+
+P  Q(f, C ) > 2Bsq + ( C + 1) wavg KGε2, ∀f ∈ F  ≤ |F (ε)| · exp 
+
+
+
+− (C − 1) min t∈[T ] nt
+
+2C2κ2
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+,
+
+P (M (f ) > w avg KGε (1 + 4 rv ) + u/ 2C, ∀f ∈ F ) ≤ |F (ε)| · exp 
+
+
+
+−u · T
+
+16 Cν 2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+Since the common term m · exp 
+
+
+
+− dx(rx−2σ)2
+
+> 128 σ2
+
+
+
+in the above two probability bounds arise from bounding the norm of 
+
+x1i’s, we apply the union bound and obtain that 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ f ∗(xt) − ˆf (xt)∥22
+
+ > (C + 1) wavg KG(rx)ε2 + Cw avg KG(rx) (1 + 4 rv ) ε + u
+
+2 + 2 Bsq (rx)+ 2 Cλ 
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+,
+
+holds with probability at most 
+
+|F (ε)| · 
+
+
+
+exp 
+
+
+
+− (C − 1) min t∈[T ] nt
+
+2C2κ2
+
+
+
++ exp 
+
+
+
+−u · T
+
+16 Cν 2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+ 
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+,
+
+(28) Recall n′ = min t∈[T ] nt, n′′ = min t∈[T ],w t>0 nt 
+
+> wt
+
+. For any δ ∈ (0 , 1] , consider the following problem (which essentially minimizes the bound while maintaining high probability 1 − δ): 
+
+u∗ = min   
+
+> rx,r v,ε,u ≥0
+
+u (O) s.t. (C + 1) wavg KG(rx)ε2 + Cw avg KG(rx) (1 + 4 rv ) ε + 2 Bsq (rx) − u
+
+2 ≤ 0, (C1) 
+
+ln(4 /δ ) + ln( |F (ε)|) − (C − 1) n′
+
+2C2κ2 ≤ 0, (C2) 
+
+ln(4 /δ ) + ln( |F (ε)|) − u · T n ′′ 
+
+16 Cν 2 ≤ 0, (C3) 
+
+ln(4 m/δ ) − dx(rx − 2σ)2
+
+128 σ2 ≤ 0, (C4) 
+
+ln(4 m/δ ) − (rv − 2νpdy )2
+
+128 ν2 ≤ 0. (C5) 
+
+Choosing rx, r v , ϵ, u :Recall rx := σ
+
+3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+ , rv := 2 ν
+
+hpdy + 8 p2 ln(4 m/δ )
+
+i
+
+.Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Then from (C4), and (C5) we have that rx ≥ rx, and rv ≥ rv . From (C1), and (C3) we have 
+
+u
+
+2 ≥ (C + 1) wavg KG(rx)ε2 + Cw avg KG(rx) (1 + 4 rv ) ε + 2 Bsq (rx) ≥ 2Bsq (rx),u
+
+2 ≥ 8Cν 2 ln(4 /δ ) + ln( |F (ε)|)
+
+T n ′′ ≥ 0.
+
+We can upper bound the optimization program by setting u to be sum of the lower bounds obtained earlier (by non-negativity), this gives us 
+
+u∗ ≤ min 
+
+> rx≥
+
+rx,r v ≥rv ,ε ≥0
+
+
+
+(C + 1) wavg KG(rx)ε2 + Cw avg KG(rx) (1 + 4 rv ) ε + 2 Bsq (rx) + 8 Cν 2 ln(4 /δ ) + ln( |F (ε)|)
+
+T n ′′ 
+
+
+
+,
+
+= 8 Cν 2 ln(4 /δ )
+
+T n ′′ + min 
+
+> rx≥
+
+rx,ε ≥0
+
+(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε KG(rx) + 2 Bsq (rx) + 8 Cν 2 ln( |F (ε)|)
+
+T n ′′ 
+
+
+
+,
+
+Rewrite the right-hand side of the above and we have: 
+
+u∗ ≤ min 
+
+> ϵ> 0
+
+h
+
+8Cν 2 ln(4 /δ )
+
+T n ′′ +
+
+h
+
+8Cν 2 ln( |F (ε)|)
+
+T n ′′ + (C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε
+
+× min 
+
+> rx≥
+
+rx
+
+
+
+KG(rx) + 2
+
+{(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε} Bsq (rx)
+
+ i
+
+.
+
+(29) We recall Lemma 4 which states that when rx > 3σ we have 
+
+Bsq (rx)128 wavg 
+
+≤
+
+ LGσdx
+
+p(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+ 2
+
++
+
+r M2
+
+32 
+
+LGσdx
+
+p(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+
+
+.
+
+We now use the inequality 
+
+(rx − 2σ)2 ≥ (rx − 2σ)2 + ( rx − rx)2 > (rx − rx)2 + σ2 + 256 σ2 ln(4 m/δ )
+
+dx
+
+,
+
+to obtain 
+
+LGσdx
+
+p(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+
+
+≤ LGσ
+
+4dxedx/256 
+
+p(dx + 64) δm exp 
+
+
+
+− dx(rx − rx)2
+
+256 σ2
+
+
+
+.
+
+Therefore, when m ≥ √2LGσ√M2
+
+δe −dx/256 √dx+64  
+
+> dx
+
+, it is true that 
+
+LGσdx
+
+p(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+
+
+≤ LGσ
+
+4dxedx/256 
+
+p(dx + 64) δm exp 
+
+
+
+− dx(rx − rx)2
+
+256 σ2
+
+
+
+,
+
+≤
+
+r M2
+
+32 exp 
+
+
+
+− dx(rx − rx)2
+
+256 σ2
+
+
+
+≤
+
+r M2
+
+32 .
+
+(30) Based on the inequality x2 + ax ≤ 2ax when 0 < x ≤ a, this gives the bound 
+
+Bsq (rx) ≤ 32 wavg LGσdx
+
+p2M2(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+
+
+. (31) We substitute the upper bound (31) to (29) and obtain 
+
+u∗ ≤ 8Cν 2 ln(4 /δ )
+
+T n ′′ + min 
+
+> ϵ> 0
+
+h
+
+8Cν 2 ln( |F (ε)|)
+
+T n ′′ + (C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε
+
+× min 
+
+> rx≥
+
+rx
+
+KG(rx) + 64 wavg LGσp2M2(dx + 64) 
+
+dx {(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε} exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+! i
+
+.Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Let KG(r) ≤ kGrα, then we have the bound KG(rx − rx + rx) ≤ αk G(rx − rx)α + αk G(rx)α. Now define r := rx − rx
+
+this gives us 
+
+u∗ ≤8Cν 2 ln(4 /δ )
+
+T n ′′ + min 
+
+> ϵ> 0
+
+h
+
+αk G
+
+(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε
+
+× min  
+
+> r≥0
+
+(rx)α + rα + 64 wavg LGσp2M2(dx + 64) 
+
+αk Gdx {(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε} exp 
+
+
+
+− dx(r − (2 σ − rx)) 2
+
+256 σ2
+
+!
+
++ 8 Cν 2 ln( |F (ε)|)
+
+T n ′′ 
+
+i
+
+.
+
+(32) Moreover, define the quantities: 
+
+τ := 64 wavg LGσp2M2(dx + 64) /d x, β := τ  αk G
+
+(C + 1) wavg ε2 + Cw avg (1 + 4 rv ) ε −1 ,γ := dx/(256 σ2), and ζ := 2 σ − rx < 0,
+
+Rewriting (32) gives us 
+
+u∗ ≤ min 
+
+> ϵ> 0
+
+ τβ × min 
+
+> r≥0
+
+ (rx)α + rα + βexp  −γ(r − ζ)2 + 8 Cν 2 ln( |F (ε)|)
+
+T n ′′ 
+
+
+
++ 8 Cν 2 ln(4 /δ )
+
+T n ′′ . (33) We can further upper bound this via setting r = pmax {ln( βγ α/ 2)/γ, 0}, and from Proposition 4 we obtain: 
+
+u∗ ≤ min 
+
+> ϵ> 0
+
+ τβ ×
+
+
+
+rαx + 1
+
+γα/ 2 +
+
+
+
+max {ln( βγ α/ 2)/γ, 0}
+
+α/ 2
+
++ 8 Cν 2 ln( |F (ε)|)
+
+T n ′′ 
+
+
+
++ 8 Cν 2 ln(4 /δ )
+
+T n ′′ . (34) When 0 < ϵ < C (1 + 4 rv )/(C + 1) we have 
+
+τ
+
+2Cw avg αk G(1 + 4 rv )ϵ ≤ β ≤ τ
+
+2( C + 1) wavg αk Gϵ2 .
+
+Restricting to this domain gives us, 
+
+u∗ ≤ min 
+
+> ϵ′∈(0 ,1]
+
+h
+
+2αCw avg kG(1 + 4 rv )ϵ′ ×
+
+"
+
+rαx + 1
+
+γα/ 2 +
+
+
+
+max 
+
+
+
+ln 
+
+ τ γ α/ 2
+
+2( C + 1) wavg αk Gϵ′2
+
+
+
+/γ, 0
+
+ α/ 2#
+
++ 8 Cν 2 ln( |F (ε′C(1 + 4 rv )/(C + 1)) |)
+
+T n ′′ 
+
+i
+
++ 8 Cν 2 ln(4 /δ )
+
+T n ′′ ,
+
+(35) where ϵ′ = (C+1) ϵC(1+4 rv ) .Now set ϵ′ = 1 /T n ′′ this gives us the bound 
+
+u∗ ≤ 2αCw avg kG(1 + 4 rv )
+
+"
+
+rαx + 1
+
+γα/ 2 +
+
+
+
+max 
+
+
+
+ln 
+
+ τ γ α/ 2
+
+2( C + 1) wavg αk G
+
+T 2n′′ 2
+
+
+
+/γ, 0
+
+ α/ 2#
+
+1
+
+T n ′′ (36) 
+
++ 8 Cν 2 p ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+
+
+rv ) T n ′′ 
+
+
+
+T n ′′ + 8 Cν 2 ln(4 /δ )
+
+T n ′′ , (37) plugging back the values and retaining σ, ν, d x, n ′, n ′′ , m and T gives us 
+
+u∗ ≤ 2αCw avg kG
+
+
+
+1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i 
+
+×
+
+h
+
+σα
+
+3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 16 α
+
+dα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 σ2
+
+dx
+
+ln 32 T 2(n′′ )2LG
+
+√2M2
+
+α16 α(C + 1) kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1
+
+!
+
+, 0
+
+)! α/ 2 i 1
+
+T n ′′ 
+
++ 8 Cν 2 p ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+
+
+rv ) T n ′′ 
+
+
+
+T n ′′ + 8 Cν 2 ln(4 /δ )
+
+T n ′′ ,
+
+(38) Peng, Tadipatri, Xu, Eaton, Vidal 
+
+when m ≥ LGσ√2M2
+
+δe −dx/256 √dx+64  
+
+> dx
+
+and n′ ≥ 2κ2C2
+
+> C−1
+
+h
+
+ln(4 /δ ) + p ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+
+
+rv ) T n ′′ 
+
+i 
+
+. Finally we upper bound the term 2Cλ 
+
+h
+
+ΩT (f ∗) − ΩT ( ˆf )
+
+i
+
+by 8Cν 2ΩT (f ∗)/T n ′′ . Combining this upper bound, (38), and (27), finishes the proof. 
+
+B.1 Proposition 1 and Its Proof Proposition 1. Fix u > 0. Let C be some constant larger than 1, and write wavg := 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt. Recall the quadratic term Q(f, C ) defined in (26): 
+
+Q(f, C ) := 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+ E ∥Gf,t (x1)∥22
+
+ − C · ∥ Gf,t (x1i)∥22
+
+ .
+
+Suppose Assumptions 3 and 4 hold, and let KG, L G be defined therein. Let M2 and κ be defined in (65) and (8) respectively. For any rx > 2σ, define ˜Gf,t := Gf,t ◦ P Brx (dx) and 
+
+Bsq := sup  
+
+> f∈F
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt
+
+
+
+∥ ˜Gf,t (x1)∥22 − ∥ Gf,t (x1)∥22
+
+ . (39) 
+
+Let F(ε) be the smallest ε-net of F \{ f ∗}, then we have 
+
+P  Q(f, C ) > 2Bsq + ( C + 1) wavg KGε2, ∀f ∈ F  ≤ |F (ε)| · exp 
+
+
+
+− (C − 1) min t∈[T ] nt
+
+2C2κ2
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+.
+
+Proof. For any f ∈ F , let f ′ ∈ F (ε) be such that ∥f ′ − f ∥F ≤ ε. It follows from Assumption 4 that 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt ·
+
+
+
+∥ ˜Gf,t (x1)∥22 − ∥ ˜Gf ′,t (x1)∥22
+
+ ≤ wavg KG∥f − f ′∥2 
+
+> F
+
+;
+
+CT
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+·
+
+
+
+∥ ˜Gf ′,t (x1)∥22 − ∥ ˜Gf,t (x1)∥22
+
+
+
+≤ Cw avg KG∥f − f ′∥2 
+
+> F
+
+.
+
+(40) We consider the following two events that hold with high probability: • For any rx > 2σ, using Lemma 17, we have 
+
+P (∥x1i∥2 ≤ rx, ∀i ∈ [m]) ≥ 1 − m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+.
+
+• In Lemma 2 we have established for a fixed f ∈ F and C > 1 that 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ Gf,t (x1)∥22
+
+ ≤ CT
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ Gf,t (x1i)∥22
+
+holds with probability at least 1 − exp 
+
+
+
+− (C−1) min t∈[T ] nt
+
+> 2C2κ2
+
+
+
+. Applying the union bound with the ε-net F(ε), we see that the following holds with probability at least 1 − |F (ε)| · exp 
+
+
+
+− (C−1) min t∈[T ] nt
+
+> 2C2κ2
+
+
+
+:
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ Gf ′,t (x1)∥22
+
+ ≤ CT
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ Gf ′,t (x1i)∥22, ∀f ′ ∈ F (ε). (41) Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Under these two events, we seek to establish the upper bound Q(f, C ) for general f :
+
+Q(f, C ) = 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+ E ∥Gf,t (x1)∥22
+
+ − C · ∥ Gf,t (x1i)∥22
+
+
+
+> (i)
+
+≤ Bsq + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+
+
+E
+
+h
+
+∥ ˜Gf,t (x1)∥22
+
+i
+
+− C · ∥ Gf,t (x1i)∥22
+
+
+
+> (ii)
+
+≤ Bsq + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+
+
+E
+
+h
+
+∥ ˜Gf,t (x1)∥22
+
+i
+
+− C · ∥ ˜Gf,t (x1i)∥22
+
+
+
+> (iii)
+
+≤ Bsq + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+
+
+E
+
+h
+
+∥ ˜Gf ′,t (x1)∥22
+
+i
+
+− C · ∥ ˜Gf ′,t (x1i)∥22
+
+
+
++ ( C + 1) wavg KG∥f − f ′∥2
+
+> F
+> (iv)
+
+≤ Bsq + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+
+
+E
+
+h
+
+∥ ˜Gf ′,t (x1)∥22
+
+i
+
+− C · ∥ Gf ′,t (x1i)∥22
+
+
+
++ ( C + 1) wavg KG∥f − f ′∥2
+
+> F
+> (v)
+
+≤ 2Bsq + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+ E ∥Gf ′,t (x1)∥22
+
+ − C · ∥ Gf ′,t (x1i)∥22
+
+
+
++ ( C + 1) wavg KG∥f − f ′∥2
+
+> F
+> (vi)
+
+≤ 2Bsq + ( C + 1) wavg KG∥f − f ′∥2
+
+> F
+> (vii)
+
+≤ 2Bsq + ( C + 1) wavg KGε2.
+
+Here, (i) follows from the definitions of Bsq and Q(f, C ), (iii) follows by summing the two inequalities in (40) and rearranging, (ii) and (iv) follow from the event x1i ≤ rx (∀i ∈ [m]), which implies Gf,t (x1i) = ˜Gf,t (x1i) and Gf ′,t (x1i) = ˜Gf ′,t (x1i), (v) follows again from the definition of Bsq , (vi) follows from the event that (41) holds, and (vii) follows from the definition of the ε-net F(ε).By an application of the union bound, we arrive at 
+
+P  Q(f, C ) > 2Bsq + ( C + 1) wavg KGε2, ∀f ∈ F  ≤ |F (ε)| · exp 
+
+
+
+− (C − 1) min t∈[T ] nt
+
+2C2κ2
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+.
+
+The proof is now complete. 
+
+Lemma 2. Recall the definition of κ in (8): 
+
+κ = sup   
+
+> f∈F \{ f∗}
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥42
+
+1/2
+
+E [∥Gf,t (x1)∥22] .
+
+For any fixed f ∈ F \{ f ∗} and C > 1 we have 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ f (xt) − f ∗(xt)∥22
+
+ ≤ CT
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+· ∥ f ∗(xti ) − f (xti )∥22
+
+with probability at least 
+
+1 − exp 
+
+
+
+− (C − 1) min t∈[T ],w t>0 nt
+
+2C2κ2
+
+
+
+.Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Proof. In the proof we assume wt > 0 for all t ∈ [T ], as the case with some of the wt’s being zero follows immediately. Define F := f − f ∗. Then we need to compute the probability of the event 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ F (xt)∥22
+
+ ≤ CT
+
+X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+ , (42) or equivalently E
+
+ X 
+
+> t∈[T]
+
+wt · ∥ F (xt)∥22
+
+ ≤ C · X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+ . (43) Applying the Chernoff-Cram´ er bound gives 
+
+P
+
+C X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+≤ X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
+≤ inf  
+
+> α> 0
+
+exp 
+
+α · X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i · E
+
+exp 
+
+−α · C X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+ .
+
+We proceed by bounding the rightmost term: 
+
+E
+
+exp 
+
+−α · C X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+
+
+= E
+
+exp 
+
+−Cα X
+
+> i∈[m]
+
+X
+
+> t∈M i
+
+wt · ∥ F (xti )∥22
+
+nt
+
+
+
+> (i)
+
+= Y
+
+> i∈[m]
+
+E
+
+"
+
+exp −Cα X
+
+> t∈M i
+
+wt · ∥ F (xti )∥22
+
+nt
+
+!# 
+
+> (ii)
+
+≤ Y
+
+> i∈[m]
+
+exp 
+
+−Cα X
+
+> t∈M i
+
+E wt · ∥ F (xti )∥22
+
+
+
+nt
+
++ C2α2
+
+2 κ2 X
+
+> t∈M i
+
+E wt · ∥ F (xti )∥22
+
+
+
+nt
+
+!2
+
+= exp 
+
+−Cα X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
++ C2α2
+
+2 κ2 X
+
+> i∈[m]
+
+X
+
+> t∈M i
+
+E wt · ∥ F (xt)∥22
+
+
+
+nt
+
+!2
+
+> (iii)
+
+≤ exp 
+
+−Cα X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
++ C2α2κ2
+
+2 min t∈[T ] nt
+
+ X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
+> 2
+
+
+
+where (i) follows from the assumption that the data indexed by R1 are i.i.d., and therefore the trajectories are independent (Lemma 7), (ii) follows from Lemma 10, and (iii) follows from Lemma 11. Combining the above gives 
+
+P
+
+C X
+
+> (t,i )∈M
+
+wt · ∥ F (xti )∥22
+
+nt
+
+≤ X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
+≤ exp 
+
+−(C − 1) α X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
++ C2α2κ2
+
+2 min t∈[T ] nt
+
+ X 
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i
+
+> 2
+
+ .
+
+Since the above holds for any α > 0, we take 
+
+α = C − 1
+
+C2 P  
+
+> t∈[T]
+
+E
+
+h
+
+wt · ∥ F (xt)∥22
+
+i · min t∈[T ] nt
+
+κ2
+
+and plugging this value back we obtain the desired result. Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Lemma 3 (Projection Difference) . Let z = [ z1, . . . , z d]⊤ be a sub-Gaussian vector with proxy variance σ2/d and inde-pendent coordinates. Let h be a vector-valued function that is Lipschitz continuous with constant L. For any r > 2σ we have 
+
+E
+
+h
+
+h(PBr (d)(z)) − h(z) 22
+
+i
+
+≤ L2
+
+ 128 σ2
+
+d + 2 · 64 2σ4
+
+d2(r − 2σ)2
+
+
+
+exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+.
+
+Furthermore, if r > 3σ, then we have σ2/(r − 2σ)2 ≤ 1 and thus 
+
+E
+
+h
+
+h(PBr (d)(z)) − h(z) 22
+
+i
+
+≤ 128 L2σ2
+
+d2 (d + 64) exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+.
+
+Proof. Since h is L-Lipschitz, we have 
+
+E
+
+h
+
+h(PBr (d)(z)) − h(z) 22
+
+i
+
+≤ L2 · E
+
+h
+
+PBr (d)(z) − z 22
+
+i
+
+,
+
+and therefore it remains to bound the expectation E
+
+h
+
+PBr (d)(z) − z 22
+
+i
+
+. If z ∈ Br (d), then we have this expectation equal to 0. Hence we only need to consider z / ∈ Br (d), which means 
+
+E
+
+h
+
+PBr (d)(z) − z 22
+
+i
+
+= E
+
+h
+
+PBr (d)(z) − z 22 z / ∈ Br (d)
+
+i
+
+= E
+
+"
+
+r · z
+
+∥z∥2
+
+− z
+
+> 22
+
+z / ∈ Br (d)
+
+#
+
+= E
+
+h
+
+|r − ∥ z∥2|2 z / ∈ Br (d)
+
+i
+
+Applying the Integral Identity (Lemma 20) with some basic probability calculation yields 
+
+E
+
+h
+
+PBr (d)(z) − z 22
+
+i
+
+=
+
+Z ∞
+
+> 0
+
+P
+
+
+
+|r − ∥ z∥2|2 > τ z / ∈ Br (d)
+
+
+
+dτ 
+
+=
+
+Z ∞
+
+> 0
+
+P  ∥z∥2 − r > √τ z / ∈ Br (d) dτ 
+
+≤
+
+Z ∞
+
+> 0
+
+P  ∥z∥2 − r > √τ  dτ 
+
+=
+
+Z ∞
+
+> 0
+
+P  ∥z∥2 − 2σ > √τ + r − 2σ dτ 
+
+≤
+
+Z ∞
+
+> 0
+
+exp 
+
+
+
+− d(√τ + r − 2σ)2
+
+128 σ2
+
+
+
+dτ. 
+
+Here, the last inequality follows from Lemma 16 with the assumption that r > 2σ. It remains to evaluate this integral. Observe that 
+
+exp 
+
+
+
+− d · (√τ + r − 2σ)2
+
+128 σ2
+
+
+
+= exp 
+
+
+
+− d
+
+128 σ2
+
+ τ + 2( r − 2σ)√τ + ( r − 2σ)2 
+
+= exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+· exp 
+
+
+
+− d
+
+128 σ2
+
+ τ + 2( r − 2σ)√τ  Peng, Tadipatri, Xu, Eaton, Vidal 
+
+and that by a change of variable u2 = τ we have 
+
+Z ∞
+
+> 0
+
+exp 
+
+
+
+− d
+
+128 σ2
+
+ τ + 2( r − 2σ)√τ  
+
+dτ = 2 
+
+Z ∞
+
+> 0
+
+exp 
+
+
+
+− d
+
+128 σ2
+
+ u2 + 2( r − 2σ)u 
+
+u du 
+
+=
+
+
+
+− 128 σ2
+
+d exp 
+
+
+
+− d
+
+128 σ2 u2
+
+ ∞
+
+> 0
+
++ 2 
+
+Z ∞
+
+> 0
+
+exp 
+
+
+
+− d
+
+64 σ2 (r − 2σ)u
+
+
+
+u du 
+
+= 128 σ2
+
+d + 2 
+
+Z ∞
+
+> 0
+
+exp 
+
+
+
+− d
+
+64 σ2 (r − 2σ)u
+
+
+
+u du 
+
+= 128 σ2
+
+d + 2 · 64 2σ4
+
+d2(r − 2σ)2 ,
+
+where the last equality is due to Lemma 8. In summary, we have shown 
+
+E
+
+h
+
+PBr (d)(z) − z 22
+
+i
+
+≤
+
+ 128 σ2
+
+d + 2 · 64 2σ4
+
+d2(r − 2σ)2
+
+
+
+exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+.
+
+Adding the Lipschitz parameter L back finishes the proof. 
+
+Lemma 4. Consider the ball Brx (dx) in Rdx of radius rx with rx > 3σ, and recall that PBrx (dx) denotes projection onto 
+
+Brx (dx). Write ˜Gf,t := Gf,t ◦ P Brx (dx). Recall wavg := 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt. and the definition of Bsq in (39): 
+
+Bsq (rx) = sup  
+
+> f∈F
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt
+
+
+
+∥ ˜Gf,t (x1)∥22 − ∥ Gf,t (x1)∥22
+
+ .
+
+Under Assumptions 3 and 4 we have 
+
+Bsq (rx) ≤ 128 wavg 
+
+L2
+
+> G
+
+σ2
+
+d2
+
+> x
+
+(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ 16 wavg 
+
+LGσdx
+
+p2M2(dx + 64) exp 
+
+
+
+− dx(rx − 2σ)2
+
+256 σ2
+
+
+
+.
+
+(44) 
+
+Proof. Note that for two random vectors a, b we apply Jensen’s and Cauchy-Schwartz inequality and obtain 
+
+E[∥a∥22 − ∥ b∥22] = E[∥a − b∥22] + 2 · E[b⊤(a − b)] 
+
+≤ E[∥a − b∥22] + 2 · E[∥b∥22]1/2 · E[∥a − b∥22]1/2.
+
+With a = ˜Gf,t (x1) and b = Gf,t (x1), the above inequality and Lemma 3 with the assumption r ≥ 3σ give 
+
+E
+
+h
+
+∥ ˜Gf,t (x1)∥22 − ∥ Gf,t (x1)∥22
+
+i
+
+≤ 128 L2
+
+> G
+
+σ2
+
+d2
+
+> x
+
+(dx + 64) exp 
+
+
+
+− dx(r − 2σ)2
+
+128 σ2
+
+
+
++ 16 LGσdx
+
+p2M2(dx + 64) exp 
+
+
+
+− dx(r − 2σ)2
+
+256 σ2
+
+
+
+.
+
+Weighting the above inequality by wt, averaging it over t, and taking the supremum over F, we finish the proof. 
+
+B.2 Proposition 2 and Its Proof Proposition 2. Recall that M (f ) is defined in (25) as 
+
+M (f ) = 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+4 · ⟨ vti , f (xti ) − f ∗(xti )⟩ − ∥ f ∗(xti ) − f (xti )∥22
+
+ ,Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+where vti conditioned on x1i, . . . , x ti is sub-Gaussian with proxy variance ν2. Fix u > 0. Let rx > 2σ, r v > 2νpdy , and 
+
+ε-net F(ε) be the smallest ε-net of F \{ f ∗}. Then we have 
+
+P (M (f ) > w avg KGε (1 + 4 rv ) + u/ 2, ∀f ∈ F ) ≤ |F (ε)| · exp 
+
+
+
+−u · T
+
+16 ν2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+Proof. For any f ∈ F , let f ′ ∈ F (ε) be such that ∥f ′ − f ∥F ≤ ε. Write ˜Gf,t := Gf,t ◦ P Br (dx). Using Assumption 4, the triangular inequality, and the assumption ε ≤ 1, we arrive at 
+
+⟨vti , ˜Gf,t (x1i)⟩ − ⟨ vti , ˜Gf ′,t (x1i)⟩ ≤ KG∥f − f ′∥F · max  
+
+> (t,i )∈M
+
+∥vti ∥2 ≤ KGε · max  
+
+> (t,i )∈M
+
+∥vti ∥2,
+
+∥ ˜Gf ′,t (xti )∥22 − ∥ ˜Gf,t (xti )∥22 ≤ KG∥f − f ′∥2 
+
+> F
+
+≤ KGε, 
+
+which in turn implies 
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+·
+
+
+
+⟨vti , ˜Gf,t (x1i)⟩ − ⟨ vti , ˜Gf ′,t (x1i)⟩
+
+
+
+≤ wavg KGε · max  
+
+> (t,i )∈M
+
+∥vti ∥2,
+
+1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+·
+
+
+
+∥ ˜Gf ′,t (xti )∥22 − ∥ ˜Gf,t (xti )∥22
+
+
+
+≤ wavg KGε. 
+
+(45) We now consider three events that hold with high probability: • From Lemma 5, we see that for a fixed f ′ ∈ F we have 
+
+P
+
+
+
+M (f ′) ≥ u
+
+2
+
+
+
+≤ exp 
+
+
+
+−u · T
+
+16 ν2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
+.
+
+Applying the union bound with the ε-net F(ε), we obtain 
+
+P
+
+
+
+M (f ′) ≤ u
+
+2 , ∀f ′ ∈ F (ε)
+
+
+
+≤ 1 − |F (ε)| · exp 
+
+
+
+−u · T
+
+16 ν2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
+.
+
+• For any rx > 2σ from Lemma 17, we have 
+
+P (∥x1i∥2 ≤ rx, ∀i ∈ [m]) ≥ 1 − m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+.
+
+• Similarly, for any rv > 2μpdy , using Lemma 17, we obtain 
+
+P (∥vti ∥2 ≤ rv , ∀(t, i ) ∈ M ) ≥ 1 − m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+Under these three events, we derive that 
+
+M (f ) = 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+h
+
+4 · ⟨ vti , ˜Gf,t (x1i)⟩ − ∥ ˜Gf,t (x1i)∥22
+
+i
+
+> (i)
+
+≤ wavg KGε
+
+
+
+1 + 4 max  
+
+> (t,i )∈M
+
+∥vti ∥2
+
+
+
++ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+h
+
+4 · ⟨ vti , ˜Gf ′,t (x1i)⟩ − ∥ ˜Gf ′,t (x1i)∥22
+
+i
+
+> (ii)
+
+≤ wavg KGε (1 + 4 rv ) + 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+4 · ⟨ vti , G f ′,t (x1i)⟩ − ∥ Gf ′,t (x1i)∥22
+
+
+
+> (iii)
+
+= wavg KGε (1 + 4 rv ) + M (f ′)
+
+> (iv)
+
+≤ wavg KGε (1 + 4 rv ) + u/ 2.Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Above, (i) follows by weighting the inequalities in (45) properly and summing them together; (ii) follows as ∥x1i∥2 ≤ rx
+
+and ∥vti ∥2 ≤ rv , the former indicating Gf,t (x1i) = ˜Gf,t (x1i) and Gf ′,t (x1i) = ˜Gf ′,t (x1i); (iii) follows from the definition of M (f ); (iv) follows from the event M (f ′) ≤ u/ 2. Now, applying the union bound, we obtain 
+
+P (M (f ) > w avg KGε (1 + 4 rv ) + u/ 2, ∀f ∈ F ) ≤ |F (ε)| · exp 
+
+
+
+−u · T
+
+16 ν2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+The proof is now complete. 
+
+Lemma 5. Fix f ∈ F . Recall that M (f ) is defined in (25) as 
+
+M (f ) = 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+4 · ⟨ vti , f (xti ) − f ∗(xti )⟩ − ∥ f ∗(xti ) − f (xti )∥22
+
+ ,
+
+where vti conditioned on x1i, . . . , x ti is sub-Gaussian with proxy variance ν2. Then 
+
+P (M (f ) ≥ u) ≤ exp 
+
+
+
+−u · T
+
+8ν2 min  
+
+> t∈[T],w t>0
+
+nt
+
+wt
+
+
+
+.
+
+Proof. In the proof we assume wt > 0 for all t ∈ [T ], as the case with some of the wt’s being zero follows immediately. The proof follows the strategy of Proposition F.2 of Ziemann et al. (2024a) but extends it for the case with weights wt and partial trajectories. Defining 
+
+a := T
+
+8ν2 min  
+
+> t∈[T]
+
+nt
+
+wt
+
+, (46) we need to prove P (M (f ) ≥ u) ≤ exp (−ua ). Since Markov’s inequality implies 
+
+P (M (f ) ≥ u) = P (exp (a · M (f )) ≥ exp (au )) 
+
+≤ E [exp (a · M (f ))] · exp (−au ),
+
+it suffices to show E [exp (a · M (f ))] ≤ 1. To do so, we first bound each summand of M (f ). For any fixed f ∈ F , write 
+
+F := f − f ∗. Note that vti is conditioned on x1i, . . . , x ti is sub-Gaussian, thus, for any (t, i ) ∈ M we have 
+
+E
+
+
+
+exp 
+
+ aT · wt
+
+nt
+
+4 · ⟨ vti , F (xti )⟩ − ∥ F (xti )∥22
+
+
+
+x1i, . . . , x ti 
+
+
+
+> (i)
+
+≤ exp 
+
+ ν2
+
+2 · 16 a2w2
+
+> t
+
+T 2n2
+
+> t
+
+∥F (xti )∥22 − aw t
+
+T n t
+
+· ∥ F (xti )∥22
+
+
+
+> (ii)
+
+≤ 1,
+
+(47) where (i) follows from the property of sub-Gaussian vectors vti as shown in (72), and (ii) follows from the definition of a,that is a ≤ T 
+
+> 8ν2
+
+· nt 
+
+> wt
+
+, which implies ν2 
+
+> 2T
+
+· 16 a2w2 
+
+> t
+> T2n2
+> t
+
+− aw t 
+
+> T n t
+
+≤ 0. Define 
+
+Rt := X
+
+> i∈R t
+
+aT · wt
+
+nt
+
+4 · ⟨ vti , F (xti )⟩ − ∥ F (xti )∥22
+
+
+
+and write X1: t := {x1i, . . . , x ti }i∈[m]. Since for any i ∈ R t we have that vti ’s are independent of each other, from (47) it follows that 
+
+E exp (Rt) X1: t
+
+ ≤ 1. (48) Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Note that a · M (f ) = P  
+
+> t∈[T]
+
+Rt, and we have 
+
+E [exp (a · M (f ))] = E
+
+exp 
+
+ X 
+
+> t∈[T]
+
+Rt
+
+
+
+> (i)
+
+= E
+
+E
+
+exp 
+
+ X 
+
+> t∈[T]
+
+Rt
+
+ X1: T
+
+
+
+> (ii)
+
+= E
+
+E
+
+exp 
+
+ X 
+
+> t∈[T−1]
+
+Rt
+
+ X1: T
+
+ · E E exp (RT ) X1: T
+
+ 
+
+> (iii)
+
+≤ E
+
+E
+
+exp 
+
+ X 
+
+> t∈[T−1]
+
+Rt
+
+ X1: T
+
+
+
+> (iv)
+
+= E
+
+exp 
+
+ X 
+
+> t∈[T−1]
+
+Rt
+
+
+
+≤ · · · ≤ 1.
+
+(49) Above, (i) and (iv) follow from the law of total expectation , (ii) follows from the fact that vT i ’s are independent of other noise vectors vti ’s when conditioned on X1: T , and (iii) follows from (48), and the rest of the derivations follows a recursive application of the previous steps. 
+
+## C Full Statement of Theorem 2 and Its Proof (Data-Dependent Regularization) 
+
+Theorem 5 (Data-Dependent Regularization, Full Version of Theorem 2) . Recall the definitions of M2 and κ in (65) and (8): 
+
+M2 = sup  
+
+> f∈F
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥22
+
+ , κ = sup   
+
+> f∈F \{ f∗}
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥42
+
+1/2
+
+E [∥Gf,t (x1)∥22] .
+
+Let δ ∈ (0 , 1] . Let ˆθ1, . . . , ˆθT ∈ Θ ⊂ Rp be global minimizers of (11) with βt = 1 /4T −t. Define wt := 4 T −t · nt 
+
+> m
+
+· βt
+
+and wavg := 1
+
+> T
+
+P  
+
+> t∈[T]
+
+wt. Let C be some constant with C > 1. Define n′ := min t∈[T ] nt, and n′′ := min t:wt>0(nt/w t).Suppose Assumptions 1 to 4 hold and let σ, ν, r x, K G, L G be defined therein. Let KG(r) ≤ kGrα for some α > 0, kG > 0,and r v := 2 ν
+
+hpdy + 8 p2 ln(4 m/δ )
+
+i
+
+.
+
+Assume that 
+
+n′ ≥ 2κ2C2
+
+C − 1
+
+
+
+ln(4 /δ ) + p ln 
+
+
+
+1 + 2B(C + 1) 
+
+C(1 + rv ) T n ′′ 
+
+ 
+
+,m ≥√2LGσδ p(dx + 64) 
+
+edx/256 √M2
+
+.
+
+(50) 
+
+Then, with probability at least 1 − δ the quantity E
+
+ P     
+
+> t∈[T]ntβt·∥ f∗(xt)−ˆfT(xt)∥22
+> n1+··· +nT
+
+
+
+is bounded above by Peng, Tadipatri, Xu, Eaton, Vidal 
+
+n
+
+2αCw avg kG
+
+
+
+1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i h 3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 116 αdα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 
+
+dx
+
+ln 32 LG
+
+√2M2
+
+α16 α(C + 1) wavg kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1 m2
+
+!
+
+, 0
+
+)! α/ 2 io σα
+
+n1 + · · · + nT
+
+max  
+
+> t∈[T]
+
+{22( T −t)βt}
+
++ 8 Cν 2
+
+pT ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+8 ν
+> h
+> 1+8
+
+√2 ln(4 m/δ )  
+
+> i
+> )
+> T m
+> max t∈T22( T−t)βt
+
+
+
+n1 + · · · + nT
+
++ 8 Cν 2 ln(4 /δ )
+
+n1 + · · · + nT
+
+max  
+
+> t∈[T]
+
+{22( T −t)βt},
+
+(51) 
+
+Proof for Global Minimizers of (11). We first analyze the case with objective (12) that is associated with the regularizer 
+
+ΩT (θ) = P 
+
+> t∈[T−1]
+
+P 
+
+> i∈R t
+
+βt · ∥ fθ (xti ) − fˆθT −1 (xti )∥22. Suppose we have just computed ˆθT in Step 1 . At that moment, we have access to all the m samples of task T , but only to part of the samples from previous tasks. To unify the notation, we define RT := [ m] and nT := m. Write ˆft := fˆθt . Applying the inequality ∥a + b∥22 − ∥ b∥22 ≥ (1 − 1 
+
+> s
+
+) · ∥ a∥22 − s · ∥ b∥22
+
+with a = ˆfT (xti ) − f ∗(xti ) and b = f ∗(xti ) − ˆfT −1(xti ), we obtain 
+
+∥ ˆfT (xti ) − ˆfT −1(xti )∥22 − ∥ f ∗(xti ) − ˆfT −1(xti )∥22
+
+≥
+
+
+
+1 − 1
+
+s
+
+
+
+· ∥ ˆfT (xti ) − f ∗(xti )∥22 − s · ∥ f ∗(xti ) − ˆfT −1(xti )∥22.
+
+Applying this inequality to the regularization term ΩT (θ) = P 
+
+> t∈[T−1]
+
+P 
+
+> i∈R t
+
+βt · ∥ fθ (xti ) − fˆθT −1 (xti )∥22, we obtain 
+
+ΩT (f ∗) − ΩT ( ˆfT )= X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt
+
+
+
+∥f ∗(xti ) − ˆfT −1(xti )∥22 − ∥ ˆfT (xti ) − ˆfT −1(xti )∥22
+
+
+
+≤ X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt
+
+
+
+s · ∥ f ∗(xti ) − ˆfT −1(xti )∥22 −
+
+
+
+1 − 1
+
+s
+
+
+
+· ∥ ˆfT (xti ) − f ∗(xti )∥22
+
+
+
+.
+
+Similarly to the beginning of the proof of Theorem 4, we have 
+
+X
+
+> i∈R T
+
+βT · ∥ f ∗(xT i ) − ˆfT (xT i )∥22 ≤ X
+
+> i∈[m]
+
+2βT · ⟨ vT i , ˆfT (xT i ) − f ∗(xT i )⟩ + Ω T (f ∗) − ΩT ( ˆfT ).
+
+Defining 
+
+Mt(f ) := X
+
+> i∈[m]
+
+2s · ⟨ vti , f (xti ) − f ∗(xti )⟩ − ∥ f ∗(xti ) − f (xti )∥22
+
+ , (52) and combining the above with some rearrangements of terms and rescaling by ss−1 yields 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆfT (xti )∥22
+
+≤ βT
+
+s − 1 · MT
+
+  ˆfT
+
+ + s2
+
+s − 1
+
+X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt−1 · ∥ f ∗(xti ) − ˆfT −1(xti )∥22
+
+(53) We can now unroll the above recurrence relation and arrive at 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆfT (xti )∥22 ≤ X 
+
+> t∈[T]
+
+s2( T −t)
+
+(s − 1) T −t+1 βt · Mt
+
+  ˆft
+
+. (54) Set s = 2 , and the above becomes 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆfT (xti )∥22 ≤ X 
+
+> t∈[T]
+
+22( T −t)βt · Mt
+
+  ˆft
+
+. (55) Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Write β′ 
+
+> t
+
+:= nt 
+
+> m
+
+· βt, and we obtain 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+β′
+
+> t
+
+nt
+
+· ∥ f ∗(xti ) − ˆfT (xti )∥22 ≤ X 
+
+> t∈[T]
+
+22( T −t)β′
+
+> t
+
+nt
+
+· Mt
+
+  ˆft
+
+.
+
+Multiplying both sides by constant C > 1, dividing it by T , adding E
+
+hP  
+
+> t∈[T]
+
+β′ 
+
+> t
+
+· ∥ f ∗(xti ) − ˆfT (xti )∥22
+
+i
+
+, we obtain 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+β′ 
+
+> t
+
+· ∥ f ∗(xt) − ˆfT (xt)∥22
+
+ ≤ Q( ˆfT , C, β ′
+
+> t
+
+) + C · X 
+
+> t∈[T]
+
+22( T −t)β′
+
+> t
+
+T n t
+
+· Mt
+
+  ˆft
+
+,
+
+where Q(f, C, β ′
+
+> t
+
+) is defined as 
+
+Q(f, C, β ′
+
+> t
+
+) := 1
+
+T
+
+X
+
+> (t,i )∈M
+
+β′
+
+> t
+
+nt
+
+ E ∥f (xt) − f ∗(xt)∥22
+
+ − C · ∥ f (xti ) − f ∗(xti )∥22
+
+ .
+
+To obtain a high probability bound of Q(f, C, β ′
+
+> t
+
+), we can now invoke Proposition 1, and to obtain a probabilistic bound of P   
+
+> t∈[T]22( T−t)β′
+> t
+> T n t
+
+· Mt
+
+  ˆft
+
+ we invoke Proposition 3. These respectively give 
+
+P  Q(f, C, β ′
+
+> t
+
+) > 2Bsq + ( C + 1) wavg KGε2, ∀f ∈ F  ≤ |F (ε)| · exp 
+
+
+
+− (C − 1) min t∈[T ] nt
+
+2C2κ2
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
+and 
+
+X 
+
+> t∈[T]
+
+22( T −t)β′
+
+> t
+
+T n t
+
+· Mt(ft) ≤ wavg KGε (1 + 4 rv ) + u/ 2, ∀f1, . . . , f T ∈ F ,
+
+with probability at least 
+
+|F (ε)|T · exp 
+
+
+
+−u · T
+
+16 ν2 min  
+
+> t∈[T]
+
+nt
+
+22( T −t)β′
+
+> t
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+Then, following the identical idea of proving Theorem 4 we obtain that, with probability at least 1 − δ, the quantity 
+
+E
+
+h 1
+
+> T
+
+P  
+
+> t∈[T]
+
+β′ 
+
+> t
+
+· ∥ f ∗(xt) − fˆθT (xt)∥22
+
+i
+
+is upper bounded by 
+
+n
+
+2αCw avg kG
+
+
+
+1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i h 3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 116 αdα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 
+
+dx
+
+ln 32 LG
+
+√2M2
+
+α16 α(C + 1) wavg kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1 m2
+
+!
+
+, 0
+
+)! α/ 2 io σα
+
+T n ′′ 
+
++ 8 Cν 2
+
+pT ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+8 ν
+> h
+> 1+8
+
+√2 ln(4 m/δ ) 
+
+> i
+> )
+
+T n ′′ 
+
+
+
+T n ′′ + 8 Cν 2 ln(4 /δ )
+
+T n ′′ ,
+
+(56) with n′′ now defined as n′′ = min t∈[T ] nt 
+
+> 22( T−t)β′
+> t
+
+.Substituting the identity β′ 
+
+> t
+
+= nt 
+
+> m
+
+βt with nT = m to the above result and rescaling by T / (n1 + · · · + nT ), we obtain that 
+
+E
+
+ P     
+
+> t∈[T]ntβt·∥ f∗(xt)−ˆfT(xt)∥22
+> n1+··· +nT
+
+
+
+is bounded above by Peng, Tadipatri, Xu, Eaton, Vidal 
+
+n
+
+2αCw avg kG
+
+
+
+1 + 8 ν
+
+h
+
+1 + 8 p2 ln(4 m/δ )
+
+i h 3 + 16 
+
+s
+
+ln(4 m/δ )
+
+dx
+
+
+
+> α
+
++ 116 αdα/ 2
+
+> x
+
+
+
++ max 
+
+(
+
+256 
+
+dx
+
+ln 32 LG
+
+√2M2
+
+α16 α(C + 1) wavg kG
+
+dα/ 2−1
+
+> x
+
+√dx + 64 
+
+σα−1 m2
+
+!
+
+, 0
+
+)! α/ 2 io σα
+
+n1 + · · · + nT
+
+max  
+
+> t∈[T]
+
+{22( T −t)βt}
+
++ 8 Cν 2
+
+pT ln 
+
+
+
+1 + 2B(C+1) 
+
+> C(1+8 ν
+> h
+> 1+8
+
+√2 ln(4 m/δ )  
+
+> i
+> )
+> T m
+> max t∈T22( T−t)βt
+
+
+
+n1 + · · · + nT
+
++ 8 Cν 2 ln(4 /δ )
+
+n1 + · · · + nT
+
+max  
+
+> t∈[T]
+
+{22( T −t)βt},
+
+(57) We finish the proof with βt = 1 /4T −t.
+
+Proof for Global Minimizers of (12). We now consider objective (12) that is associated with the regularizer ΩT (θ) = 
+
+P 
+
+> t∈[T−1]
+
+P 
+
+> i∈R t
+
+βt · ∥ fθ (xti ) − fˆθt (xti )∥22. Write ˆft := fˆθt . Similarly to the proof of Theorem 5, we unify the no-tation by defining RT := [ m] and nT := m. Similarly to (53), we have 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆfT (xti )∥22
+
+≤ βT
+
+s − 1 · MT
+
+  ˆfT
+
+ + s2
+
+s − 1
+
+X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆft(xti )∥22.
+
+(58) Note here that the rightmost term is with ˆft, not ˆfT −1.Similarly to the beginning of the proof of Theorem 4, we have for every t ∈ [T − 1] that 
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆft(xti )∥22 ≤ X
+
+> i∈[m]
+
+βt · ∥ f ∗(xti ) − ˆft(xti )∥22
+
+≤ X
+
+> i∈[m]
+
+2βt · ⟨ vti , ˆft(xti ) − f ∗(xti )⟩ + Ω t(f ∗) − Ωt( ˆft)
+
+≤ X
+
+> i∈[m]
+
+2βt · ⟨ vti , ˆft(xti ) − f ∗(xti )⟩ + Ω t(f ∗)= X
+
+> i∈[m]
+
+2βt · ⟨ vti , ˆft(xti ) − f ∗(xti )⟩
+
++ X 
+
+> τ∈[t−1]
+
+X
+
+> i∈R t
+
+βτ · ∥ f ∗(xτ i ) − ˆfτ (xτ i )∥22.
+
+Multiplying both sides by s/ (s − 1) and rearranging the terms with the definition of Mt(f ) in (52), we get 
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆft(xti )∥22 ≤ βt
+
+s − 1 · Mt( ˆft) + ss − 1
+
+X 
+
+> τ∈[t−1]
+
+X
+
+> i∈R τ
+
+βτ · ∥ f ∗(xτ i ) − ˆfτ (xτ i )∥22.
+
+This inequality is of the form at ≤ ct + ss−1
+
+P  
+
+> τ∈[t−1]
+
+aτ , and it implies 
+
+X 
+
+> t∈[T−1]
+
+at ≤ cT −1 +
+
+ ss − 1 + 1 
+
+ X 
+
+> t∈[T−2]
+
+at = cT −1 + 2s − 1
+
+s − 1
+
+X 
+
+> t∈[T−2]
+
+at.
+
+Unrolling this recurrence relation gives 
+
+X 
+
+> t∈[T−1]
+
+at ≤ X 
+
+> t∈[T−1]
+
+ 2s − 1
+
+s − 1
+
+T −t−1
+
+ct.Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+We have just shown that 
+
+X 
+
+> t∈[T−1]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆft(xti )∥22 ≤ X 
+
+> t∈[T−1]
+
+ 2s − 1
+
+s − 1
+
+T −t−1
+
+βt · Mt( ˆft).
+
+Substituting this back to (58) with s = 2 yields 
+
+X 
+
+> t∈[T]
+
+X
+
+> i∈R t
+
+βt · ∥ f ∗(xti ) − ˆfT (xti )∥22
+
+≤ βT
+
+s − 1 · MT
+
+  ˆfT
+
+ + s2
+
+s − 1
+
+X 
+
+> t∈[T−1]
+
+ 2s − 1
+
+s − 1
+
+T −t−1
+
+βt · Mt( ˆft)= βT · MT
+
+  ˆfT
+
+ + 4 X 
+
+> t∈[T−1]
+
+3T −t−1βt · Mt( ˆft)
+
+≤ X 
+
+> t∈[T]
+
+4T −tβt · Mt( ˆft).
+
+This is identical to (55), thus the rest of the steps follow directly from the previous proof. 
+
+C.1 Proposition 3 and Its Proof Proposition 3. Recall that Mt(f ) is defined in (52) as 
+
+Mt(f ) = X
+
+> i∈[m]
+
+2s · ⟨ vti , f (xti ) − f ∗(xti )⟩ − ∥ f ∗(xti ) − f (xti )∥22
+
+
+
+where s = 2 and vti is conditionally sub-Gaussian with proxy variance ν2. Fix u > 0. Recall βt > 0 and define 
+
+wt := s2( T −t)βt (∀t ∈ [T ]). Let rx > 2σ, r v > 2νpdy , and ε-net F(ε) be the smallest ε-net of F \{ f ∗}. Then we have 
+
+X 
+
+> t∈[T]
+
+wt
+
+T n t
+
+· Mt(ft) ≤ wavg KGε (1 + 4 rv ) + u/ 2, ∀f1, . . . , f T ∈ F ,
+
+with probability at least 
+
+|F (ε)|T · exp 
+
+
+
+−u · T
+
+4ν2s2 min  
+
+> t∈[T]
+
+nt
+
+s2( T −t)βt
+
+
+
++ m · exp 
+
+
+
+− dx(rx − 2σ)2
+
+128 σ2
+
+
+
++ m · exp − (rv − 2νpdy )2
+
+128 ν2
+
+!
+
+.
+
+Proof. The proof is almost the same as Proposition 2, except that we apply union bound for each Mt(f ) using ε-net; this gives us the exponent T in the failure probability. 
+
+Lemma 6. Fix f1, . . . , f T ∈ F . Recall βt > 0 and that Mt(f ) is defined in (52) as 
+
+Mt(f ) = X
+
+> i∈[m]
+
+2s · ⟨ vti , f (xti ) − f ∗(xti )⟩ − (s − 1) · ∥ f ∗(xti ) − f (xti )∥22
+
+ ,
+
+where vti conditioned on x1i, . . . , x ti is sub-Gaussian with proxy variance ν2. Then 
+
+P
+
+ X 
+
+> t∈[T]
+
+s2( T −t)βt
+
+T n t
+
+· Mt
+
+ ft
+
+ ≥ u
+
+ ≤ exp 
+
+
+
+−u · T (s − 1) 2ν2s2 min  
+
+> t∈[T]
+
+nt
+
+s2( T −t)βt
+
+
+
+.
+
+Proof. This follows from a similar proof to Lemma 5. Peng, Tadipatri, Xu, Eaton, Vidal 
+
+## D Discussion on Extension of Results 
+
+In this section, we will discuss modifications of existing proofs to accommodate noise in (2), i.e., noisy transformation of tasks rather than deterministic transformation. Finally, our Assumption 2 requires that the true predictor f ∗ to be realizable in the class of learnable functions; here we will provide pointer to extend our results. 
+
+Noisy tasks setting. Consider the following model 
+
+yt = f ∗(xt) + vt, ∀t ≥ 1; (59) 
+
+xt = gt(x1, . . . , x t−1) + ηt, ∀t > 1, (60) where ηt is conditionally independent sub-Gaussian noise with proxy variance σ2 
+
+> η
+
+. Our analysis relies primarily on invoking Proposition 1, Proposition 2, Proposition 3 and ?? . The crucial step in establishing these intermediate results is obtaining tail bounds for 
+
+Q(f, C ) = 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+ E ∥f (xt)∥22
+
+ − C · ∥ f (xti )∥22
+
+ . (61) The key difficulty arises from the temporal dependencies in the noisy setting. In the noiseless case analyzed previously, we could deterministically relate f (xt) to x1, and directly apply Lipschitz concentration bounds. For the case here with additive noise ηt, we can in principle make use of and extend the results extensively studied in the system identification literature (see Matni and Tu (2019) for a detailed survey). 
+
+Non-realizable setting. We now consider the case where f ∗ does not belong to the realizable function class, meaning our model is misspecified. In this setting, (27) becomes 
+
+E
+
+ 1
+
+T
+
+X 
+
+> t∈[T]
+
+wt · ∥ ˜f (xt) − ˆf (xt)∥22
+
+ ≤ 1
+
+T
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+
+
+E
+
+h
+
+∥f (xt) − ˜f (xt)∥22
+
+i
+
+− C · ∥ f (xti ) − ˜f (xti )∥22
+
+
+
+(62) 
+
++ CT
+
+X
+
+> (t,i )∈M
+
+wt
+
+nt
+
+h
+
+4 · ⟨ vti − f ∗(xti ), f (xti ) − ˜f (xti )⟩ − ∥ ˜f (xti ) − f (xti )∥22
+
+i
+
+(63) 
+
++ 2 Cλ 
+
+h
+
+ΩT ( ˜f ) − ΩT ( ˆf )
+
+i
+
+, (64) where ˜f = f˜θ and ˜θ ∈ argmin θ∈Θ E
+
+h 1
+
+> T
+
+P 
+
+> (t,i )∈M
+> wt
+> nt
+
+· L 
+
+
+
+yti , f θ (xti )
+
+
+
++ λ · ΩT (θ)
+
+i
+
+.The key challenge arises in the term ⟨vti − f ∗(xti ), f (xti ) − ˜f (xti )⟩ − ∥ ˜f (xti ) − f (xti )∥22, where the first argument in the inner product is no longer independent of xt. This dependence is critical because the proof of Proposition 2 relied crucially on the independence between the first and second arguments of the inner product. To obtain concentration bounds for such complex dependent terms, we require sophisticated mixed-tail concentration results. The framework developed by Maurer and Pontil (2021) provides such tools, and Ziemann et al. (2024b) present concrete results that appear well-suited to our setting. Adapting their approach to handle the dependence structure in our problem remains a promising direction for future work. 
+
+## E Related Work on Distance Measures 
+
+Here we review some relevant works on multitask learning, transfer learning, and domain adaptation, with a focus on the distance measures that arise in generalization bounds. Such bounds typically depend linearly on the distance dist( π1, π 2)
+
+between two distributions, π1 and π2. In the main paper, we discussed the discrepancy distance in Example 1 and Remark 3. Furthermore, there have been multiple choices of such distance. Here, we examine a few other choices and evaluate whether they are suitable for our case. The first distance we consider is the so-called H-divergence (Ben-David et al., 2010; Shui et al., 2019). In Ben-David et al. (2010) the H-divergence is defined for classification tasks, while here we consider regression losses. In Shui et al. (2019), the H-divergence is defined exactly the same as the discrepancy distance in Remark 3, with a difference that the 
+
+ℓ1 loss is considered in Shui et al. (2019). Similarly to Remark 3, the discrepancy with the ℓ1 loss could grow unbounded, Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+e.g., if the two distributions are N (0 , 1) and N (a, 1) , respectively, with a growing polynomially with the problem size (e.g., dimension, number of samples). The second distance is called Y-discrepancy (Mohri and Mu˜ noz Medina, 2012; Wang et al., 2023). It is similar to the discrepancy distance in Remark 3, and we can show it is unbounded for simple distributions as well. 
+
+## F Basic Definitions and Auxiliary Lemmas 
+
+Here we present some basic definitions and lemmas that serve as fundamental building blocks for our proof. In Section F.1 we develop several lemmas tailored for our proof. In Section F.2, we collect notations and results from high dimensional statistics. 
+
+F.1 Notations and Lemmas 
+
+Denote by PBr (d)(·) the projection of its input onto Br (d). Define the supremum of the second order moment of Gf,t (x1):
+
+M2 := sup  
+
+> f∈F
+
+sup  
+
+> t∈[T],w t>0
+
+E ∥Gf,t (x1)∥22
+
+ . (65) Note that M2 is finite under Assumption 3 (see Lemma 12). 
+
+Lemma 7. Let {x1i}ni=1 be n independent random variables in Rdx , each distributed according to π1. Suppose we have deterministic functions g2, . . . , g t and generate for each i ∈ { 1, . . . , n }:
+
+xki = gk
+
+ x1i, x 2i, . . . , x k−1,i 
+
+ for k = 2 , . . . , t. (66) 
+
+Then, for each i, we have trajectories  x1i, x 2i, . . . , x ti 
+
+. These trajectories are also mutually independent, that is, with 
+
+i̸ = j we have 
+
+(x1i, x 2i, . . . , x ti ) ⊥ (x1j , x 2j , . . . , x tj ). (67) 
+
+Proof. By assumption, the random variables x1i are mutually independent for i = 1 , . . . , n . Then, for each i, note that the trajectory  x1i, x 2i, . . . , x ti 
+
+ is obtained via a deterministic transformation of x1i, namely, 
+
+x2i = g2(x1i), x3i = g3(x1i, x 2i), . . . , xti = gt
+
+ x1i, . . . , x t−1,i 
+
+. (68) Hence the trajectory  x1i, x 2i, . . . , x ti 
+
+ is a measurable (deterministic) function of the initial variable x1i. Since trajectory  x1i, . . . , x ti 
+
+ depends only on x1i, and  x1j , . . . , x tj 
+
+ depends only on x1j , the mutual independence of x1i and x1j for 
+
+i̸ = j directly implies 
+
+ x1i, . . . , x ti 
+
+ ⊥  x1j , . . . , x tj 
+
+. (69) This finishes the proof. 
+
+Lemma 8. For all c̸ = 0 we have the following identity: 
+
+Z
+
+τ · exp (cτ ) dτ = cτ − 1
+
+c2 · exp (cτ ).
+
+Moreover, if c < 0 then we have 
+
+Z ∞
+
+> 0
+
+τ · exp (cτ ) dτ = 1
+
+c2 .
+
+Proof. The first identity follows from integration by parts , or by observing that the derivative of cτ −1 
+
+> c2
+
+·exp (cτ ) with respect to τ is equal to τ · exp (cτ ). The second identity follows by evaluating the integral at infinity and at 0.
+
+Lemma 9. For k non-negative random variables z1, . . . , z k with E[zi]̸ = 0 we have 
+
+E
+
+
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!2 ≤
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!2
+
+· max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2 .Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Proof. We have 
+
+E(z1 + · · · + zk)2 =
+
+> k
+
+X
+
+> i=1
+
+E[z2 
+
+> i
+
+] + X
+
+> i̸=j
+
+2E[zizj ]
+
+> (i)
+
+≤
+
+> k
+
+X
+
+> i=1
+
+E[z2 
+
+> i
+
+] + X
+
+> i̸=j
+
+2
+
+q
+
+E[z2 
+
+> i
+
+]E[z2 
+
+> j
+
+]
+
+≤
+
+> k
+
+X
+
+> i=1
+
+E[zi]2 · max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2 + X
+
+> i̸=j
+
+2
+
+q
+
+E[zi]2E[zj ]2 · max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+=
+
+> k
+
+X
+
+> i=1
+
+E[zi]2 · max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2 + X
+
+> i̸=j
+
+2E[zi]E[zj ] · max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+=
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!2
+
+· max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+where (i) follows from the Cauchy-Schwarz inequality. 
+
+Lemma 10. For k non-negative random variables z1, . . . , z k with E[zi]̸ = 0 , and for any fixed positive constant α > 
+
+0, C > 1 we have 
+
+E
+
+"
+
+exp −Cα 
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!# 
+
+≤ exp 
+
+−Cα 
+
+> k
+
+X
+
+> i=1
+
+E[zi] + C2α2
+
+2
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!2
+
+· max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+ ,
+
+and moreover we have 
+
+P C
+
+> k
+
+X
+
+> i=1
+
+zi ≤
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!
+
+≤ exp 
+
+− C − 12C2 max i∈[k] 
+
+> E[z2
+> i]
+> E[zi]2
+
+ .
+
+Proof. For any α > 0, Markov’s inequality gives 
+
+P C
+
+> k
+
+X
+
+> i=1
+
+zi ≤
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!
+
+= P exp −Cα 
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!
+
+≥ exp −α
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!! 
+
+≤ exp α
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!
+
+· E
+
+"
+
+exp −Cα 
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!# 
+
+.
+
+We upper bound the rightmost terms: 
+
+E
+
+"
+
+exp −Cα 
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!# (i) 
+
+≤ E
+
+1 − Cα 
+
+> k
+
+X
+
+> i=1
+
+zi + C2α2
+
+2
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!2
+
+> (ii)
+
+≤ exp 
+
+−Cα 
+
+> k
+
+X
+
+> i=1
+
+E[zi] + C2α2
+
+2 E
+
+
+
+> k
+
+X
+
+> i=1
+
+zi
+
+!2
+
+> (iii)
+
+≤ exp 
+
+−Cα 
+
+> k
+
+X
+
+> i=1
+
+E[zi] + C2α2
+
+2
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!2
+
+· max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+
+
+where (i) follows from the inequality exp (−a) ≤ 1 − a + a2/2 (∀a ≥ 0), (ii) from the inequality 1 + a ≤ exp (a) (∀a), and (iii) from Lemma 9. Combining the above gives 
+
+P C
+
+> k
+
+X
+
+> i=1
+
+zi ≤
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!
+
+≤ exp 
+
+−(C − 1) α
+
+> k
+
+X
+
+> i=1
+
+E[zi] + C2α2
+
+2
+
+> k
+
+X
+
+> i=1
+
+E[zi]
+
+!2
+
+· max 
+
+> i∈[k]
+
+E[z2 
+
+> i
+
+]
+
+E[zi]2
+
+ .Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+Since the above holds for any α and since C > 1, we set α to 
+
+α = C − 1
+
+C2 Pki=1 E[zi] · 1max i∈[k] 
+
+> E[z2
+> i]
+> E[zi]2
+
+and plug this back into the above inequality to obtain the desired result. 
+
+Lemma 11. Let S1, . . . , S m be subsets of [T ], and denote by nt the number of times that the index t is contained in 
+
+S1, . . . , S m, that is 
+
+nt := X
+
+> i∈[m]
+
+1(t ∈ Si).
+
+where 1(·) is the binary indicator function that outputs 1 if its input statement is true, or outputs 0 otherwise. Then, for T
+
+non-negative numbers a1, . . . , a T , we have 
+
+X
+
+> i∈[m]
+
+X
+
+> t∈Si
+
+at
+
+nt
+
+!2
+
+≤ 1min t∈[T ]{nt} ·
+
+ X 
+
+> i∈[T]
+
+at
+
+
+
+> 2
+
+.
+
+Proof. We expand the square on the left-hand side and make the following observations: • The left-hand side has the term a2 
+
+> t
+
+/n t, as each square gives a2 
+
+> t
+
+/n 2 
+
+> t
+
+and there are nt such sets that contains index t.Therefore we have 
+
+a2
+
+> t
+
+nt
+
+≤ at
+
+min t∈[T ]{nt} .
+
+• For any t1, t 2 ∈ [T ] The left-hand side has the term 2at1 at2 
+
+> nt1nt2
+
+· ct1,t 2 , where ct1,t 2 denotes the number of times that both indices t1, t 2 are contained in the sets S1, . . . , S m, that is 
+
+ct1,t 2 := X
+
+> i∈[m]
+
+1 (t1 ∈ Si and t2 ∈ Si) .
+
+By definition we have ct1,t 2 ≤ min {nt1 , n t2 }. Therefore 
+
+2at1 at2
+
+nt1 nt2
+
+· ct1,t 2 ≤ 2at1 at2
+
+max {nt1 , n t2 } ≤ 2at1 at2
+
+min t∈[T ]{nt} .
+
+These prove the desired inequality. 
+
+Lemma 12. Under Assumption 3, we have κ < ∞ and M2 < ∞, where κ is defined in (8) and M2 in (65). Proof. From Jensen’s inequality E ∥Gf,t (x1)∥22
+
+ ≤ pE [∥Gf,t (x1)∥42] and Assumption 3 that E ∥Gf,t (x1)∥42
+
+ is finite for all f ∈ F and t ∈ [T ], we see that M2 is indeed finite. That κ is finite also follows from Assumption 3. 
+
+Proposition 4. Suppose α, β, γ > 0. Whenever r = max {ζ, 0} + pmax {ln( βγ α/ 2)/γ, 0} it holds that: 
+
+min  
+
+> r
+
+rα + βexp (−γ(r − ζ)2) ≤ min 
+
+β + max {ζα, 0}, 1
+
+γα/ 2 +
+
+max {ζ, 0} +
+
+vuutmax 
+
+( ln  βγ α/ 2
+
+γ , 0
+
+)
+
+> α
+
+ . (70) 
+
+Proof. We first consider the case when ζ > 0, we obtain: 
+
+ rα + βexp (−γ(r − ζ)2) =
+
+
+
+ζ +
+
+q
+
+max {ln( βγ α/ 2)/γ, 0}
+
+α
+
++ 1
+
+γα/ 2 .
+
+Whenever, ζ ≤ 0 we can upper bound the function on r by dropping ζ:
+
+ rα + βexp (−γ(r − ζ)2) ≤  rα + βexp (−γr 2) .
+
+Now this reduces to the case when ζ = 0 . This completes the proof. Peng, Tadipatri, Xu, Eaton, Vidal 
+
+F.2 Definitions and Lemmas from High-Dimensional Statistics 
+
+Here we collect some basic definitions used and auxiliary lemmas from high-dimensional statistics and probability. For a more detailed account on this subject, see, e.g., Rigollet and H¨ utter (2023); Vershynin (2018); Wainwright (2019). We mostly follow the presentation of Rigollet and H¨ utter (2023). For a few lemmas that we did not find exact statements or proofs in Rigollet and H¨ utter (2023); Vershynin (2018); Wainwright (2019), we provide independent proofs. 
+
+Sub-Gaussian Random Variables. A random variable ξ is called sub-Gaussian with proxy variance σ2 if it has mean zero and satisfies 
+
+E[exp (uξ )] ≤ exp 
+
+ σ2u2
+
+2
+
+
+
+. (71) A random vector z = [ z1, . . . , z d]⊤ is called sub-Gaussian with proxy variance σ2 if it has mean zero and if z⊤ω is sub-Gaussian with proxy variance σ2 for every unit vector ω ∈ Rd (with ∥ω∥2 = 1 ). It follows from (71) that, if a sub-Gaussian vector z has independent coordinates then 
+
+E[exp (z⊤ω)] ≤ exp 
+
+ σ2 · ∥ ω∥22
+
+2
+
+
+
+, ∀ω ∈ Rd. (72) In particular, taking ω to be standard basis vectors of Rd, we see that every entry zi is a sub-Gaussian random variable with proxy variance σ2.
+
+Sub-exponential Random Variables. A random variable ξ is called sub-exponential with parameter s if it has zero mean and satisfies 
+
+E[exp (uξ )] ≤ exp 
+
+ s2u2
+
+2
+
+
+
+, ∀u ∈
+
+
+
+− 1
+
+s , 1
+
+s
+
+
+
+(73) This defining property is identical to (71), with one difference that u is now constrained to lie in the interval − 1 
+
+> s
+
+, 1
+
+> s
+
+.We now state a few lemmas about sub-Gaussian and sub-exponential random variables. 
+
+Lemma 13 (see, e.g., Lemmas 1.3 and 1.4 of Rigollet and H¨ utter (2023)) . For a sub-Gaussian random variable ξ with proxy variance σ2, it holds that 
+
+P (ξ > u ) ≤ exp 
+
+
+
+− u2
+
+2σ2
+
+
+
+, ∀u ∈ R.
+
+Furthermore, we have E[ξ2] ≤ 4σ2.
+
+Lemma 14 (see, e.g., Lemma 1.12 of Rigollet and H¨ utter (2023)) . If ξ is sub-Gaussian with proxy variance σ2, then 
+
+ξ2 − E[ξ2] is sub-exponential with parameter 16 σ2.
+
+Lemma 15 (Bernstein’s inequality, see, e.g., Theorem 1.13 of Rigollet and H¨ utter (2023) ) . Let ξ1, . . . , ξ d be independent sub-exponential random variables, each with parameter s. Then, for any u > 0, we have 
+
+P
+
+ dX
+
+> i=1
+
+ξi ≥ u
+
+
+
+≤ exp 
+
+
+
+− 12 min 
+
+ u2
+
+s2d , us
+
+
+
+.
+
+Lemma 16. Suppose z = [ z1, . . . , z d]⊤ is a sub-Gaussian vector with proxy variance σ2/d and independent coordinates. Then we have 
+
+P
+
+
+
+∥z∥2 − 2σ ≥ u
+
+
+
+≤ exp 
+
+
+
+− du 2
+
+128 σ2
+
+
+
+, ∀u > 0.
+
+Proof. From Lemma 14 we know that z2 
+
+> i
+
+− E[z2 
+
+> i
+
+] is sub-exponential with parameter 16 σ2/d . From Lemma 13 we know that E[∥z∥22] ≤ 4σ2. Moreover, by our assumption, z21 − E[z21 ], . . . , z 2 
+
+> d
+
+− E[z2 
+
+> d
+
+] are independent. Then we apply Lemma 15 Recovery Guarantees for Continual Learning of Dependent Tasks 
+
+(Bernstein’s inequality) and obtain 
+
+P
+
+ ∥z∥22
+
+4σ2 − 1 ≥ u
+
+4σ2
+
+
+
+= P
+
+
+
+∥z∥22 − 4σ2 ≥ u
+
+
+
+≤ P
+
+
+
+∥z∥22 − E[∥z∥22] ≥ u
+
+
+
+≤ P
+
+ dX
+
+> i=1
+
+ z2 
+
+> i
+
+− E[z2 
+
+> i
+
+] ≥ u
+
+
+
+≤ P
+
+ dX
+
+> i=1
+
+ z2 
+
+> i
+
+− E[z2 
+
+> i
+
+] ≥ u
+
+
+
+≤ exp 
+
+
+
+− d
+
+2 min 
+
+ u2
+
+256 σ4 , u
+
+16 σ2
+
+
+
+.
+
+We now use the technique of (Vershynin, 2018, Theorem 3.1.1) to obtain a bound for ∥z∥2. Since ∥z∥2 
+
+> 2σ
+
+− 1 ≥ u1 
+
+> 2σ
+
+implies  
+
+> ∥z∥22
+> 4σ2
+
+− 1 ≥ u21 
+
+> 4σ2
+
++ u1 
+
+> σ
+
+≥ max { u21 
+
+> 4σ2
+
+, u1 
+
+> 2σ
+
+} for all u1 > 0, we choose u such that u 
+
+> 4σ2
+
+= max { u21 
+
+> 4σ2
+
+, u1 
+
+> 2σ
+
+} and obtain 
+
+P
+
+
+
+∥z∥2 − 2σ ≥ u1
+
+
+
+= P
+
+ ∥z∥2
+
+2σ − 1 ≥ u1
+
+2σ
+
+
+
+≤ P
+
+ ∥z∥22
+
+4σ2 − 1 ≥ max 
+
+ u21
+
+4σ2 , u1
+
+2σ
+
+  
+
+≤ exp 
+
+
+
+− d
+
+2 min 
+
+ max 
+
+n u41 
+
+> 16 σ4
+
+, u21
+
+> 4σ2
+
+o
+
+16 ,
+
+max 
+
+n u21 
+
+> 4σ2
+
+, u1
+
+> 2σ
+
+o
+
+4
+
+
+
+≤ exp 
+
+
+
+− d
+
+8 min 
+
+
+
+max 
+
+ u41
+
+16 σ4 , u21
+
+4σ2
+
+
+
+, max 
+
+ u21
+
+4σ2 , u1
+
+2σ
+
+ 
+
+= exp 
+
+
+
+− d
+
+32 · u21
+
+4σ2
+
+
+
+.
+
+The last equality follows from a simple discussion on whether u1 
+
+> 2σ
+
+is greater than 1 or not. The proof is now complete. 
+
+Lemma 17. Let z1, . . . , z n be d-dimensional sub-Gaussian vectors, each with proxy variance σ2/d and independent coordinates. Then for any r > 2σ and some universal constant c > 0 we have 
+
+P (∥zi∥2 ≤ r, ∀i ∈ [n]) ≥ 1 − n · exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+.
+
+Proof. In Lemma 16, take u = σ(a − 2) with a > 2, and we obtain 
+
+P
+
+
+
+∥zi∥2 ≥ aσ 
+
+
+
+≤ exp 
+
+
+
+− d(a − 2) 2
+
+128 
+
+
+
+, ∀a > 2.
+
+Then take r = aσ , and we obtain 
+
+P
+
+
+
+∥zi∥2 ≥ r
+
+
+
+≤ exp 
+
+
+
+− d(r − 2σ)2
+
+128 σ2
+
+
+
+, ∀r > 2σ. 
+
+Applying the union bound finishes the proof. 
+
+Nets. In our proof, we will often consider some specific subset of the function class F, called ϵ-net. The defining property of an ϵ-net F(ϵ) is that, for every f ∈ F , there exists some f ′ ∈ F (ε) satisfying ∥f ′ − f ∥F ≤ ε; thus, the definition of 
+
+F(ε) implicitly depends on the norm ∥ · ∥ F .
+
+Lemma 18. Suppose (6) holds. Let Θ( ε) := {θ1, . . . , θ N } be the smallest ε-net of Θ. Then {fθ1 , . . . , f θN } is an ( LF ε)-net of F. Thus, the smallest ε-net of F \{ f ∗} has smaller size than the smallest ( ε/L F )-net of Θ.Peng, Tadipatri, Xu, Eaton, Vidal 
+
+Proof. For any fθ ∈ F \{ f ∗}, there is some θi ∈ Θ such that ∥θ − θi∥2 ≤ ε. By (6) we have 
+
+∥fθ − fθi ∥F ≤ LF · ∥ θ − θi∥2 ≤ LF · ε. 
+
+The proof is finished. 
+
+Lemma 19. Assume Θ is a bounded subset of Rp with bounded diameter diam(Θ) (Assumption 2). Then the smallest 
+
+ε-net of Θ is at most of size 
+
+exp 
+
+
+
+p · O
+
+
+
+ln diam(Θ) 
+
+ε
+
+ 
+
+.
+
+Proof. Note that Θ can be covered by a ball of radius diam(Θ) . Then invoke, e.g., Proposition 5 of Cucker and Smale (2002). 
+
+Lemma 20 (Integral Identity, cf. Lemma 1.2.1 of Vershynin (2018)) . For a non-negative random variable ξ we have 
+
+E[ξ] = 
+
+Z ∞
+
+> 0
+
+P(ξ > τ ) dτ.

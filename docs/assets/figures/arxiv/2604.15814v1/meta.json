@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-001.webp",
+      "caption": "Fig. 8. Qualitative localization results on the i12S dataset. Each pair shows the rendered 3D model (left, grayscale) overlaid with the query image (right) using the estimated pose after continual learning across all 12 scenes.",
+      "page": 11,
+      "index": 1,
+      "width": 1074,
+      "height": 659
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-002.webp",
+      "caption": "Fig. 9. Visualization of localization results on the Simulation dataset. The query image (right) with a rendered image (left, grayscale) using the estimated pose and the ground truth 3D model.",
+      "page": 11,
+      "index": 2,
+      "width": 495,
+      "height": 460
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-003.webp",
+      "caption": "TABLE III",
+      "page": 7,
+      "index": 3,
+      "width": 1081,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-004.webp",
+      "caption": "TABLE I",
+      "page": 7,
+      "index": 4,
+      "width": 1074,
+      "height": 331
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-005.webp",
+      "caption": "TABLE II",
+      "page": 7,
+      "index": 5,
+      "width": 1072,
+      "height": 427
+    },
+    {
+      "url": "assets/figures/arxiv/2604.15814v1/fig-006.webp",
+      "caption": "Fig. 6. Task forgetting rate comparisons on the Simulation dataset.",
+      "page": 9,
+      "index": 6,
+      "width": 516,
+      "height": 254
+    }
+  ]
+}
