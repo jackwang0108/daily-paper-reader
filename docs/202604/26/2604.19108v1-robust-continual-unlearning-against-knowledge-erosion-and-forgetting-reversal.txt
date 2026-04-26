@@ -1,0 +1,741 @@
+Title: Robust Continual Unlearning against Knowledge Erosion and Forgetting Reversal
+
+URL Source: https://arxiv.org/pdf/2604.19108v1
+
+Published Time: Wed, 22 Apr 2026 01:00:31 GMT
+
+Number of Pages: 16
+
+Markdown Content:
+# Robust Continual Unlearning against Knowledge Erosion and Forgetting Reversal 
+
+## Eun-Ju Park 1 Youjin Shin 2* Simon S. Woo 1,3*
+
+> 1
+
+## Sungkyunkwan University 
+
+> 2
+
+## The Catholic University of Korea 
+
+> 3
+
+## Secure Machines Lab   
+
+> {eunju.park, swoo }@g.skku.edu, yj.shinn@catholic.ac.kr
+
+## Abstract 
+
+As a means to balance the growth of the AI industry with the need for privacy protection, machine unlearning plays a crucial role in realizing the “right to be forgotten” in ar-tificial intelligence. This technique enables AI systems to remove the influence of specific data while preserving the rest of the learned knowledge. Although it has been actively studied, most existing unlearning methods assume that un-learning is performed only once. In this work, we evaluate existing unlearning algorithms in a more realistic scenario where unlearning is conducted repeatedly, and in this set-ting, we identify two critical phenomena: (1) Knowledge Erosion, where the accuracy on retain data progressively degrades over unlearning phases, and (2) Forgetting Rever-sal, where previously forgotten samples become recogniz-able again in later phases. To address these challenges, we propose SAFER (StAbility-preserving Forgetting with Effec-tive Regularization), a continual unlearning framework that maintains representation stability for retain data while en-forcing negative logit margins for forget data. Extensive ex-periments show that SAFER mitigates not only knowledge erosion but also forgetting reversal, achieving stable per-formance across multiple unlearning phases. Source code: 
+
+https://github.com/DASH-Lab/SAFER 
+
+## 1. Introduction 
+
+With large-scale datasets, deep learning has achieved sig-nificant progress across a wide range of computer vision tasks, including classification [12, 13, 19, 22]. While ap-plying such technology to real-world problems can bring significant convenience to daily life, it inevitably requires collecting and processing more personal data, thereby in-tensifying concerns over privacy violations [3, 6]. To ad-dress these concerns, data protection regulations such as the 
+
+> *Corresponding Authors
+
+GDPR [26] guarantee individuals the “right to be forgotten,” which grants them the right to request the deletion of infor-mation related to themselves. This extends beyond merely removing the original data from databases; it also encom-passes erasing the influence of that data from models that have already been trained on it. Therefore, deep learning systems should be equipped with the capability to selectively forget specific user data. Enabling a model to forget certain information is essential not only for addressing privacy concerns but also for cor-recting unintended learning outcomes resulting from erro-neous data during training. In this respect, machine unlearn-ing has become an important research area for ensuring the reliability, security, and fairness of AI systems. Most prior studies on machine unlearning [8, 14, 15, 23] implicitly assume that the unlearning operation is processed only once. In real-world applications, however, data dele-tion requests may arise continuously over time, requiring models to support ongoing unlearning throughout their en-tire life cycle. In other words, models should be capable of maintaining their utility even when data removal is per-formed repeatedly. Thus, developing robust and efficient ap-proaches for continual unlearning is essential to ensure both regulatory compliance and long-term model reliability. In our analysis of applying existing unlearning methods to multi-phase unlearning, we identify two critical issues that undermine both model reliability and privacy compli-ance. The first issue, Knowledge Erosion , refers to the pro-gressive degradation of accuracy on retain data as unlearn-ing proceeds across multiple phases. The second issue, For-getting Reversal , describes the phenomenon in which sam-ples that were previously forgotten become recognizable again in later unlearning phases. To mitigate these issues, we propose SAFER (StAbility-preserving Forgetting with Effective Regularization), a con-tinual unlearning framework designed to maintain model utility while preventing previously forgotten samples from 1
+
+> arXiv:2604.19108v1 [cs.LG] 21 Apr 2026
+
+being recognized again in later unlearning phases. SAFER simultaneously enhances the clusterability of retain data representations by reducing intra-class variation and in-creasing inter-class separation, and encourages forgotten samples to maintain negative unlearning margins across phases. By combining these two mechanisms, SAFER re-duces the likelihood that forgotten samples re-enter class decision regions as correct predictions as the unlearning process repeats. In brief, our contributions can be summa-rized as follows: • We propose SAFER , a continual unlearning framework that enhances the clusterability of retain data representa-tions, while encouraging forgotten samples to maintain negative unlearning margins across phases. This mecha-nism prevents previously forgotten information from be-ing reactivated even after multiple unlearning phases. • Through comprehensive evaluations on diverse datasets and continual unlearning configurations, we show that SAFER maintains strong model utility while robustly pre-venting forgetting reversal, outperforming existing state-of-the-art approaches. • We provide detailed analyses of representation cluster-ability and unlearning-margin behaviors to uncover the factors that enable reliable continual unlearning. 
+
+## 2. Related Work 
+
+Cao and Yang [5] introduced the notion of machine un-learning, focusing on the challenge of removing a subset of training data from a trained model. Earlier research on ma-chine unlearning, including SISA [3] and Amnesiac learn-ing [17], explored strategies for training models under the assumption that data deletion occurs. More recent stud-ies [8, 14, 15] have instead focused on approaches that mod-ify the weights of an already trained model to minimize the influence of the forget data. This category of unlearning methods, known as approx-imate unlearning , aims to statistically ensure that an un-learned model obtained through post-hoc methods remains indistinguishable from models that achieve exact unlearn-ing, such as retrained models. In other words, approximate unlearning is regarded as effective when it achieves perfor-mance comparable to retrained models, under comprehen-sive evaluation criteria. These methods typically fine-tune the model to reduce the influence of the forget data [8, 10, 14, 23] or esti-mate the degree to which model parameters are affected when updating forget data or train data and adjust them ac-cordingly [15, 16]. However, approximate unlearning does not inherently guarantee the complete removal of the for-get samples’ influence. Therefore, its effectiveness is typi-cally evaluated by comparison with retrained models. Even though most unlearning studies achieve high levels of for-getting, they generally assume that the unlearning process 
+
+> Figure 1. Illustration of knowledge erosion and forgetting reversal. The left figure illustrates knowledge erosion, where the model’s performance on the retain data progressively degrades as unlearn-ing is repeated. The right figure depicts forgetting reversal, where previously forgotten samples become recognizable again in later unlearning phases.
+
+is performed only once and evaluate their methods using forget data as a single batch. In this work, we study continual unlearning, also referred to as iterative unlearning [18] or online unlearning [27]. Re-cent works [1, 7, 20, 25] consider scenarios where learn-ing and unlearning occur at different stages of the train-ing process, or where, after multi-stage learning, unlearning removes knowledge acquired at a specific learning stage. In contrast, our setting assumes a fully trained model, af-ter which unlearning requests may arise on arbitrary data in either class-aligned or class-misaligned settings. Thus, unlearning is not tied to a specific training phase. GS-LoRA [29, 30] presents a LoRA-based approach that adapts Transformer-specific FFN modules to address continual for-getting. In the context of continual unlearning, we charac-terize two key issues, Knowledge Erosion and Forgetting Reversal , and propose corresponding metrics to quantify them. Furthermore, we introduce an architecture-agnostic framework that addresses these challenges. 
+
+## 3. Preliminaries 
+
+3.1. Problem Setting and Notation 
+
+Let the entire training dataset used for a classification model 
+
+fθ : X → Y be D = {(x(i), y(i))}Ni=1 ⊆ X ×Y , where each input x(i) ∈ X maps to a label y(i) ∈ Y . The set of labels is denoted as Y = {l1, l 2, ..., l K } where K is the number of classes. We denote the original classification model trained on D
+
+as fθ0 . When a subset of the training data should be un-learned from fθ0 in the first phase, we denote the forget-ting data as D(1) 
+
+> forget
+
+, and the remaining data as D(1)  
+
+> retain
+
+=
+
+D \ D (1) 
+
+> forget
+
+. After the first unlearning, we obtain the un-learned model fθ1 , where the parameters are updated from 
+
+fθ0 to fθ1 during the unlearning process. When additional deletion requests arise in the second phase, we denote the new forgetting data as D(2) 
+
+> forget
+
+, and the 2remaining data as D(2) 
+
+> retain
+
+. Importantly, the forgetting data from the first phase becomes the forgotten data in the sec-ond phase, denoted as D(2) 
+
+> forgot
+
+. This implies that the forgotten data has already been removed in the first unlearning phase and therefore remains inaccessible. The unlearned model after the second unlearning phase is denoted as fθ2 , ob-tained using fθ1 , D(2) 
+
+> forget
+
+, and D(2) 
+
+> retain
+
+.Let the model at phase t be denoted as fθt , which has un-dergone unlearning with respect to a forget set D(t)
+
+> forget
+
+. When a new forget request D(t+1)  
+
+> forget
+
+arise, the model fθt serves as the starting point for the next unlearning phase, producing 
+
+fθt+1 . The continual unlearning process can therefore be represented as: 
+
+fθ0 
+
+> unlearn on D(1)
+> forget
+
+−−−−−−−−−→ fθ1 
+
+> unlearn on D(2)
+> forget
+
+−−−−−−−−−→ · · · unlearn on D(t)
+
+> forget
+
+−−−−−−−−−→ fθt .
+
+We also denote the relationship among D, D(t)
+
+> forget
+
+, D(t)
+
+> retain
+
+,and D(t) 
+
+> forgot
+
+as follows: 
+
+D = D(t) 
+
+> forget
+
+∪ D (t) 
+
+> retain
+
+∪ D (t)
+
+> forgot
+
+, (1) where D(1)  
+
+> forgot
+
+= ∅ and D(t) 
+
+> forgot
+
+= St−1 
+
+> i=1
+
+D(i)
+
+> forget
+
+.Let f ∗
+
+> θt
+
+denote a model retrained from scratch on D(t)
+
+> retain
+
+.The objective for fθt does not imply that θt should be sim-ilar to ∗
+
+θt. Instead, we expect the behavior of fθt to be anal-ogous to that of f ∗
+
+> θt
+
+. Hence, our objective for continual un-learning is to (i) prevent forgotten samples from being clas-sified as their original labels again, while (ii) preserving per-formance on the retain dataset at any unlearning phase t.
+
+3.2. Challenges in Continual Unlearning 
+
+Applying existing unlearning algorithms in the continual unlearning setup, as described in Sec. 3.1, tends to result in two fundamental challenges that threaten both performance and reliability. 
+
+(1) Knowledge Erosion. We define Knowledge Erosion 
+
+as the phenomenon where the model’s performance on re-tain data gradually degrades as unlearning is repeated across phases: Acc t(D(t)
+
+> retain
+
+) > Acc t+k(D(t+k) 
+
+> retain
+
+), (2) where k ≥ 1. Here, Acc t(·) and Acc t+k(·) denote the ac-curacy measured after completing the t-th and ( t + k)-th unlearning phase, using the models fθt and fθt+k , respec-tively. This degradation suggests that the model’s ability to preserve the discriminative characteristics of retain data weakens as unlearning is repeated. As a result, the model becomes increasingly unstable and less reliable in continual unlearning scenarios. 
+
+(2) Forgetting Reversal. We identify another critical is-sue, Forgetting Reversal , in which samples that were suc-cessfully forgotten in earlier phases become recognizable again in subsequent ones: Acc t(D(t)
+
+> forget
+
+) < Acc t+k(D(t)
+
+> forget
+
+), (3) where k ≥ 1. This implies that during later unlearning opti-mization, the representations of previously forgotten data drift toward newly adjusted decision boundaries, causing them to re-enter recognizable regions. These two phenomena, Knowledge Erosion and Forget-ting Reversal , represent distinct yet interrelated challenges in continual unlearning. The former pertains to the stability of retained knowledge, whereas the latter concerns the re-liability of forgetting. Consequently, an effective continual unlearning algorithm should aim to achieve both: (i) robust preservation of knowledge learned from Dretain , and (ii) con-sistent unrecognizability of both Dforget and Dforgot . In the next section, we present a method that explicitly addresses these challenges by optimizing intra/inter-class feature vari-ation for retain data while enforcing negative logit margins for forget data. 
+
+## 4. Method 
+
+In this section, we propose SAFER ( StAbility-preserving Forgetting with Effective Regularization ), a continual un-learning framework designed to address two critical issues: 
+
+Knowledge Erosion , the progressive degradation of perfor-mance on retain data across unlearning phases, and Forget-ting Reversal , the unintended reclassification of previously forgotten data as correct predictions. To overcome these challenges, continual unlearning should satisfy two key requirements. First, as unlearning is repeated, the model should preserve the structural integrity of retain data representations: maintaining compact intra-class distributions while keeping distinct class boundaries prevents accumulated representation drift and helps sus-tain predictive utility over phases. Second, forgotten sam-ples should remain unrecognizable in future updates so that forgetting does not unintentionally reverse. This motivates constraining the model’s confidence for the ground-truth class of forget data to remain lower than that of retain classes, even as unlearning continues across phases. To effectively counteract the two challenges, SAFER introduces two optimization objectives: (i) improving the clusterability of retain data representations to protect re-tained knowledge from degradation, and (ii) encouraging negative logit margins for forget data to suppress the possi-bility of their re-entering decision regions in later phases. 
+
+Improving Representation Clusterability. To mitigate knowledge erosion, SAFER aims to maintain and rein-force the clusterability of retain data representations across 3phases. Our key idea is to encourage (i) low intra-class vari-ation and (ii) well-separated cluster structures over unlearn-ing phases. We introduce a class-conditioned latent-variable module that operates exclusively on retain samples. Given a feature vector x ∈ Rd with class label c, the encoder produces the parameters of a latent distribution conditioned on the input feature x and class label c, from which a latent embedding is sampled as: 
+
+z = μ + σ ⊙ ϵ, ϵ ∼ N (0 , I ), (4) where μ and σ are the mean and standard deviation of the latent distribution. A decoder reconstructs the feature from 
+
+z as ˆx, and the stabilized feature forwarded to the classifier is computed as: 
+
+x′ = x + ˆ x
+
+2 . (5) Averaging the original and reconstructed representations encourages feature smoothness and consistency between encoder and decoder, reducing noisy intra-class variability. We then optimize retain samples with the following objec-tive: 
+
+Lretain = LCE (f (x′), c )
+
+| {z }
+
+> classification consistency
+
++ ∥x − ˆx∥2
+
+| {z }
+
+> intra-class compactness
+
++ KL( q(z|x, c ) ∥ N (0 , I )) 
+
+| {z }
+
+> smooth and bounded latent structure
+
++ λ(E[∥μ − μEMA ∥2]) −1
+
+| {z }
+
+> cluster separation
+
+,
+
+(6) where μEMA denotes a global exponential moving average of latent means computed over mini-batches. The final term encourages separation between latent representations and the global mean, preventing collapse of class clusters. The regularization terms in Eq. (6) reduce intra-class variabil-ity and maintain well-separated cluster structures across un-learning phases, thereby preserving retain-data utility. 
+
+Negative Logit Margin for Forget Data. In continual unlearning, our objective is to ensure that forgotten data re-main unrecognizable even after multiple phases. To char-acterize this behavior, we introduce the unlearning margin, inspired by the concept of the logit margin [24]. For a sam-ple x with original class y, we define 
+
+U M (x) = ℓy − max   
+
+> k̸=y
+
+ℓk, (7) where ℓy is the logit of the original class and max k̸ =y ℓk is the maximum competing logit. SAFER encourages negative unlearning margins for for-get samples by suppressing the logit of the original class and assigning probability mass to retain classes. For each forget sample at phase t, we define a target vector q such that only retain classes receive non-zero supervision: 
+
+qi =
+
+(
+
+0, i / ∈ D (t)
+
+> retain
+
+,ri, i ∈ D (t)
+
+> retain
+
+, (8) where ri is independently sampled from a uniform distribu-tion over [0, 1]. Then, the target vector is normalized as: 
+
+qi ← qi
+
+P 
+
+> j
+
+qj
+
+. (9) Since the original label y of a forget sample does not belong to D(t)
+
+> retain
+
+, it receives zero target probability. Mini-mizing KL divergence using q drives the model toward 
+
+ℓy < max 
+
+> i∈D (t)
+> retain
+
+ℓi ⇒ U M (x) < 0. (10) As a result, forgotten classes remain suboptimal in the deci-sion space throughout unlearning phases, preventing inad-vertent reclassification of forgotten samples. A formal anal-ysis of the objective based on the negative logit margin is provided in Sec. 8. 
+
+## 5. Experiment 
+
+5.1. Experimental Settings 
+
+Dataset and Models. For unlearning evaluation, we use three datasets: CIFAR-100 [21], VGGFace2 [4], and MU-FAC [9]. CIFAR-100 is a benchmark dataset comprising 100 object classes, each containing 600 images, of which 500 are used for training and 100 for testing. VGGFace2 is a facial dataset containing 100 identities, with the num-ber of images per identity ranging from 87 to 843. Lastly, MUFAC consists of facial images from a total of 1,216 sub-jects, with 8 to 24 photographs per individual, taken at dif-ferent ages and categorized into eight distinct age groups. We use ResNet-18, ResNet-50 [19], and Vision Transformer (ViT) [13] as backbone models. 
+
+Continual Unlearning Setup. In our experiments, we eval-uate the performance of unlearning algorithms under sce-narios where the unlearning process is performed multiple times. To simulate diverse continual unlearning situations, we consider two settings based on the alignment between the task label and the forgetting unit: • Class-Aligned Continual Unlearning : the forgetting unit directly corresponds to the model’s classification labels (CIFAR-100, VGGFace2). • Class-Misaligned Continual Unlearning : unlearning re-quests occur at the individual level, while the task objec-tive is attribute classification, resulting in a misalignment between the forgetting unit and the classification target (MUFAC). For each setting, we conduct experiments under the NCLASSES-3PHASES configuration, which consists of three 4Phase Acc. Retrain SCRUB SALUN SSD BndShrink NegGrad Finetune SAFER 3CLASSES-3PHASES 1 Dtr 76.60 ± 0.54 77.22 ± 0.30 71.97 ± 0.80 68.49 ± 8.23 63.22 ± 1.83 64.28 ± 3.03 76.73 ± 0.33 75.69 ± 0.81 
+
+Dtf 0.00 ± 0.00 1.33 ± 0.98 1.33 ± 0.82 6.11 ± 8.64 12.89 ± 7.82 16.33 ± 7.32 0.00 ± 0.00 0.00 ± 0.00 
+
+2
+
+Dtr 76.71 ± 0.24 77.78 ± 0.41 71.93 ± 0.42 53.80 ± 24.49 61.41 ± 2.40 68.14 ± 2.14 68.48 ± 6.88 77.82 ± 0.16 
+
+Dtf 0.00 ± 0.00 0.33 ± 0.27 0.56 ± 0.42 0.00 ± 0.00 10.11 ± 2.61 17.11 ± 2.98 1.89 ± 2.67 0.00 ± 0.00 
+
+Dtg 0.00 ± 0.00 2.00 ± 1.09 16.11 ± 4.90 6.22 ± 8.80 45.33 ± 19.81 68.78 ± 16.65 0.00 ± 0.00 0.00 ± 0.00 
+
+3
+
+Dtr 77.20 ± 0.32 78.03 ± 0.31 71.55 ± 0.54 37.89 ± 29.77 51.72 ± 2.05 64.65 ± 1.45 71.95 ± 5.73 77.29 ± 0.61 
+
+Dtf 0.00 ± 0.00 7.56 ± 6.00 0.89 ± 0.42 4.44 ± 6.28 8.00 ± 1.19 18.56 ± 3.27 8.78 ± 11.03 0.11 ± 0.16 
+
+Dtg 0.00 ± 0.00 1.17 ± 0.76 16.78 ± 2.28 3.39 ± 4.79 36.72 ± 4.36 65.39 ± 3.75 0.00 ± 0.00 0.00 ± 0.00 
+
+Table 1. Performance for continual unlearning on CIFAR-100 with ResNet-18. 
+
+Phase Acc. Retrain SCRUB SALUN SSD BndShrink NegGrad Finetune SAFER 3CLASSES-3PHASES 1 Dtr 96.66 ± 0.35 95.30 ± 0.03 94.05 ± 0.32 85.49 ± 4.85 85.15 ± 3.36 88.91 ± 1.69 95.39 ± 0.51 94.90 ± 0.03 
+
+Dtf 0.00 ± 0.00 2.34 ± 1.85 0.67 ± 0.62 0.00 ± 0.00 14.33 ± 5.59 36.32 ± 4.78 7.84 ± 3.22 0.00 ± 0.00 
+
+2
+
+Dtr 96.81 ± 0.15 95.26 ± 0.17 93.07 ± 0.48 23.22 ± 17.63 68.65 ± 2.65 89.48 ± 2.01 84.89 ± 2.50 95.25 ± 0.16 
+
+Dtf 0.00 ± 0.00 6.85 ± 5.17 0.66 ± 0.47 0.00 ± 0.00 12.60 ± 7.40 39.90 ± 10.63 0.00 ± 0.00 0.00 ± 0.00 
+
+Dtg 0.00 ± 0.00 2.39 ± 2.13 37.75 ± 3.04 0.00 ± 0.00 27.37 ± 1.84 92.36 ± 1.56 0.00 ± 0.00 0.00 ± 0.00 
+
+3
+
+Dtr 96.67 ± 0.10 95.42 ± 0.12 92.83 ± 0.21 1.98 ± 1.37 40.69 ± 3.52 90.69 ± 0.81 85.04 ± 0.71 95.53 ± 0.14 
+
+Dtf 0.00 ± 0.00 0.18 ± 0.25 2.31 ± 2.89 0.00 ± 0.00 1.98 ± 2.43 32.20 ± 3.28 0.00 ± 0.00 0.00 ± 0.00 
+
+Dtg 0.00 ± 0.00 4.14 ± 2.83 17.65 ± 3.53 0.00 ± 0.00 11.18 ± 2.95 93.17 ± 5.15 0.00 ± 0.00 0.00 ± 0.00 
+
+Table 2. Performance for continual unlearning on VGGFace2 with ResNet-50. 
+
+Phase Acc. Retrain SCRUB SALUN SSD BndShrink NegGrad Finetune SAFER 20PERSONS-3PHASES  1
+
+Dr 99.97 ± 0.00 99.94 ± 0.02 99.04 ± 0.58 64.29 ± 42.49 52.95 ± 12.63 53.82 ± 31.04 99.97 ± 0.00 99.73 ± 0.07 
+
+Df 73.69 ± 6.66 76.53 ± 8.84 21.33 ± 5.15 65.69 ± 40.87 29.66 ± 6.42 45.24 ± 31.26 98.71 ± 0.30 71.94 ± 1.02 
+
+Dt 67.02 ± 0.39 69.48 ± 0.42 64.03 ± 4.15 44.46 ± 30.43 43.75 ± 9.92 45.48 ± 20.44 68.24 ± 0.64 68.88 ± 0.47 
+
+2
+
+Dr 99.98 ± 0.01 99.98 ± 0.01 99.81 ± 0.06 64.23 ± 42.39 29.16 ± 8.88 21.46 ± 5.83 99.97 ± 0.01 99.87 ± 0.04 
+
+Df 71.63 ± 5.61 99.60 ± 0.57 28.21 ± 11.59 62.91 ± 44.04 17.58 ± 5.02 21.38 ± 8.65 99.73 ± 0.38 70.49 ± 4.39 
+
+Dt 66.91 ± 0.27 69.30 ± 0.60 64.30 ± 0.41 44.62 ± 30.52 27.08 ± 9.18 23.29 ± 7.17 68.17 ± 0.19 67.95 ± 1.00 
+
+Dg 61.66 ± 6.81 76.67 ± 8.90 27.81 ± 6.83 65.40 ± 40.70 19.16 ± 2.13 20.91 ± 7.87 98.62 ± 0.88 75.95 ± 7.65 
+
+3
+
+Dr 99.98 ± 0.01 99.98 ± 0.01 99.46 ± 0.38 64.19 ± 42.29 19.39 ± 3.14 17.12 ± 0.20 99.98 ± 0.01 99.92 ± 0.01 
+
+Df 72.37 ± 10.39 100.00 ± 0.00 29.21 ± 12.23 63.81 ± 45.26 10.46 ± 2.35 22.97 ± 3.62 100.00 ± 0.00 64.68 ± 2.85 
+
+Dt 66.95 ± 0.57 69.33 ± 0.51 64.21 ± 1.30 44.48 ± 30.45 19.19 ± 1.85 18.22 ± 0.00 68.61 ± 0.34 67.51 ± 0.54 
+
+Dg 66.80 ± 5.50 87.17 ± 4.70 52.34 ± 11.98 64.19 ± 42.18 15.64 ± 1.38 17.32 ± 2.97 99.00 ± 0.60 78.65 ± 3.28 
+
+Table 3. Performance for continual unlearning on MUFAC with ViT-B/16. 
+
+consecutive unlearning processes with N different classes. All experiments begin with a pre-trained classification model fθ0 . At each phase t, a new deletion request D(t)
+
+forget 
+
+is processed using fθt−1 , D(t)
+
+forget , and D(t)
+
+retain , resulting in an updated model fθt .
+
+Evaluation. At each unlearning phase, we measure and re-port the accuracy using the following evaluation sets: • Class-Aligned Continual Unlearning : Dtr (retain class data of test set), Dtf (forget class data of test set), and 
+
+Dtg (forgotten class data of test set). • Class-Misaligned Continual Unlearning : Dr (retain data), Df (forget data), Dt (test data), and Dg (forgotten data). We note that the measurement of forgotten data is included starting from the second unlearning process. To provide a concise and comparable assessment across multiple unlearning phases, we introduce two metrics that quantify the two key phenomena observed in continual un-learning: Knowledge Erosion and Forgetting Reversal. 
+
+Measurement of Knowledge Erosion. Let Acc t(D(t)
+
+retain ) de-note the accuracy on retain data measured after completing the t-th unlearning phase. Knowledge erosion characterizes the progressive decline of predictive performance on retain data across phases. Accordingly, we define 
+
+m(KE) := 1
+
+T − 1
+
+T −1X
+
+t=1 
+
+
+
+Acc t(D(t)
+
+retain ) − Acc t+1 (D(t+1) 
+
+retain )
+
+
+
+.
+
+(11) Since smaller changes in the performance on retain data in-dicate that the model better preserves its utility as unlearn-ing progresses, lower values correspond to more stable per-formance. 
+
+Measurement of Forgetting Reversal. We measure the ex-tent to which samples forgotten at phase-( t) become recog-nizable in subsequent phases. To quantify forgetting rever-sal, we compare Acc t(D(t)
+
+forget ) with Acc t+1 (D(t+1) 
+
+forgot ), since 
+
+D(t+1) 
+
+forgot contains D(t)
+
+forget , as described in Eq. (1). Thus, we 5(a) Unlearning Efficiency (ToW)  
+
+> (b) Knowledge Erosion (c) Forgetting Reversal
+> Figure 2. Measured continual unlearning metrics. In (a), ToW results, shown from left to right for CIFAR-100, VGGFace2, and MUFAC, indicate that higher values are better. For both (b) knowledge erosion and (c) forgetting reversal, lower values indicate better performance.
+
+define 
+
+m(FR) := −1
+
+T − 1 
+
+> T−1
+
+X
+
+> t=1
+
+
+
+Acc t(D(t)
+
+> forget
+
+) − Acc t+1 (D(t+1)  
+
+> forgot
+
+)
+
+
+
+.
+
+(12) Since it is desirable for the performance on forget data to remain low even after multiple unlearning processes, lower values indicate more robust unlearning efficiency. In addition, we adopt the Tug of War (ToW) metric to comprehensively rank unlearning methods for each phase and dataset, following [31]. In brief, ToW quantifies the per-formance discrepancy between the unlearned model ( fθt )and the retrained model ( hθ ) as follows: 
+
+T oW (t) = Π D(t) (1 − | Acc (D(t); fθt ) − Acc (D(t); hθ )|).
+
+(13) 
+
+Baselines. We compare our proposed method against vari-ous state-of-the-art baselines for continual unlearning. The baselines used in our experiments are as follows. Retrain is a model retrained from scratch on Dretain and serves as an oracle reference for continual unlearning. SCRUB [23] op-timizes the distance between the student and teacher mod-els, decreasing it for the retain data while increasing it for the forgetting data. SALUN [14] identifies model weights where the gradient of the forgetting loss exceeds a thresh-old and applies random labeling to update those selected weights. SSD [15] selectively updates weights of fθ that are important for the forgetting data but not for the retain data, using the Fisher information matrix. BndShrink [8] fine-tunes fθ with the nearest but incorrect labels for the forgetting data, determined through adversarial perturba-tions. NegGrad [16] fine-tunes the model in the direction that increases the loss for Dforget . Finetune [16] updates the weights of fθ to minimize the loss only on the retain data. 
+
+5.2. Results 
+
+Model Performance. In Tab. 1, Tab. 2, and Tab. 3, we present the accuracy results for CIFAR-100, VGGFace2, and MUFAC after each algorithm processes multiple un-learning requests. For each dataset, we conduct three exper-iments under the N CLASSES-3PHASES setting, using dif-ferent D(t) 
+
+> forget
+
+at each phase. We report the average accuracy and standard deviation across the three runs. In Tab. 1 and Tab. 2, Retrain shows zero accuracy for both Dtf and Dtg , while demonstrating almost identical performance on Dtr in each unlearning phase. On the other hand, the results in Tab. 3 show that the accuracy on for-get and forgotten data is comparable to that of the test data within the margin of error, whereas the accuracy on retain data remains nearly unchanged, staying close to 100%. We now describe the performance results of the remain-ing unlearning methods using Fig. 2. In our experiments, SCRUB exhibits almost no knowledge erosion or forgetting reversal. However, as the number of phases increases, its ToW value, which measures similarity to the retrain per-formance, tends to gradually decrease. SALUN shows pro-nounced forgetting reversal, and this effect leads to a di-vergence from the retrain performance as reflected in its 6(a) CIFAR-100 (b) VGGFace2 (c) MUFAC 
+
+> Figure 3. MIA results across phases. For each method, the three bars correspond to the MIA scores at phases 1, 2, and 3.
+
+ToW scores. In contrast, SSD and Finetune display signs of knowledge erosion. BndShrink and NegGrad exhibit both substantial knowledge erosion and forgetting reversal, re-sulting in extremely low values of ToW. For SAFER, the performance on retain data remains nearly unchanged across phases for all datasets, showing virtually no knowledge erosion as illustrated in Fig. 2b. In Tab. 1 and Tab. 2, the accuracy on forget data and for-gotten data remains close to zero. However, in Tab. 3, the accuracy of unlearned samples in earlier phases becomes higher when evaluated in later phases. Reflecting these ob-servations, Fig. 2c shows that forgetting reversal does not occur for CIFAR-100 or VGGFace2, whereas it does occur for MUFAC. Correspondingly, ToW scores for CIFAR-100 and VGGFace2 stay close to 1, while those for MUFAC ex-hibit a downward trend in ToW as the number of phases increases. To investigate whether this trend persists over ex-tended phases, we provide the results of additional experi-ments in Sec. 10. 
+
+Unlearning Efficacy. In Fig. 3, we present MIA results for CIFAR-100, VGGFace2, and MUFAC. To assess unlearn-ing efficacy, we compute the proportion of forget samples that an attacker determines to be absent from the train-ing set of the unlearned model, following the MIA proto-col in [14, 28]. As shown in Fig. 3a and Fig. 3b, the re-trained model in the class-aligned continual unlearning set-ting maintains an MIA score of 100% across all phases, indicating that an attacker identifies none of the unlearned samples as belonging to the model’s training set. In con-trast, in the class-misaligned continual unlearning setting, illustrated in Fig. 3c, the retrained model yields scores near 60 across all phases. Other algorithms exhibit varying MIA scores across phases under both the class-aligned and class-misaligned continual unlearning settings. However, SAFER consistently achieves MIA scores similar to the retrained model for all datasets and across all phases. 
+
+Efficiency. We evaluate the computational efficiency of SAFER and other baselines in continual unlearning settings, as shown in Fig. 4. Each value corresponds to the mean run-time across phases, and the error bar reflects the runtime variation between phases. SSD, BndShrink, and NegGrad exhibit faster unlearning times across all datasets. Although 
+
+> Figure 4. Time efficiency of each unlearning method.
+
+SAFER requires more time than these methods, its time ef-ficiency remains comparable to most approaches that fine-tune the model using retain data. This implies that SAFER is able to maintain stable performance across phases without introducing meaningful computational overhead, making it practical for real-world continual unlearning scenarios. 
+
+## 6. Analysis 
+
+Representation Clustering Quality. To assess how re-peated unlearning affects the structure of learned repre-sentations, we analyze the representation stability of retain data using the Davies–Bouldin Index (DBI) [11], a widely used data clusterability metric. SAFER aims to stabilize fea-ture representations by reducing intra-class variation and reinforcing inter-class separation. To quantitatively assess whether the retain data remain well-clustered throughout continual unlearning, we adopt the DBI metric. Formally, for each class ( i), we compute its DBI as 
+
+DBI i = max 
+
+> i̸=j
+
+dintra (i) + dintra (j)
+
+dinter (i, j ) , (14) where dintra (i) denotes the intra-class variance of cluster (i), computed as the mean squared distance of its samples from the corresponding class centroid. dinter (i, j ) repre-sents the distance between the class centroids of clusters (i) and ( j). The overall DBI score is obtained by averaging 
+
+DBI i across all classes in the retain data at phase t. A lower DBI value indicates tighter clusters and greater separation. 7(a) CIFAR-100 (b) VGGFace2 (c) MUFAC 
+
+> Figure 5. DBI scores for retain data across unlearning phases. A smaller DBI score reflects more compact clusters and better inter-class separation.
+
+Fig. 5 shows the DBI results for the retain data across all phases on CIFAR-100, VGGFace2, and MUFAC. In all datasets, Retrain maintains consistently low DBI values across phases, reflecting compact intra-class structures and well-separated class centers. This behavior represents the ideal target for stable representation geometry and serves as the reference point against which all unlearning methods are evaluated. Compared to the retrain model, NegGrad shows higher DBI values. This suggests that error-maximizing un-learning methods that do not account for retain data may induce drift in retrain data representation, leading to nega-tive effects on model utility. On the contrary, our proposed method maintains low DBI values across all phases, remain-ing close to the retrain model. This suggests that its feature-regularization mechanism effectively constrains representa-tional drift over phases. 
+
+Negative Unlearning Margin. To further evaluate how effectively SAFER prevents forgetting reversal and pre-serves the intended forgetting behavior across phases, we analyze the unlearning margin distributions of the forget and forgotten data. Recall that the proposed method explic-itly enforces negative logit margins for all non-retain classes as defined in Eq. (7). Fig. 6 presents the unlearning margin distributions for the forget set D(t) 
+
+> forget
+
+and the forgotten set D(t) 
+
+> forgot
+
+across phases. For the retrained model, U M (x) is strictly nega-tive for CIFAR-100 and VGGFace2, whereas the margin distribution for MUFAC is skewed toward positive values. This indicates that, in the class-aligned continual unlearning setting, forget data never become more confident than the other classes, as they have never been part of the model’s training set. However, in the class-misaligned continual un-learning setting, the retain data influence all classes during training, causing the unlearning margin to form distribu-tions with values exceeding zero. Analogously to the re-trained model, SAFER maintains negative unlearning mar-gins across all phases in the class-aligned continual unlearn-ing setting. This suggests that the explicit logit margin con-straint is effective in preventing forgotten classes from re-entering the decision region. In contrast, under the class-misaligned continual unlearning setting, SAFER exhibits a  
+
+> (a) Retrain (b) SAFER
+> Figure 6. Logit margin distribution. From top to bottom, the plots show the results for CIFAR-100, VGGFace2, and MUFAC.
+
+tendency for its UM distribution to shift toward zero, unlike the retrained model. This indicates that applying the logit margin constraint to forget data influences how the unlearn-ing margins are distributed in such settings. In Sec. 10, we provide further analysis of our proposed method, including the performance contribution of each module in SAFER and the sensitivity of λ in Eq. (6). 
+
+## 7. Conclusion 
+
+In this work, we examined the challenges that emerge when machine unlearning is performed continually across multi-ple phases. Our analysis shows that existing unlearning ap-proaches exhibit two critical issues in this setting: knowl-edge erosion, characterized by a gradual decline in perfor-mance on retain data, and forgetting reversal, where previ-ously forgotten samples become recognizable again in later stages. These issues underscore the need for methods that not only ensure complete removal of designated informa-tion but also preserve model stability over time. To address this challenge, we proposed SAFER, a continual unlearn-ing framework that maintains well-clustered representations for retain samples while enforcing negative logit margins for forget samples. Experimental evaluations across multi-ple datasets and unlearning configurations demonstrate that SAFER consistently preserves model utility while prevent-ing the reactivation of forgotten information. Furthermore, we provide an in-depth analysis of how margin-based sup-pression contributes to stability in continual unlearning. We hope our framework contributes to efforts toward robust and practically deployable continual unlearning solutions. 8Acknowledgment 
+
+This work was partly supported by Institute for Infor-mation & communication Technology Planning & eval-uation (IITP) grants funded by the Korean government MSIT: (RS-2022-II220688, RS-2019-II190421, RS-2024-00437849, RS-2024-00337703). Also, this work was sup-ported by the Cyber Investigation Support Technology De-velopment Program (No.RS-2025-02304983) of the Ko-rea Institute of Police Technology (KIPoT), funded by the Korean National Police Agency. Lastly, this work was supported by the National Research Foundation of Korea (NRF) grant funded by the Korea government (MSIT) (No. RS-2024-00356293). 
+
+## References 
+
+[1] Sayanta Adhikari, Vishnuprasadh Kumaravelu, and PK Sri-jith. An unlearning framework for continual learning. arXiv preprint arXiv:2509.17530 , 2025. 2 [2] Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. Optuna: A next-generation hyperparameter optimization framework. In The 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining , pages 2623–2631, 2019. 1 [3] Lucas Bourtoule, Varun Chandrasekaran, Christopher A Choquette-Choo, Hengrui Jia, Adelin Travers, Baiwu Zhang, David Lie, and Nicolas Papernot. Machine unlearning. In 
+
+2021 IEEE symposium on security and privacy (SP) , pages 141–159. IEEE, 2021. 1, 2 [4] Qiong Cao, Li Shen, Weidi Xie, Omkar M. Parkhi, and An-drew Zisserman. Vggface2: A dataset for recognising faces across pose and age, 2018. 4 [5] Yinzhi Cao and Junfeng Yang. Towards making systems for-get with machine unlearning. In 2015 IEEE symposium on security and privacy , pages 463–480. IEEE, 2015. 2 [6] Nicholas Carlini, Florian Tramer, Eric Wallace, Matthew Jagielski, Ariel Herbert-Voss, Katherine Lee, Adam Roberts, Tom Brown, Dawn Song, Ulfar Erlingsson, et al. Extract-ing training data from large language models. In 30th USENIX security symposium (USENIX Security 21) , pages 2633–2650, 2021. 1 [7] Romit Chatterjee, Vikram Chundawat, Ayush Tarun, Ankur Mali, and Murari Mandal. A unified framework for continual learning and unlearning. arXiv preprint arXiv:2408.11374 ,2024. 2 [8] Min Chen, Weizhuo Gao, Gaoyang Liu, Kai Peng, and Chen Wang. Boundary unlearning: Rapid forgetting of deep net-works via shifting the decision boundary. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 7766–7775, 2023. 1, 2, 6 [9] Dasol Choi and Dongbin Na. Towards machine unlearn-ing benchmarks: Forgetting the personal identities in facial recognition systems. Presented at the AAAI Workshop on Privacy-Preserving Artificial Intelligence (PPAI-24), 2024. 4 [10] Vikram S Chundawat, Ayush K Tarun, Murari Mandal, and Mohan Kankanhalli. Can bad teaching induce forgetting? unlearning in deep networks using an incompetent teacher. In Proceedings of the AAAI Conference on Artificial Intelli-gence , pages 7210–7217, 2023. 2 [11] David L Davies and Donald W Bouldin. A cluster separation measure. IEEE transactions on pattern analysis and machine intelligence , (2):224–227, 2009. 7 [12] Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition , pages 248–255. Ieee, 2009. 1 [13] Alexey Dosovitskiy, Lucas Beyer, Alexander Kolesnikov, Dirk Weissenborn, Xiaohua Zhai, Thomas Unterthiner, Mostafa Dehghani, Matthias Minderer, Georg Heigold, Syl-vain Gelly, Jakob Uszkoreit, and Neil Houlsby. An image is worth 16x16 words: Transformers for image recognition at scale. In International Conference on Learning Representa-tions , 2021. 1, 4 [14] Chongyu Fan, Jiancheng Liu, Yihua Zhang, Eric Wong, Den-nis Wei, and Sijia Liu. Salun: Empowering machine unlearn-ing via gradient-based weight saliency in both image classi-fication and generation. In The Twelfth International Confer-ence on Learning Representations , 2024. 1, 2, 6, 7 [15] Jack Foster, Stefan Schoepf, and Alexandra Brintrup. Fast machine unlearning without retraining through selective synaptic dampening. In Proceedings of the AAAI Confer-ence on Artificial Intelligence , pages 12043–12051, 2024. 1, 2, 6 [16] Aditya Golatkar, Alessandro Achille, and Stefano Soatto. Eternal sunshine of the spotless net: Selective forgetting in deep networks. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 9304– 9312, 2020. 2, 6 [17] Laura Graves, Vineel Nagisetty, and Vijay Ganesh. Amne-siac machine learning. In Proceedings of the AAAI Confer-ence on Artificial Intelligence , pages 11516–11524, 2021. 2 [18] Keltin Grimes, Collin Abidi, Cole Frank, and Shannon Gal-lagher. Gone but not forgotten: Improved benchmarks for machine unlearning. arXiv preprint arXiv:2405.19211 ,2024. 2 [19] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition. In Proceed-ings of the IEEE conference on computer vision and pattern recognition , pages 770–778, 2016. 1, 4 [20] Zhehao Huang, Xinwen Cheng, Jie Zhang, Jinghao Zheng, Haoran Wang, Zhengbao He, Tao Li, and Xiaolin Huang. A unified gradient-based framework for task-agnostic contin-ual learning-unlearning. arXiv preprint arXiv:2505.15178 ,2025. 2 [21] Alex Krizhevsky, Geoffrey Hinton, et al. Learning multiple layers of features from tiny images. 2009. 4 [22] Alex Krizhevsky, Ilya Sutskever, and Geoffrey E Hinton. Imagenet classification with deep convolutional neural net-works. Advances in neural information processing systems ,25, 2012. 1 [23] Meghdad Kurmanji, Peter Triantafillou, Jamie Hayes, and Eleni Triantafillou. Towards unbounded machine unlearn-ing. In Thirty-seventh Conference on Neural Information Processing Systems , 2023. 1, 2, 6 
+
+9[24] Jonas Ngnaw´ e, Sabyasachi Sahoo, Yann Pequignot, Fr´ ed´ eric Precioso, and Christian Gagn´ e. Detecting brittle decisions for free: Leveraging margin consistency in deep robust clas-sifiers. Advances in Neural Information Processing Systems ,37:23301–23324, 2024. 4 [25] Jianheng Tang, Huiping Zhuang, Di Fang, Jiaxu Li, Feijiang Han, Yajiang Huang, Kejia Fan, Leye Wang, Zhanxing Zhu, Shanghang Zhang, et al. Acu: Analytic continual unlearning for efficient and exact forgetting with privacy preservation. 
+
+arXiv preprint arXiv:2505.12239 , 2025. 2 [26] Paul Voigt and Axel Bussche. The EU General Data Protec-tion Regulation (GDPR): A Practical Guide . 2017. 1 [27] Miao Xu. Machine unlearning: challenges in data quality and access. In Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence (IJCAI-24) , 2024. 2[28] Chenhao Zhang, Shaofei Shen, Weitong Chen, and Miao Xu. Toward efficient data-free unlearning. In Proceedings of the AAAI Conference on Artificial Intelligence , pages 22372– 22379, 2025. 7 [29] Hongbo Zhao, Bolin Ni, Junsong Fan, Yuxi Wang, Yuntao Chen, Gaofeng Meng, and Zhaoxiang Zhang. Continual for-getting for pre-trained vision models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 28631–28642, 2024. 2 [30] Hongbo Zhao, Fei Zhu, Bolin Ni, Feng Zhu, Gaofeng Meng, and Zhaoxiang Zhang. Practical continual forgetting for pre-trained vision models. IEEE Transactions on Pattern Analy-sis and Machine Intelligence , 2026. 2 [31] Kairan Zhao, Meghdad Kurmanji, George-Octavian B˘ arbulescu, Eleni Triantafillou, and Peter Triantafillou. What makes unlearning hard and what to do about it. 
+
+Advances in Neural Information Processing Systems , 37: 12293–12333, 2024. 6 
+
+10 Robust Continual Unlearning against Knowledge Erosion and Forgetting Reversal 
+
+# Supplementary Material 
+
+## 8. Theoretical Analysis of Unlearning Margin Suppression 
+
+Proposition 1 (Effect of Negative Unlearning Margin) . For a non-retain sample x with original label y, optimizing the KL divergence loss with the random retain-class target distribution q in Eq. 9 drives its unlearning margin toward negative values: 
+
+U M (x) < 0. (15) 
+
+Thus, forgotten samples remain suboptimal within the decision space. Proof Sketch. Let p(x) = softmax( ℓ(x)) denote the model’s predictive distribution over logits ℓ. Then the KL objective is written as: 
+
+LKL (x) = KL( q ∥ p(x)) = X
+
+> i
+
+qi log qi
+
+pi(x) , (16) where i indexes over all classes. Since qy = 0 and qi > 0 only for i ∈ D (t)
+
+> retain
+
+, the gradient w.r.t. logits becomes: 
+
+∂LKL 
+
+∂ℓ i
+
+=
+
+(
+
+pi(x) − qi, i ∈ D (t)
+
+> retain
+
+,pi(x), i / ∈ D (t)
+
+> retain
+
+. (17) In particular, for the ground-truth class y, if py (x) > 0, gradient descent decreases ℓy . Meanwhile, logits of retain classes 
+
+pi(x) are pushed toward matching qi. At a stationary point, py (x) approaches 0, leading to ℓy ≪ max j∈D (t)
+
+> retain
+
+ℓj . Because 
+
+max k̸ =y ℓk = max j∈D (t)
+
+> retain
+
+ℓj , we obtain U M (x) = ℓy − max k̸ =y ℓk < 0.
+
+Therefore, the forgotten class is consistently discouraged from re-entering its decision region. Since this update is repeatedly applied across unlearning phases, negative unlearning margins consistently prevent forgetting reversal. 
+
+## 9. Experiment Details 
+
+9.1. Implementation 
+
+Original Models. We trained ResNet-18 on CIFAR-100, ResNet-50 on VGGFace2, and ViT-B/16 on MUFAC from scratch. For optimization, we used SGD with a learning rate of 0.1 for CIFAR-100 and VGGFace2, and 0.001 for MUFAC, along with weight decay of 0.0005 and momentum of 0.9. We set the batch size to 128 for CIFAR-100 and 64 for VGGFace2 and MUFAC. 
+
+SAFER and Baselines. Retrain models were trained in the same manner as original models, using only the remaining data 
+
+D(t)
+
+> retain
+
+. For the other baseline methods, we utilized publicly available source code. We perform 10 unlearning epochs for all experiments, and the optimal hyperparameters are selected using Optuna [2]. All methods are tuned only in Phase 1, and the selected hyperparameters are fixed and reused for all subsequent phases to ensure a fair comparison without phase-wise re-optimization. This optimization protocol is applied to all experimental results in this paper unless otherwise noted. 
+
+Hardware Specifications. All experiments are conducted on Ubuntu 18.04 using NVIDIA GeForce RTX 3090 GPUs, each equipped with 24,268 MB of memory. 
+
+9.2. Unlearning Targets 
+
+Tab. 4 describes the unlearning targets used in our experiments. At each phase, we unlearn 3 classes for CIFAR-100 and VGGFace2, and 20 identities for MUFAC. The three-phase unlearning process is considered as a single evaluation unit, and we repeat it three times with different targets. The reported results are averaged over the three runs. 1Set Phase CIFAR-100 VGGFace2 MUFAC 11 31,33,35 31,33,35 250 - 259, 260 - 269 2 37,39,51 37,39,51 270 - 279, 280 - 289 3 53,55,57 53,55,57 700 - 709, 710 - 719 21 71,63,20 6,7,8 230 - 239, 320 - 329 2 35,17,81 26,27,28 510 - 519, 600 - 609 3 9,18,15 51,52,53 610 - 619, 620 - 629 31 6,7,8 36,37,38 240 - 249, 340 - 349 2 26,27,28 2,3,4 540 - 549, 850 - 859 3 51,52,53 81,82,83 860 - 869, 870 - 879                                
+
+> Table 4. Unlearning target classes for CIFAR-100, VGGFace2, and MUFAC across three phases in our experiments.
+> Dataset Phase IC IC+CD UM+IC+CD CIFAR-100 10.8687 0.9857 0.9910
+> 20.6052 0.8635 0.9889
+> 30.4621 0.3944 0.9981
+> VGGFace2 10.6890 0.9806 0.9824
+> 20.4655 0.7456 0.9844
+> 30.6697 0.8090 0.9887
+> MUFAC 10.7372 0.7371 0.9618
+> 20.4563 0.4445 0.8375
+> 30.4895 0.4783 0.8086
+> Table 5. Ablation study for CIFAR-100, VGGFace2, and MUFAC. The results represent ToW scores, and higher values indicate better unlearning performance. UM corresponds to the optimization in Eq. (9), whereas IC and CD optimize the intra-class compactness and centroid drift suppression terms in Eq. (6), respectively. SAFER includes all three components (UM+IC+CD).
+
+## 10. Additional Analysis 
+
+Ablation Study. As presented in Tab. 5, we conduct ablation studies to evaluate the impact of each component in SAFER. The ablation results are evaluated under the same conditions described in Sec. 5, and for each phase, the highest ToW score is highlighted in bold. First, when optimizing intra-class compactness (IC), the ToW score gradually decreases after the first phase in both class-aligned and class-misaligned unlearning settings. This suggests that repeated unlearning with only IC optimization causes the model to diverge from the retrained model (the ideal unlearning reference) in both model utility and unlearning efficacy. Second, adding centroid drift suppression to intra-class compactness (IC+CD) yields consistent performance improvements in the class-aligned setting compared to IC alone. However, its effect remains minimal in the class-misaligned setting, sug-gesting that controlling centroid drift has limited influence under this scenario. Lastly, when all components are incorporated (UM+IC+CD), the ToW scores are significantly higher than those of the other settings across all datasets and phases. This result implies that jointly optimizing unlearning margin and retain-representation clusterability is crucial to preserving both model utility and effective forgetting throughout multiple unlearning phases. 
+
+Results in Extended Phases. A downward trend of SAFER is observed for MUFAC in Fig. 2a. Therefore, we conduct additional experiments up to five phases under the same experimental setting. As described above, the phase 5 results are obtained using the same hyperparameters as in the main paper, without any additional tuning. In this experiment, we include GS-Lora as an additional baseline, using the authors’ default hyperparameters. As shown in Fig. 7a, SAFER remains com-petitive with strong baselines and does not exhibit a persistent downward trend beyond phase 3. It consistently maintains a ToW above 0.8, indicating that the discrepancy from the Retrain model does not accumulate over extended phases, even in the class-misaligned setting. These results indicate that SAFER maintains competitive and stable performance beyond three phases. 
+
+Hyperparameter Sensitivity. To further examine the robustness of our proposed method, we provide a sensitivity analysis of the regularization weight λ in Eq. (6), which controls cluster separation. As shown in Fig. 7b, varying λ results in highly consistent trends up to phase 5, without significant performance fluctuations. These results indicate that SAFER shows limited sensitivity and remains stable across a reasonable range of hyperparameter values. 2(a) Baseline comparison (b) Hyperparameter sensitivity 
+
+> Figure 7. ToW performance across phases 1-5.
+
+Representation Similarity. To further evaluate representation stability under continual unlearning settings, we measure the cosine similarity between the feature representations extracted by the model at each unlearning phase and those of the original model before any unlearning is applied. For a given sample xi, let the original model and the model after t-th unlearning phase produce feature representations: 
+
+f before  
+
+> i
+
+= fθ0 (xi), f after  
+
+> i
+
+= fθt (xi), (18) where t ∈ { 1, 2, 3}. Applying L2-normalization, we measure the representation similarity using cosine similarity: Sim (xi) = f before  
+
+> i
+
+· f after 
+
+> i
+
+∥f before  
+
+> i
+
+∥2 ∥f after  
+
+> i
+
+∥2
+
+(19) , where Sim (xi) ∈ [−1, 1] . We obtain the similarity distributions for retain data and forget data as: Sim (t) 
+
+> retain
+
+= {Sim (xi) | i ∈ D (t)
+
+> retain
+
+}, Sim (t) 
+
+> forget
+
+= {Sim (xi) | i / ∈ D (t)
+
+> retain
+
+}. (20) The underlying rationale is that an ideal unlearning algorithm should remove information only related to the forgotten sam-ples, while preserving knowledge from the retain samples. Thus, high similarity for retain samples across unlearning phases indicates that the model successfully maintains useful knowledge without feature distortion. Conversely, decreasing similarity for forget samples suggests that their embeddings diverge from their original feature space, reflecting effective forgetting. Fig. 8, Fig. 9, and Fig. 10 present the representation similarity results between the original model and the unlearned models at each phase for CIFAR-100, VGGFace2, and MUFAC. For the retrained model in the class-aligned unlearning setting, the retain and forget samples form distinguishable distributions in terms of their representation similarity to the original model. The retain-sample distribution is shifted toward the right with a narrower spread, indicating consistently high similarity. In contrast, the forget-sample distributions across all unlearning phases shift further left with a broader spread, indicating that their similarity to the original model remains uniformly low. In the class-misaligned unlearning setting, the retrained model exhibits retain and forget similarity distributions with nearly identical shapes, although the forget distribution tends to be slightly more dispersed. Among all approximate unlearning methods, SAFER most closely preserves the representation similarity characteristics of Retrain. This indicates that SAFER achieves desirable and consistent unlearning behavior, not only in accuracy-based evaluation but also in this representational analysis. 3Method Phase 1 Phase 2 Phase 3 
+
+Retrain 
+
+SCRUB 
+
+SALUN 
+
+SSD 
+
+BndShrink 
+
+NegGrad 
+
+Finetune 
+
+SAFER 
+
+Figure 8. Representation similarity over the three-phase unlearning process on CIFAR-100. The orange shows the retain data distribution, while the blue shows the forget data distribution. 
+
+4Method Phase 1 Phase 2 Phase 3 
+
+Retrain 
+
+SCRUB 
+
+SALUN 
+
+SSD 
+
+BndShrink 
+
+NegGrad 
+
+Finetune 
+
+SAFER 
+
+Figure 9. Representation similarity over the three-phase unlearning process on VGGFace2. The orange shows the retain data distribution, while the blue shows the forget data distribution. 
+
+5Method Phase 1 Phase 2 Phase 3 
+
+Retrain 
+
+SCRUB 
+
+SALUN 
+
+SSD 
+
+BndShrink 
+
+NegGrad 
+
+Finetune 
+
+SAFER 
+
+Figure 10. Representation similarity over the three-phase unlearning process on MUFAC. The orange shows the retain data distribution, while the blue shows the forget data distribution. 
+
+6

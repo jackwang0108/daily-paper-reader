@@ -1,0 +1,110 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-001.webp",
+      "caption": "Figure 2. Measured continual unlearning metrics. In (a), ToW results, shown from left to right for CIFAR-100, VGGFace2, and MUFAC, indicate that higher values are better. For both (b) knowledge erosion and (c) forgetting reversal, lower values indicate better performance.",
+      "page": 6,
+      "index": 1,
+      "width": 1036,
+      "height": 504
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-002.webp",
+      "caption": "Figure 9. Representation similarity over the three-phase unlearning process on VGGFace2. The orange shows the retain data distribution, while the blue shows the forget data distribution.",
+      "page": 15,
+      "index": 2,
+      "width": 802,
+      "height": 1309
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-003.webp",
+      "caption": "Figure 4. Time efficiency of each unlearning method.",
+      "page": 7,
+      "index": 3,
+      "width": 481,
+      "height": 287
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-004.webp",
+      "caption": "Figure 3. MIA results across phases. For each method, the three bars correspond to the MIA scores at phases 1, 2, and 3.",
+      "page": 7,
+      "index": 4,
+      "width": 1036,
+      "height": 190
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-005.webp",
+      "caption": "Figure 8. Representation similarity over the three-phase unlearning process on CIFAR-100. The orange shows the retain data distribution, while the blue shows the forget data distribution.",
+      "page": 14,
+      "index": 5,
+      "width": 802,
+      "height": 1309
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-006.webp",
+      "caption": "Figure 7. ToW performance across phases 1-5.",
+      "page": 13,
+      "index": 6,
+      "width": 936,
+      "height": 488
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-007.webp",
+      "caption": "Figure 6. Logit margin distribution. From top to bottom, the plots show the results for CIFAR-100, VGGFace2, and MUFAC.",
+      "page": 8,
+      "index": 7,
+      "width": 496,
+      "height": 462
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-008.webp",
+      "caption": "Table 4. Unlearning target classes for CIFAR-100, VGGFace2, and MUFAC across three phases in our experiments.",
+      "page": 12,
+      "index": 8,
+      "width": 510,
+      "height": 267
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-009.webp",
+      "caption": "Table 5. Ablation study for CIFAR-100, VGGFace2, and MUFAC. The results represent ToW scores, and higher values indicate better unlearning performance. UM corresponds to the optimization in Eq. (9), whereas IC and CD optimize the intra-class compactness and centroid drift suppression terms in Eq. (6), respectively. SAFER includes all three components (UM+IC+CD).",
+      "page": 12,
+      "index": 9,
+      "width": 510,
+      "height": 250
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-010.webp",
+      "caption": "Table 3. Performance for continual unlearning on MUFAC with ViT-B/16.",
+      "page": 5,
+      "index": 10,
+      "width": 1026,
+      "height": 251
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-011.webp",
+      "caption": "Table 1. Performance for continual unlearning on CIFAR-100 with ResNet-18.",
+      "page": 5,
+      "index": 11,
+      "width": 1026,
+      "height": 198
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-012.webp",
+      "caption": "Table 2. Performance for continual unlearning on VGGFace2 with ResNet-50.",
+      "page": 5,
+      "index": 12,
+      "width": 1026,
+      "height": 200
+    },
+    {
+      "url": "assets/figures/arxiv/2604.19108v1/fig-013.webp",
+      "caption": "Figure 10. Representation similarity over the three-phase unlearning process on MUFAC. The orange shows the retain data distribution, while the blue shows the forget data distribution.",
+      "page": 16,
+      "index": 13,
+      "width": 802,
+      "height": 1309
+    }
+  ]
+}
