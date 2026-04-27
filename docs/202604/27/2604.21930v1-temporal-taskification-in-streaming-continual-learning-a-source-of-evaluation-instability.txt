@@ -1,0 +1,518 @@
+Title: Temporal Taskification in Streaming Continual Learning: A Source of Evaluation Instability
+
+URL Source: https://arxiv.org/pdf/2604.21930v1
+
+Published Time: Fri, 24 Apr 2026 01:14:42 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+Preprint. 
+
+# TEMPORAL TASKIFICATION IN STREAMING CONTINUAL 
+
+# LEARNING : A S OURCE OF EVALUATION INSTABILITY 
+
+Nicolae Filat 
+
+Bitdefender, Romania KTH Royal Institute of Technology 
+
+nfilat@bitdefender.com 
+
+Elena Burceanu 
+
+Bitdefender, Romania Politehnica University of Bucharest, Romania 
+
+eburceanu@bitdefender.com 
+
+Ahmed Hussain 
+
+Stockholm, Sweden Network Systems Security (NSS) Group KTH Royal Institute of Technology 
+
+ahmhus@kth.se 
+
+Konstantinos Kalogiannis 
+
+Stockholm, Sweden Network Systems Security (NSS) Group KTH Royal Institute of Technology 
+
+konkal@kth.se 
+
+## ABSTRACT 
+
+Streaming Continual Learning (CL) typically converts a continuous stream into a sequence of discrete tasks through temporal partitioning. We argue that this temporal taskification step is not a neutral preprocessing choice, but a structural component of evaluation: different valid splits of the same stream can induce different CL regimes and therefore different benchmark conclusions. To study this effect, we introduce a taskification-level framework based on plasticity and stability profiles, a profile distance between taskifications, and Boundary-Profile Sensitivity (BPS), which diagnoses how strongly small boundary perturbations alter the induced regime before any CL model is trained. We evaluate continual finetuning, Experience Replay, Elastic Weight Consolidation, and Learning without Forgetting on network traffic forecasting with CESNET-Timeseries24, keeping the stream, model, and training budget fixed while varying only the temporal taskification. Across 9-, 30-, and 44-day splits, we observe substantial changes in forecasting error, forgetting, and backward transfer, showing that taskification alone can materially affect CL evaluation. We further find that shorter taskifications induce noisier distribution-level patterns, larger structural distances, and higher BPS, indicating greater sensitivity to boundary perturbations. These results show that benchmark conclusions in streaming CL depend not only on the learner and the data stream, but also on how that stream is taskified, motivating temporal taskification as a first-class evaluation variable. 
+
+## 1 INTRODUCTION 
+
+Neural Networks (NNs) trained on non-stationary data suffer from catastrophic forgetting, in which models overwrite previously learned knowledge in favor of newly learned information (Goodfellow et al., 2013). Continual Learning ( CL )addresses this problem by accumulating knowledge over time without sacrificing past performance (Chen & Liu, 2016). However, solutions like weight regularization (Kirkpatrick et al., 2017b), dynamic architectures (Serra et al., 2018), or exemplar-free representation (Gomez-Villa et al., 2024) assume that the tasks arrive as discrete units (Lesort et al., 2020). In practice, real-world systems operate on continuous streams where the input data are constructed rather than observed as in a dataset. Further, several works measure CL performance assuming prefixed tasks (Chaudhry et al., 2018; Kemker et al., 2018; De Lange et al., 2021a), while investigations on the effect of task ordering (Yoon et al., 2020; Buzzega et al., 2020) also assume a given temporal partition of the tasks. Existing research in CL for time series typically treats task boundaries as a given property of the experimental setup (Besnard & Ragot, 2024; Wang et al., 2021; Gupta et al., 2021; Du et al., 2021; Kim et al., 2021). This is also observed in works discussing concept drift (Gama et al., 2014; Lu et al., 2019). By relying on fixed time windows, these works overlook the potential bias introduced by the windowing step itself, providing evidence that the construction of evaluation tasks has received insufficient attention. Unlike CL benchmarks built from static datasets such as CIFAR (Krizhevsky et al., 2009) and ImageNet (Deng et al., 2009), network telemetry evolves as a genuine stream, with temporally structured variation, recurring patterns, and natural non-stationarity. This makes the network domain a suitable setting for studying whether temporal task construction captures the underlying learning problem or instead introduces additional experimental bias. 1
+
+> arXiv:2604.21930v1 [cs.LG] 23 Apr 2026
+
+Preprint. In this work, we explicitly question the task-boundaries assumption by investigating how segmenting a continuous stream into tasks can alter performance metrics. Our main contributions are as follows: • Temporal taskification matters. We formalize temporal taskification as a structural component of evaluation in streaming CL, and show that different valid splits of the same stream can induce different CL regimes. • Taskifications can be diagnosed efficiently before training. We develop a taskification-level framework based on plasticity and stability profiles, profile distance, and Boundary-Profile Stability ( BPS ), which enables comparing temporal splits and assessing their robustness before training any CL model. • Structural variation predicts evaluation variability. On the CESNET-Timeseries24 dataset, we show that temporal taskifications with different induced distributional structures also differ in profile distance and robustness, and that these differences translate into materially different CL conclusions, including changes in forecasting error, forgetting, and backward transfer. 
+
+Paper Structure. Sec. 2 situates our work within the CL , time-series forecasting, and benchmark robustness literature. Sec. 3 formalizes temporal taskification, and Sec. 4 introduces plasticity and stability profiles, defines the profile distance, and presents BPS as a pre-training diagnostic of taskification robustness. Sec. 5 describes the experimental setup and reports results across the 9-, 30-, and 44-day taskifications for four CL methods. Sec. 6 discusses limitations, and Sec. 7 concludes the paper and outlines directions for future work. 
+
+## 2 RELATED WORK 
+
+Relation to Continual Learning Evaluation. Prior work focuses on measuring CL performance once tasks are fixed. (Chaudhry et al., 2018) formalize forgetting and intransigence as complementary evaluation metrics, while (Kemker et al., 2018) benchmark catastrophic forgetting across multiple mitigation strategies, and (De Lange et al., 2021b) systematize the stability–plasticity trade-off under fixed evaluation protocols. (Hsu et al., 2018) further show that even scenario categorization significantly changes benchmark conclusions. These studies assume that task structure is predetermined; our work goes a step earlier and demonstrates that temporal taskification is itself a structural evaluation variable whose choice alters the measured forgetting, transfer, and stability–plasticity profiles. 
+
+Relation to Task Order and Curriculum Effects in Continual Learning. (Bengio et al., 2009) established that the ordering of training examples shapes both convergence speed and generalization, a principle that naturally extends to CL where tasks arrive sequentially. Within CL specifically, (Yoon et al., 2020) introduce order-robustness metrics and propose additive parameter decomposition to mitigate sensitivity to permutations of a fixed task sequence, while (Buzzega et al., 2020) blur task boundaries in their General CL ( GCL ) setting and show that rehearsal with distillation provides strong baselines even as boundaries soften. These works demonstrate that task order matters given a fixed set of tasks; our contribution operates at a logically prior level by showing that, in streaming settings, the task sequence itself is an artifact of how the continuous stream is partitioned; different valid temporal splits produce different orderings, different numbers of tasks, and ultimately different benchmark conclusions. 
+
+Relation to Online and Streaming Continual Learning. Online and streaming CL methods process data without revisiting previous samples: (Aljundi et al., 2019) select replay samples via maximal retrieval interference, (Caccia et al., 2022) diagnose how abrupt representation changes degrade online learners, and (Mai et al., 2022) provide a systematic empirical comparison of online CL methods under standardized evaluation protocols. More recently, (Ghunaim et al., 2023) argue that evaluation itself must be rethought for the online setting by proposing real-time metrics that assess performance during stream processing rather than only at task boundaries. Despite these advances, evaluation in all of these works still depends (implicitly or explicitly) on a temporal split that defines when one phase of the stream ends, and another begins. Our work makes this dependence explicit by analyzing how the choice of temporal partition changes the induced CL regime and the conclusions one draws about method performance. 
+
+Relation to Task-Free and Task-Agnostic Continual Learning. Task-free and task-agnostic methods aim to remove dependence on explicit task labels during training: (Lee et al., 2020) use a neural Dirichlet process mixture to automatically discover task structure without boundaries, and (van de Ven et al., 2022) formalize the taxonomy of incremental learning scenarios (task-, domain-, and class-incremental) showing that the assumed task structure fundamentally determines which methods succeed. (Prabhu et al., 2023) further demonstrate that under realistic computational budgets, the gap between task-aware and task-free methods narrows substantially, questioning whether task labels provide a genuine signal or merely evaluation scaffolding. While these works eliminate task identity during training, evaluation typically reintroduces task structure, leading to per-task metrics such as forgetting or backward 2Preprint. transfer. Our contribution focuses specifically on this evaluation-side dependence: the choice of temporal taskification for evaluation is not neutral and induces different stability–plasticity profiles and benchmark rankings. 
+
+Relation to Benchmark Robustness and Evaluation Sensitivity. A growing body of work exposes fragilities in how Machine Learning ( ML ) progress is measured. (Recht et al., 2019) demonstrate that ImageNet accuracy drops significantly on a carefully re-collected test set, revealing benchmark overfitting, while (Torralba & Efros, 2011) show that dataset-specific biases allow classifiers to identify which dataset an image comes from rather than learning generalizable features. At the methodological level, (Bouthillier et al., 2021) quantify how sources of variance (e.g., random seeds, hyperparameters, data splits) can reverse method rankings, and (Dehghani et al., 2021) formalize the benchmark lottery, showing that which benchmarks are selected determines which methods appear state-of-the-art. Our work identifies a previously uncharacterized source of benchmark instability specific to streaming CL : temporal taskification. We show that BPS can quantify this instability before any model is trained, complementing the general benchmark-robustness literature with a domain-specific structural analysis. 
+
+## 3 PROBLEM FORMULATION 
+
+We start from a single temporally ordered stream and study how different temporal partitions of that same stream affect CL evaluation. Formally, a temporal taskification is an ordered partition 
+
+τ = ( t0, . . . , t K ), 0 = t0 < t 1 < · · · < t K = T, (1) which segments the stream into task intervals Iτk := [ tk−1, t k) for k = 1 , . . . , K . Each interval induces a task-level distribution P τk , yielding a sequence of distributions (P τ 
+
+> 1
+
+, . . . , P τK ).Different valid taskifications of the same stream may therefore induce different numbers of tasks, different adjacent transitions, and different longer-range recurrence structure, even though the underlying data source is unchanged. Our goal is to compare such taskifications at the structural level, before training any CL method. In particular, we seek to answer two questions: (i) when do two taskifications induce meaningfully different CL regimes, and (ii) when is a chosen taskification structurally robust or structurally fragile under small perturbations of its boundaries? To this end, we represent each taskification through task-count-invariant plasticity and stability profiles, define a profile distance between taskifications, and measure the structural sensitivity of a chosen split through local boundary perturbations. 
+
+## 4 PROPOSED APPROACH 
+
+4.1 PLASTICITY AND STABILITY PROFILES 
+
+Different temporal taskifications may yield different numbers of tasks, making task-indexed comparisons inconvenient and often ill-defined. To obtain a representation that is comparable across split families and computationally cheap, we summarize each taskification using two empirical profile distributions: a plasticity profile and a stability profile. Let a taskification τ induce task-level distributions P τ 
+
+> 1
+
+, . . . , P τKτ .
+
+Plasticity profile. We construct the plasticity profile of τ from the set of discrepancies between consecutive tasks, namely d(P τk , P τk+1 ) for k = 1 , . . . , K τ − 1, where d(·, ·) is a distance or divergence between task distributions. Rather than keeping these values as a task-indexed sequence, we treat them as samples from an empirical distribution, denoted by Πτ
+
+> pl
+
+. Intuitively, Πτ 
+
+> pl
+
+captures how frequently the chosen taskification induces mild, moderate, or abrupt transitions between adjacent tasks. 
+
+Stability profile. We construct the stability profile from longer-range relations in the induced task sequence. Specif-ically, we consider the distance or divergence d(P τi , P τj ) between non-adjacent tasks, for pairs (i, j ) satisfying 
+
+j − i ≥ ℓmin , where ℓmin excludes immediate neighbors so that the profile reflects longer-range recurrence rather than local transitions. We again treat these values as samples from an empirical distribution, denoted by Πτ
+
+> st
+
+. Intuitively, Πτ
+
+> st
+
+reflects the extent to which previously observed patterns differ from those that appear in the future. This representation has two advantages. First, it is invariant to the number of induced tasks, since each taskification is represented by distributions of transition distances rather than by fixed-length vectors. Second, it is cheap to compute, since it only requires computing task-level distributions and pairwise distances or divergences, without training any CL model. 3Preprint. 4.2 PROFILE DISTANCE 
+
+The profile representation above provides a structural, task-count-invariant description of a temporal taskification. We compare two taskifications through the discrepancy between their induced plasticity and stability profiles. Let Dpl (τ, σ ) denote a distribution distance between the plasticity profiles Πτ 
+
+> pl
+
+and Πσ
+
+> pl
+
+, and let Dst (τ, σ ) denote the corresponding distance between the stability profiles Πτ 
+
+> st
+
+and Πσ
+
+> st
+
+. We then define the overall taskification profile distance as 
+
+Dprof (τ, σ ) := αD pl (τ, σ )2 + βD st (τ, σ )21/2 , (2) where α, β > 0 are scaling coefficients. Intuitively, Dprof (τ, σ ) is small when two taskifications induce similar patterns of adjacent-task change and similar patterns of longer-range recurrence, and large when they induce substantially different CL regimes. Importantly, this distance depends only on the induced task distributions and not on the number of tasks themselves. It therefore provides a model-free structural quantity that can be computed before training and used to compare arbitrary temporal splits. 4.3 STRUCTURAL ROBUSTNESS OF A TASKIFICATION 
+
+A temporal taskification should not be judged only by the benchmark numbers it produces. It should also be judged by how sensitive its induced CL regime is to small changes in boundary placement. If minor perturbations of the split produce substantially different plasticity and stability profiles, then the resulting benchmark is structurally fragile: its conclusions may depend more on arbitrary boundary placement than on stable properties of the underlying stream. 
+
+Boundary-Profile Stability ( BPS ). To formalize this, let τ be a taskification and let N bdry  
+
+> δ
+
+(τ ) denote the set of valid taskifications obtained by perturbing each internal boundary of τ by at most δ in time. We measure the structural sensitivity of τ through the mean of the profile distance over this neighborhood. Concretely, BPS( τ ; δ) is the mean of Dprof (τ, σ ) over perturbed taskifications σ ∈ N bdry  
+
+> δ
+
+(τ ). Low values indicate that even relatively unfavorable perturbations leave the induced plasticity and stability profiles nearly unchanged. High values indicate structural fragility: small perturbations can move the benchmark into a materially different CL regime. This notion is useful because it does not require training any learner. It measures whether the chosen split is a stable substrate for evaluation before any downstream CL metric is computed. In this sense, profile sensitivity is not a substitute for benchmark performance, but a prior diagnostic of whether benchmark conclusions are likely to be robust or arbitrary with respect to boundary placement. 
+
+Robust vs. Fragile Taskifications. We distinguish between two broad regimes: robust and fragile segmentations. In robust taskifications, the underlying stream varies smoothly around the chosen boundaries, so small temporal perturbations induce only small changes in the task-level distributions and, consequently, only small changes in the induced plasticity and stability profiles. In contrast, for fragile taskifications, a boundary lies near a structurally sensitive region of the stream, such as an abrupt changepoint, a narrow transient, or a phase-sensitive recurrent pattern. In such cases, even a small perturbation can alter the induced adjacent-task discrepancies or long-range recurrence structure, leading to a large profile distance and high profile sensitivity. This distinction can be illustrated with simple synthetic constructions, as shown in Fig. 1. 
+
+Case Study 1: Abrupt changepoint. Consider a stream with a single distribution shift at times t⋆ 
+
+> 1
+
+and t⋆
+
+> 2
+
+,
+
+xt ∼
+
+
+
+N (μ1, σ 2) if t < t ⋆
+
+> 1
+
+N (μ2, σ 2) if t ∈ [t⋆
+
+> 1
+
+, t ⋆
+
+> 2
+
+]
+
+N (μ1, σ 2) if t > t ⋆
+
+> 2
+
+with μ1̸ = μ2. (3) If two nearby taskifications place boundaries close to t⋆ 
+
+> 1
+
+and t⋆
+
+> 2
+
+, then even a small perturbation can sharply alter the adjacent-task discrepancy, producing a large change in the plasticity profile; see Fig. 1a. 
+
+Case Study 2: Narrow transient. Consider a smooth background process g(t) with two high-intensity events at t⋆
+
+> 1
+
+and t⋆
+
+> 2
+
+,
+
+xt = g(t) + A exp 
+
+
+
+− (t − t⋆
+
+> 1
+
+)2
+
+2η2
+
+
+
++ A exp 
+
+
+
+− (t − t⋆
+
+> 2
+
+)2
+
+2η2
+
+
+
++ ξt, (4) with small η. If a task boundary lies near t⋆ 
+
+> 1
+
+and t⋆
+
+> 2
+
+, a small perturbation can change whether the transient peaks are concentrated in one task or split across two tasks, yielding a disproportionate change in the plasticity profile; see Fig. 1b. 4Preprint. 0 5 15 20          
+
+> −1
+> 0
+> 1
+> Abrupt changepoint
+> initial cut
+> zone ( ε= ±2.0)
+> −2 02
+> boundaries perturbation ε
+> 0.2
+> 0.4
+> 0.6
+> Dpl (τ,σε)
+> −2 02
+> boundaries perturbation ε
+> 0.2
+> 0.4
+> Dst (τ,σε)
+
+(a) Abrupt changepoint: a small boundary perturbation that crosses the changepoint sharply alters adjacent-task discrepancy, producing a large change in the plasticity profile. 0 7 15 20          
+
+> 0
+> 1
+> 2
+> Narrow transient
+> initial cut
+> zone ( ε= ±2.0)
+> −2 02
+> boundaries perturbation ε
+> 0.000
+> 0.025
+> 0.050
+> 0.075
+> 0.100
+> Dpl (τ,σε)
+> −2 02
+> boundaries perturbation ε
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> Dst (τ,σε)
+
+(b) Narrow transient: a short high-intensity event is reassigned across neighboring tasks under a small perturbation, yielding a disproportionate change in the plasticity profile. 0 5 14 20          
+
+> −1.0
+> −0.5
+> 0.0
+> 0.5
+> 1.0
+> Phase-sensitive recurrence
+> initial cut
+> zone ( ε= ±2.0)
+> −2 02
+> boundaries perturbation ε
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Dpl (τ,σε)
+> −2 02
+> boundaries perturbation ε
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> Dst (τ,σε)
+
+(c) Phase-sensitive recurrence: a small phase shift in the boundaries changes which tasks appear recurrent, substantially perturbing the stability profile. 
+
+Figure 1: Illustrative examples of structurally fragile taskifications. Small boundary perturbations can induce large profile distance through different mechanisms: (a) abrupt local transitions, (b) localized transient events, or (c) misaligned long-range recurrence. 
+
+Case Study 3: Phase-sensitive recurrence. Consider a recurrent stream such as 
+
+xt = sin( ωt ) + ξt. (5) If two nearby taskifications differ by a small phase shift in their boundaries, then the induced tasks may no longer align with the same phase of the cycle, substantially perturbing the long-range recurrence structure and therefore the stability profile; see Fig. 1c. These examples show that some taskifications are intrinsically fragile: small boundary perturbations can already induce materially different CL regimes. We therefore use boundary profile sensitivity as a taskification-level diagnostic, with low BPS indicating robustness and high BPS indicating split-dependent fragility. 
+
+Proposition 4.1 (Informal) . There exist non-stationary streams and valid temporal taskifications such that arbitrarily small boundary perturbations induce a non-negligible profile distance and, therefore, high structural sensitivity. 
+
+This result is purely structural: it isolates a source of benchmark variability that exists before any model is trained. 
+
+## 5 EXPERIMENTS 
+
+We organize the experiments to validate the main components of our framework and their empirical consequences. We first describe the common experimental setup (Sec. 5.1). Then we examine the induced task distributions to understand how different taskifications reshape the underlying regime (Sec. 5.2). Next, we test whether changing only the temporal taskifications alters CL conclusions (Sec. 5.3). We then quantify structural differences between taskifications through the proposed profile distance (Sec. 5.4). Finally, we evaluate boundary-profile sensitivity to identify which taskifications are more or less robust under small perturbations of their boundaries (Sec. 5.5). 5.1 EXPERIMENTAL SETUP 
+
+Dataset. We use the CESNET-Timeseries24 dataset (Koumar et al., 2025), which contains 40 weeks of network traffic collected from a Czech university Internet Service Provider ( ISP ). From this data, we selected the 100 highest-density IP addresses for the 10 minutes aggregation interval. 
+
+Forecasting task and temporal segmentation. Our setting is multivariate time-series forecasting. For each selected IP address, the objective is to predict the avg_duration feature from past observations of all available variables. We treat the data as a single temporally ordered stream and construct continual-learning tasks by partitioning it into 5Preprint. 0 3 6 9 12 15 18 21 24 27 30                                               
+
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> wasserstein 9 days
+> 012345678
+> 012345678
+> wasserstein 30 days
+> 012345
+> 012345
+> wasserstein 44 days
+> 036912 15 18 21 24 27 30
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> 9 - 30 days MSE = 0.41
+> 036912 15 18 21 24 27 30
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> 9 - 44 days MSE = 0.68
+> 036912 15 18 21 24 27 30
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> 26
+> 28
+> 30
+> 30 - 44 days MSE = 0.12
+> 0
+> 1
+> 2
+> 3
+> 4
+> 0
+> 1
+> 2
+> 3
+> 4
+> 0
+> 1
+> 2
+> 3
+> 4
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+
+Figure 2: Top row: pairwise Wasserstein distances between induced tasks for the 9-day, 30-day, and 44-day taskifications. The 9-day split exhibits noisier and less regular transitions than the longer-window splits. Bottom row: MSE between pairs of upsampled task-to-task distance matrices and their corresponding absolute difference heatmaps. The 30-day and 44-day taskifications induce more similar structural patterns than either does relative to the 9-day split. fixed-length temporal windows. Each task, therefore, corresponds to a contiguous time interval and contains the 100 
+
+time series associated with the selected IPs over that interval. In the experiments below, we consider three temporal taskifications with window lengths of 9, 30 , and 44 days. All three lengths are congruent to 2 (mod 7) , which preserves weekday alignment across splits. Within each task, 80% of the samples are used for training, 10% for validation, and 10% for testing. 
+
+Model and preprocessing. For all taskifications, we use the same forecasting model, a time-series-based Transformer, with two days of context as input and the next 10-minute timestep as the prediction target. Each input contains 12 features, which are linearly projected into a 32 -dimensional latent space and processed by a stack of 8 Transformer blocks with 4
+
+attention heads each. To stabilize training across heterogeneous feature scales, we apply per-sample normalization by standardizing each feature over the temporal dimension, following (Ansari et al., 2025). We additionally normalize the target feature within each task by dividing it by the maximum value observed in that task’s training split, ensuring the loss remains comparable across IPs with different scales. Since this normalization leads to small absolute errors, we report all Mean Squared Error (MSE) values multiplied by 10 3 for readability. 
+
+Training and evaluation protocol. The model is trained with AdamW using a learning rate of 10 −4 and a batch size of 256 . We reduce the learning rate by a factor of 0.1 when the validation loss does not improve for 5 consecutive epochs, and we apply early stopping with a patience of 10 epochs. Across all experiments, we compare continual finetuning, Experience Replay (Rolnick et al., 2019), Elastic Weight Consolidation (Kirkpatrick et al., 2017a), and Learning without Forgetting (Li & Hoiem, 2017). Performance is measured with average MSE , Backward Transfer, and Forgetting. Since the latter two are traditionally defined for classification accuracy, we adapt them to the regression setting by defining Mi,j as the MSE on task j after training on task i.6Preprint. Table 1: Effect of temporal taskification on CL performance. Each window size defines a different taskification of the same stream. Lower is better for average mean squared error and Forgetting, while higher is better for Backward Transfer. The last three columns report the sample standard deviation of each metric across the 9-, 30-, and 44-day taskifications for a fixed algorithm.                                                                   
+
+> Algorithm Average MSE ↓BWT ↑Forgetting ↓Std. across taskifications
+> 9d 30d 44d 9d 30d 44d 9d 30d 44d MSE Std. BWT Std. Fgt Std. ER 13.04 10.88 30.88 1.67 0.45 -1.95 0.20 -0.01 2.15 10.98 1.84 1.19 EWC 13.43 10.77 26.95 0.60 0.11 0.75 -0.03 -0.01 -0.27 8.68 0.33 0.14 Finetune 12.58 10.58 30.38 0.36 0.10 -5.65 0.08 0.11 5.71 10.90 3.40 3.24 LwF 12.57 10.52 27.04 0.89 0.21 0.62 0.07 0.10 -0.54 9.00 0.34 0.36
+
+For a total of T tasks, forgetting is computed as fj = MT,j − min k∈{ j,...,T −1} Mk,j and averaged over past tasks as 
+
+Forgetting = 1 
+
+> T−1
+
+PT −1 
+
+> j=1
+
+fj . Similarly, Backward Transfer is defined as BWT = 1 
+
+> T−1
+
+PT −1 
+
+> j=1
+
+(Mj,j − MT,j ).These adaptations ensure that while the mathematical operations are inverted to suit a minimization objective, the underlying concepts being measured remain identical to those established in the foundational survey by Wang et al. (2024). 
+
+BPS implementation. The proposed BPS metric is implemented by employing the first-order Wasserstein distance as the discrepancy measure d(·, ·). We define the boundary neighborhood N bdry  
+
+> δ
+
+via a random perturbation of each boundary by up to δ = ±1 day. To balance the contributions of plasticity and stability, the coefficients α and β are assigned equal weight ( α = β = 0 .5). 5.2 DISTRIBUTION -L EVEL DIFFERENCES ACROSS TASKIFICATIONS 
+
+We first examine whether different temporal taskifications induce visibly different task-level distribution patterns. This provides a structural view of the benchmark before analyzing downstream CL metrics. To quantify distribution differences across temporal scales, we compute pairwise Wasserstein distances between induced tasks. Fig. 2 shows the resulting task-to-task distance matrices for the 9-day, 30-day, and 44-day taskifications. Since these matrices have different sizes, we upsample them to a common resolution and compute the mean squared error between each pair, enabling a direct comparison across taskifications. The resulting patterns differ markedly across splits. The 30-day and 44-day taskifications exhibit smoother and more gradually evolving structures, suggesting that longer windows capture more stable temporal regimes. In contrast, the 9-day split shows higher-frequency and more irregular transitions, indicating a noisier task sequence. The pairwise matrix comparisons are consistent with this observation: taskifications that differ more strongly in window length also induce larger matrix-level MSE, while the 30-day and 44-day splits remain more similar to each other than either is to the 9-day split. These distribution-level differences provide a structural explanation and an intuition for the taskification sensitivity observed later in Tab. 1. Shorter windows appear to fragment the stream into less stable tasks, whereas the 30-day and 44-day taskifications provide a more consistent signal for optimization. This interpretation is also consistent with the boundary-profile sensitivity results discussed in Sec. 5.5. 5.3 TASKIFICATION SENSITIVITY 
+
+We now test the central empirical question of the paper: whether changing only the temporal taskification can alter CL conclusions while keeping the stream, model, and training budget fixed. Tab. 1 shows that the answer is clearly yes. Across all four methods, the measured performance varies substantially across the 9-day, 30-day, and 44-day taskifications. A consistent pattern emerges for average MSE: the 30-day split yields the lowest error across all methods, whereas the 44-day split results in the strongest degradation. This indicates that the temporal partition alone can change the benchmark’s predictive difficulty. The last three columns of Tab. 1 summarize this effect through the sample standard deviation of each metric across the three taskifications for a fixed method. These values provide a compact measure of taskification sensitivity and reinforce the same conclusion: benchmark outcomes in CL depend not only on the learner and the stream, but also on how the stream is partitioned into tasks. 7Preprint. Table 2: Dprof mean ± standard deviation across 100 IPs for different taskification pairs. 9 days 30 days 44 days 9 days – 0.85 ± 1.1 1.19 ± 1.6 
+
+30 days 0.85 ± 1.2 – 0.75 ± 0.9 
+
+44 days 1.19 ± 1.6 0.75 ± 0.9 –Table 3: Mean ± standard deviation of plasticity, stability, and BPS across 100 IPs for each taskification. Bold indicates the highest mean in each row, and blue indicates the second highest. 9 days 30 days 44 days Plasticity 0.15 ± 0.16 0.08 ± 0.09 0.06 ± 0.08 
+
+Stability 0.08 ± 0.10 0.07 ± 0.07 0.05 ± 0.07 
+
+BPS 0.12 ± 0.13 0.08 ± 0.08 0.06 ± 0.07 
+
+5.4 PROFILE DISTANCE BETWEEN TASKIFICATIONS 
+
+We next ask whether the temporal taskifications considered in this work induce meaningfully different CL regimes in the structural sense captured by our framework. To quantify this difference, we compute the profile distance Dprof 
+
+introduced in Eq. 2, which compares taskifications through both their plasticity and stability profiles. Tab. 2 shows that the three taskifications are indeed structurally distinct. As expected, the profile distance increases as the difference in task duration becomes larger. In particular, the 9-day and 44-day taskifications are the most dissimilar, while the 30-day and 44-day taskifications are the closest pair. This ordering is consistent with the distribution-level observations in Fig. 2, where the 30-day and 44-day splits exhibit more similar task-to-task structure than either does relative to the 9-day split. These results support the interpretation that the three temporal splits do not merely represent different granularities of the same benchmark, but induce measurably different structural regimes from the perspective of CL. 5.5 BOUNDARY -P ROFILE SENSITIVITY (BPS) We evaluate which temporal taskifications are structurally more robust under small boundary perturbations. To this end, we use the Boundary-Profile Stability ( BPS ) introduced in Sec. 4. Recall that high BPS means that small changes in task boundaries induce large changes in the plasticity and stability profiles, indicating a structurally fragile taskification. Tab. 3 shows a clear trend across the three window lengths. As the task duration increases, the mean plasticity, stability, and BPS values decrease. In particular, the 9-day split has the highest BPS , followed by the 30-day split, while the 44-day split is the least sensitive. This indicates that shorter taskifications are structurally less stable, in the sense that small boundary perturbations induce larger changes in the underlying CL regime. We also test whether this pattern depends strongly on the exact starting point of the segmentation. To do so, we repeat the same analysis after shifting all taskifications by two days. The results in Tab. 4 remain consistent with the original ordering: the 9-day split is still the most sensitive, the 44-day split remains the most stable, and the 30-day split stays in between. This confirms that the observed robustness pattern is not an artifact of a single alignment, but persists under a nontrivial change in boundary placement. Taken together, these results provide direct empirical support for the robustness notion introduced in our framework. They show that BPS captures a meaningful structural property of temporal taskifications and that shorter windows tend to produce more fragile segmentations than longer ones. 
+
+## 6 LIMITATIONS 
+
+Scope of the empirical domain. Our empirical evaluation is restricted to a single application domain, namely, network traffic forecasting on CESNET-Timeseries24. This setting is well-suited for studying temporally evolving streams, but it remains possible that the magnitude and form of taskification sensitivity differ in other streaming domains with different temporal structure, recurrence patterns, or noise characteristics. 8Preprint. Table 4: Mean ± standard deviation of plasticity, stability, and BPS across 100 IPs after shifting all task boundaries by 2 days. Bold indicates the highest mean in each row, and blue indicates the second highest. 9 days + ∆2 days 30 days + ∆2 days 44 days + ∆2 days Plasticity 0.15 ± 0.17 0.11 ± 0.12 0.06 ± 0.07 
+
+Stability 0.08 ± 0.09 0.09 ± 0.09 0.05 ± 0.06 
+
+BPS 0.12 ± 0.13 0.10 ± 0.10 0.05 ± 0.06 
+
+Coverage of CL methods. We evaluate four CL strategies: continual finetuning, Experience Replay, Elastic Weight Consolidation, and Learning without Forgetting. While these methods cover several standard CL paradigms, they do not exhaust the broader space of online, task-free, rehearsal-free, or architecture-based approaches. As a result, the extent to which taskification sensitivity appears may vary across method families not considered here. 
+
+Family of taskifications considered. Our experiments focus on fixed-length temporal taskifications and local boundary perturbations. This keeps the comparison controlled: changes in plasticity and stability profiles can be traced directly to differences in window length and boundary placement. More adaptive segmentation strategies may alter these profiles in more complex ways by jointly changing task count, transition strength, and recurrence structure. We leave such taskification families to future work. 
+
+Diagnostic rather than prescriptive scope. The contribution of this work is primarily diagnostic. We provide a framework for characterizing, comparing, and stress-testing temporal taskifications before training, but we do not yet propose an automatic procedure for selecting an optimal taskification, nor a CL method robust to taskification variability. These directions remain open for future work. 
+
+## 7 CONCLUSION 
+
+We studied temporal taskification as a source of evaluation variability in streaming Continual Learning ( CL ). Our main finding is that partitioning a continuous stream into temporal tasks is not a neutral preprocessing step, but a structural component of the benchmark itself. Different valid taskifications of the same stream can yield different task distributions, distinct plasticity and stability profiles, and, ultimately, distinct conclusions about CL. To make this dependence explicit, we introduced a taskification-level framework based on plasticity and stability profiles, a profile distance between taskifications, and BPS . These quantities provide a cheap, pre-training way to compare temporal splits and assess how robust a chosen taskification is under small boundary perturbations. Our experiments support this view at multiple levels. On CESNET-Timeseries24, changing only the temporal taskifica-tion produces substantial differences in forecasting error, forgetting, and backward transfer across all evaluated methods. These differences are also reflected structurally: shorter taskifications induce noisier distribution-level patterns, larger sensitivity to boundary perturbations, and lower robustness than longer ones. Our results show that benchmark conclusions in streaming CL are not taskification-invariant. Evaluation depends not only on the learner and the data stream, but also on how that stream is taskified. Future work should extend this analysis to adaptive and distribution-informed taskifications and investigate CL methods that are robust to taskification variability. 9Preprint. 
+
+## REFERENCES 
+
+Rahaf Aljundi, Eugene Belilovsky, Tinne Tuytelaars, Laurent Charlin, Massimo Caccia, Min Lin, and Lucas Page-Caccia. Online continual learning with maximal interfered retrieval. In Advances in Neural Information Processing Systems 32 (NeurIPS) , 2019. Abdul Fatir Ansari, Oleksandr Shchur, Jaris Küken, Andreas Auer, Boran Han, Pedro Mercado, Syama Sundar Rangapuram, Huibin Shen, Lorenzo Stella, Xiyuan Zhang, et al. Chronos-2: From univariate to universal forecasting. 
+
+arXiv preprint arXiv:2510.15821 , 2025. Yoshua Bengio, Jérôme Louradour, Ronan Collobert, and Jason Weston. Curriculum learning. In Proceedings of the 26th Annual International Conference on Machine Learning (ICML) , pp. 41–48. ACM, 2009. Quentin Besnard and Nicolas Ragot. Continual learning for time series forecasting: a first survey. Engineering Proceedings , 68(1):49, 2024. Xavier Bouthillier, Pierre Delaunay, Mirko Bronzi, Assya Trofimov, Brennan Nichyporuk, Justin Szeto, Nazanin Mohammadi Sepahvand, Edward Raff, Kanika Madan, Vikram Voleti, Samira Ebrahimi Kahou, Vincent Michalski, Tal Arbel, Chris Pal, Gaël Varoquaux, and Pascal Vincent. Accounting for variance in machine learning benchmarks. In Proceedings of Machine Learning and Systems (MLSys) , volume 3, 2021. Pietro Buzzega, Matteo Boschini, Angelo Porrello, Davide Abati, and Simone Calderara. Dark experience for general continual learning: a strong, simple baseline. In Advances in Neural Information Processing Systems 33 (NeurIPS) ,2020. Lucas Caccia, Rahaf Aljundi, Nader Asadi, Tinne Tuytelaars, Joelle Pineau, and Eugene Belilovsky. New insights on reducing abrupt representation change in online continual learning. In International Conference on Learning Representations (ICLR) , 2022. Arslan Chaudhry, Puneet K. Dokania, Thalaiyasingam Ajanthan, and Philip H. S. Torr. Riemannian walk for incremental learning: Understanding forgetting and intransigence. In Proceedings of the European Conference on Computer Vision (ECCV) . Springer, 2018. Zhiyuan Chen and Bing Liu. Lifelong Machine Learning . Morgan & Claypool Publishers, 2016. Matthias De Lange, Rahaf Aljundi, Marc Masana, Sarah Parisot, Xu Jia, Aleš Leonardis, Gregory Slabaugh, and Tinne Tuytelaars. A continual learning survey: Defying forgetting in classification tasks. IEEE transactions on pattern analysis and machine intelligence , 44(7):3366–3385, 2021a. Matthias De Lange, Rahaf Aljundi, Marc Masana, Sarah Parisot, Xu Jia, Aleš Leonardis, Gregory Slabaugh, and Tinne Tuytelaars. A continual learning survey: Defying forgetting in classification tasks. IEEE Transactions on Pattern Analysis and Machine Intelligence , 2021b. Mostafa Dehghani, Yi Tay, Alexey A Gritsenko, Zhe Zhao, Neil Houlsby, Fernando Diaz, Donald Metzler, and Oriol Vinyals. The benchmark lottery. arXiv preprint arXiv:2107.07002 , 2021. Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, and Li Fei-Fei. Imagenet: A large-scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition , pp. 248–255. Ieee, 2009. Yuntao Du, Jindong Wang, Wenjie Feng, Sinno Jialin Pan, Tao Qin, Renjun Xu, and Chongjun Wang. AdaRNN: Adaptive learning and forecasting for time series. In Proceedings of the 30th ACM International Conference on Information & Knowledge Management (CIKM) , pp. 402–411. ACM, 2021. doi: 10.1145/3459637.3482315. João Gama, Indr ˙e Žliobait ˙e, Albert Bifet, Mykola Pechenizkiy, and Abdelhamid Bouchachia. A survey on concept drift adaptation. ACM Computing Surveys , 2014. doi: 10.1145/2523813. Yasir Ghunaim, Adel Bibi, Kumail Alhamoud, Motasem Alfarra, Hasan Abed Al Kader Hammoud, Ameya Prabhu, Philip H.S. Torr, and Bernard Ghanem. Real-time evaluation in online continual learning: A new hope. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . IEEE, 2023. Alex Gomez-Villa, Dipam Goswami, Kai Wang, Andrew D Bagdanov, Bartlomiej Twardowski, and Joost van de Weijer. Exemplar-free continual representation learning via learnable drift compensation. In European Conference on Computer Vision , pp. 473–490. Springer, 2024. 10 Preprint. Ian J Goodfellow, Mehdi Mirza, Da Xiao, Aaron Courville, and Yoshua Bengio. An empirical investigation of catastrophic forgetting in gradient-based neural networks. arXiv preprint arXiv:1312.6211 , 2013. Vibhor Gupta, Jyoti Narwariya, Pankaj Malhotra, Lovekesh Vig, and Gautam Shroff. Continual learning for multivariate time series tasks with variable input dimensions. In 2021 IEEE International Conference on Data Mining (ICDM) ,pp. 161–170. IEEE, 2021. Yen-Chang Hsu, Yen-Cheng Liu, Anita Ramasamy, and Zsolt Kira. Re-evaluating continual learning scenarios: A categorization and case for strong baselines. arXiv preprint arXiv:1810.12488 , 2018. Ronald Kemker, Marc McClure, Angelina Abitino, Tyler L. Hayes, and Christopher Kanan. Measuring catastrophic forgetting in neural networks. In Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI) .AAAI Press, 2018. Taesung Kim, Jinhee Kim, Yunwon Tae, Cheonbok Park, Jang-Ho Choi, and Jaegul Choo. Reversible instance normalization for accurate time-series forecasting against distribution shift. In International Conference on Learning Representations (ICLR) , 2021. James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences , 114(13):3521–3526, 2017a. James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences , 114(13):3521–3526, 2017b. Josef Koumar, Karel Hynek, Tomáš ˇ Cejka, and Pavel Šiška. Cesnet-timeseries24: Time series dataset for network traffic anomaly detection and forecasting. Scientific Data , 12(1):338, 2025. Alex Krizhevsky, Geoffrey Hinton, et al. Learning multiple layers of features from tiny images. 2009. Soochan Lee, Junsoo Ha, Dongsu Zhang, and Gunhee Kim. A neural dirichlet process mixture model for task-free continual learning. In International Conference on Learning Representations (ICLR) , 2020. Timothée Lesort, Vincenzo Lomonaco, Andrei Stoian, Davide Maltoni, David Filliat, and Natalia Díaz-Rodríguez. Continual learning for robotics: Definition, framework, learning strategies, opportunities and challenges. Information fusion , 58:52–68, 2020. Zhizhong Li and Derek Hoiem. Learning without forgetting. IEEE transactions on pattern analysis and machine intelligence , 40(12):2935–2947, 2017. Jie Lu, Anjin Liu, Fan Dong, Feng Gu, João Gama, and Guangquan Zhang. Learning under concept drift: A review. 
+
+IEEE Transactions on Knowledge and Data Engineering , 2019. doi: 10.1109/TKDE.2018.2876857. Zheda Mai, Ruiwen Li, Jihwan Jeong, David Quispe, Hyunwoo Kim, and Scott Sanner. Online continual learning in image classification: An empirical survey. Neurocomputing , 2022. Ameya Prabhu, Hasan Abed Al Kader Hammoud, Puneet K. Dokania, Philip H.S. Torr, Ser-Nam Lim, Bernard Ghanem, and Adel Bibi. Computationally budgeted continual learning: What does matter? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) . IEEE, 2023. Benjamin Recht, Rebecca Roelofs, Ludwig Schmidt, and Vaishaal Shankar. Do ImageNet classifiers generalize to ImageNet? In Proceedings of the International Conference on Machine Learning (ICML) , 2019. David Rolnick, Arun Ahuja, Jonathan Schwarz, Timothy Lillicrap, and Gregory Wayne. Experience replay for continual learning. Advances in neural information processing systems , 32, 2019. Joan Serra, Didac Suris, Marius Miron, and Alexandros Karatzoglou. Overcoming catastrophic forgetting with hard attention to the task. In International conference on machine learning , pp. 4548–4557. PMLR, 2018. Antonio Torralba and Alexei A. Efros. Unbiased look at dataset bias. In Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 1521–1528. IEEE, 2011. Gido M. van de Ven, Tinne Tuytelaars, and Andreas S. Tolias. Three types of incremental learning. Nature Machine Intelligence , 2022. 11 Preprint. Huiju Wang, Mengxuan Li, and Xiao Yue. Inclstm: incremental ensemble lstm model towards time series data. 
+
+Computers & Electrical Engineering , 92:107156, 2021. Liyuan Wang, Xingxing Zhang, Hang Su, and Jun Zhu. A comprehensive survey of continual learning: Theory, method and application. IEEE transactions on pattern analysis and machine intelligence , 46(8):5362–5383, 2024. Jaehong Yoon, Saehoon Kim, Eunho Yang, and Sung Ju Hwang. Scalable and order-robust continual learning with additive parameter decomposition. In Proceedings of the International Conference on Learning Representations (ICLR) , 2020. 12

@@ -1,0 +1,1071 @@
+Title: Hidden Failure Modes of Gradient Modification under Adam in Continual Learning, and Adaptive Decoupled Moment Routing as a Repair
+
+URL Source: https://arxiv.org/pdf/2604.22407v1
+
+Published Time: Mon, 27 Apr 2026 00:37:59 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# Hidden Failure Modes of Gradient Modification under Adam in Continual Learning, and Adaptive Decoupled Moment Routing as a Repair 
+
+Yuelin Hu 1 Zhenbo Yu 1 Zhengxue Cheng 1 Wei Liu 2 Li Song 11Shanghai Jiao Tong University 2Shanghai Maritime University 
+
+{huyuelin51717221,yuzhenbo,zxcheng,songli}@sjtu.edu.cn 
+
+## Abstract 
+
+Failure. Many continual-learning methods modify the gradient upstream (projec-tion, penalty-based rescaling, replay-gradient mixing) and treat the adaptive opti-mizer as a neutral backend. We exhibit a hidden failure mode of this composition under Adam: in a high-overlap non-adaptive regime on an 8-domain continual LM, every shared-routing projection baseline we test collapses to within 0.7 forgetting units of vanilla ( 12 .5–12 .8 vs. 13 .2); a 0.5% replay buffer is the strongest shared-routing alternative but still trails at 11 .6 (−1.6 units); naive fixed-strength decou-pling itself drops below vanilla ( 14 .1); only adaptive decoupled routing remains stable (at 9.4, a −3.8-unit improvement over vanilla and a −2.2-unit improvement over the strongest shared baseline). On a 16-domain long continual stream the gap between adaptive decoupled routing and the strongest shared-routing projection baseline reaches 4.5–4.8 forgetting units (and exceeds a 0.5% replay buffer by 2.6
+
+units). The failure is silent in clean benchmarks, where the same methods still look competitive. Diagnosis. In the projection family, we give a scalar-surrogate characterization of Adam’s second-moment pathway along a single projected di-rection (Proposition 1, with Remark 1 and an anisotropic extension in Appendix C) that collapses, in the tested regime 𝜖 ≪ √𝑣 ∞, to a 1/(1 −𝛼 ) inflation of the old-direction effective learning rate; this prediction matches measurement within 8% 
+
+across eight 𝛼 values. The same attenuate-then-adapt conflict recurs empirically in two penalty importance sources and in replay-gradient mixing (with a three-way denominator control ruling out “any v𝑡 would win”), and at 7B scale under LoRA; a denominator-only causal intervention closes the gap between the diagnosis and the outcome metric ( 𝑟 =0 .97 ). A cross-optimizer control (Adam, AdamW, AdaFactor, SGD+Momentum) shows the effect scales with the prominence of the denominator pathway, ruling out an Adam-specific artefact. Repair. We route the modified gradient to m𝑡 and preserve magnitude-faithful statistics in v𝑡 , combined with overlap-aware adaptive strength. Under clean benchmarks the gain is moderate (1.2–1.7 forgetting units); the point of the paper is that the same one-line composi-tion change is the only tested configuration that avoids collapse in the adversarial regimes above, recurs across three gradient-modification families and four opti-mizers, and scales to 7B under LoRA. We treat the scalar surrogate as diagnostic, not as an exact theorem about coordinate-wise Adam; we regard v𝑡 inflation as one contributing mechanism rather than the sole explanation; and we flag broader claims beyond the tested families, regimes, and optimizers as hypotheses. Code: 
+
+https://github.com/huyuelin/attenuate-then-adapt/tree/main 
+
+> Preprint.
+> arXiv:2604.22407v1 [cs.LG] 24 Apr 2026
+
+Figure 1: Overview of the paper. Panel 1 (Failure). Gradient-modification modules (projec-tion/penalty/replay) attenuate the update in protected directions and the standard practice routes gmod 
+
+into both Adam moments m𝑡 , v𝑡 ; under continual streams this collapses to near-vanilla forgetting (Table 5). Panel 2 (Diagnosis). Along a protected direction 𝑢 , gmod  
+
+> 𝑡,𝑢
+
+≈ (1 −𝛼 )g𝑡,𝑢 , so m𝑡,𝑢 and 
+
+√v𝑡,𝑢 shrink in lock-step and the adaptive step 𝜂/ √v𝑡,𝑢 inflates by 1/(1 −𝛼 ), a hidden inversion of the intended protection: the attenuate-then-adapt conflict (Proposition 1). Panel 3 (Repair). 
+
+Adaptive-OGP routes gmod into m𝑡 while v𝑡 is driven by the raw g𝑡 , and an overlap-aware controller modulates 𝛼 𝑡 through the subspace-alignment signal 𝑠 𝑡 (Algorithm 1). The ribbon states the thesis: the failure is a property of how the modified signal is composed with Adam, not of the module itself. 
+
+## 1 Introduction 
+
+Continual learning methods under Adam often share a quiet assumption: once a gradient has been modified to protect old knowledge, the adaptive optimizer will faithfully enact the intended protection. Our experiments show that in a range of practically relevant regimes this assumption fails. Under a high-overlap 8-domain continual stream with no adaptive strength schedule, every shared-routing projection baseline (OGD, GPM, FOPNG, Adam-NSCL) collapses to within 0.7 forgetting units of vanilla; a 0.5% replay buffer improves by only 1.6 units and still trails our method by 2.2 units; a naive fixed-strength decoupled variant falls below vanilla; only a decoupled variant combined with an overlap-aware adaptive strength remains stable ( 9.4 vs. 13 .2, a 3.8-unit gap). Under a 16-domain extension the gap to the strongest shared-routing baseline widens to 4.5–4.8 units. Under clean benchmarks the same default still looks competitive, so the failure mode is silent until the regime is made difficult. Figure 1 summarizes the three-part story of the paper. 
+
+A named failure mode. We call this the attenuate-then-adapt conflict . Gradient-modifying methods attenuate the update in protected directions upstream; the default composition feeds the attenuated signal into Adam’s second-moment estimator v𝑡 , which is a magnitude accumulator. Shrinking 
+
+‖gmod ‖ shrinks v𝑡 there, which inflates 𝜂/ √ˆv𝑡 precisely where the method intended the update to be smaller. The conflict is a property of composition, not of any specific method, and it has been silently inherited across projection-, penalty-, and replay-based families under Adam-family optimizers. 
+
+Diagnosis. For the projection family we give a scalar-surrogate analysis of Adam’s second-moment pathway along a single projected direction (Proposition 1; Remark 1). Under the tested regime 
+
+𝜖 ≪ √𝑣 ∞, the surrogate collapses to a 1/(1 −𝛼 ) inflation of the old-direction effective learning rate; the prediction tracks measurement within 8% across eight 𝛼 values, and a denominator-only intervention holds m𝑡 fixed and produces forgetting that moves monotonically with the measured inflation ( 𝑟 =0 .97 ). An 𝜂 eff -matching intervention, in which we manually equalize the old-direction effective learning rate between routings, closes roughly 80% of the clean-benchmark forgetting gap and upgrades the correlation into a controlled-intervention statement. The same conflict recurs 2empirically in two penalty-family importance sources, in replay-gradient mixing (with a three-way denominator control ruling out alternative-v𝑡 readings), and at 7B under LoRA. We treat the scalar surrogate as diagnostic, not as an exact theorem about coordinate-wise Adam. 
+
+Repair. The repair, when it works, is structural rather than a tweak: route the modified gradient into m𝑡 , keep v𝑡 driven by magnitude-faithful statistics, and combine with an overlap-aware adaptive strength. We instantiate this as Adaptive-OGP (Algorithm 1). We are explicit that fixed-strength decoupled routing alone is not sufficient in the failure regime and can actively harm forgetting there; the identity of the repair is therefore adaptive decoupled routing, not routing alone. A cross-optimizer control (Adam, AdamW, AdaFactor, SGD+Momentum) shows the decoupling gain scales with the prominence of the denominator pathway, consistent with the composition view rather than an Adam-implementation artefact. 
+
+Contributions. (C1) Hidden failure-mode identification, isolated from adaptive scheduling. Ahigh-overlap non-adaptive regime in which every shared-routing baseline collapses to near-vanilla forgetting and naive fixed-strength decoupling falls below vanilla (Table 5); a 2×2 routing ×schedule decomposition (Table 6) quantifies routing and schedule as independent contributors; an 𝜂 eff -matching intervention (Table 4) upgrades correlation into controlled intervention. (C2) A unifying optimizer-composition principle. The attenuate-then-adapt conflict (Section 2) as a cross-family composition axis, with a scalar-surrogate analysis for the projection home case (Proposition 1; Remark 1) and empirical recurrence in penalty-based rescaling and replay-gradient mixing (Table 7). (C3) Adaptive decoupled routing as a minimal repair, with scope. A one-line routing change that keeps v𝑡 
+
+magnitude-faithful, together with an overlap-aware adaptive strength (Algorithm 1). The two axes are independently quantified (Table 6): schedule carries the heavier contribution where fixed-strength routing collapses, while routing carries the residual improvement once the schedule is in place. We hold a three-layer scope statement (analytically supported / empirically supported / hypothesis) throughout. 
+
+## 2 Background and a Unifying Optimizer-Composition View 
+
+Let g𝑡 be the raw gradient and gmod  
+
+> 𝑡
+
+the modified gradient produced by a continual-learning method. Three families instantiate different upstream modifications. Projection : gmod  
+
+> 𝑡
+
+= g𝑡 − 𝛼 UU ⊤g𝑡 
+
+with U ∈ R𝑑 ×𝑟 spanning old-task gradient directions and 𝛼 ∈ [0 , 1] the protection strength; OGD, GPM, SGP, ROGO, TRGP, FOPNG, and Adam-NSCL fall here. Penalty-based rescaling :
+
+gmod  
+
+> 𝑡
+
+= g𝑡 − 𝜆 w ⊙ g𝑡 with w ∈ [0 , 1] 𝑑 a per-coordinate importance (Fisher-diagonal or path-integral). Replay-gradient mixing : gmod  
+
+> 𝑡
+
+= (1 − 𝜌 )gnew  
+
+> 𝑡
+
++ 𝜌 greplay  
+
+> 𝑡
+
+. In standard practice gmod 
+
+> 𝑡
+
+replaces g𝑡 in the full optimizer update, so it enters both Adam moments. 
+
+Attenuate-then-adapt conflict (informal). We say that a gradient-modifying method under an adaptive optimizer exhibits an attenuate-then-adapt conflict if the upstream modification reduces 
+
+‖gmod  
+
+> 𝑡
+
+‖ in the protected directions and the modified signal is routed into both the numerator and the denominator of the optimizer. The denominator then shrinks in those directions and the adaptive step 𝜂/ (√ˆv𝑡 + 𝜖 ) grows there, implicitly inverting part of the intended protection (Figure 1, Panel 2). Projection is attenuation by subspace exclusion (the home case our analysis targets), penalty-based rescaling is coordinate-wise attenuation, and replay mixing modifies the magnitude statistics entering 
+
+v𝑡 by substituting a mixed gradient for the raw new-task gradient. This view exposes an under-named 
+
+composition axis : whether the modification is shared across both moment pathways, or routed selectively between them; the axis has been silently inherited across families. 
+
+## 3 Diagnosis: Scalar-Surrogate Analysis for the Projection Home Case 
+
+This section is diagnostic, not the main contribution. We restrict to the projection family and analyze a scalar-EMA surrogate along a single projected direction 𝑢 ; the full development (Propositions 1–4; anisotropic extension) is in Appendix C. 
+
+Proposition 1 (Scalar EMA Characterization Under Projected Input) . Consider the scalar EMA recursion 𝑣 𝑡 +1 = 𝛽 2𝑣 𝑡 +(1 −𝛽 2)˜ 𝑔 2 
+
+> 𝑡
+
+with second-moment decay 𝛽 2 ∈ [0 , 1) and input ˜𝑔 𝑡 = 𝑐 𝑢 ⊤g𝑡 for a fixed direction 𝑢 ∈ R𝑑 and scalar 𝑐 ∈ R. Assume g𝑡 is second-order stationary with E[( 𝑢 ⊤g𝑡 )2] >
+
+30 500 1000 1500 2000     
+
+> Training step
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> v(u)
+> t /σ2
+> σ2
+> window mean = 0.26
+> pred. limit (1− α)2σ2= 0.25
+> Task B
+> meas. ratio = 3.84 ×
+
+(A) vt old-task directional energy          
+
+> Vanilla
+> Param-level
+> OGP
+> 0500 1000 1500 2000
+> Training step
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> η(u)eff  / initial
+> Theory: 11 − α= 2.0 window mean = 2.14 ×
+> 0.37 ×
+> Task B
+
+(B) Effective learning-rate ratio 
+
+> Vanilla
+> Param-level
+> OGP
+
+Figure 2: Fingerprint of the attenuate-then-adapt conflict in the projection home case (256M HOPE, 2-task, 𝛼 =0 .5, 5 seeds). (A) Old-task directional second-moment energy 𝐸 old (𝑡 ). Shared routing depletes v𝑡 along the protected subspace after the task switch; decoupled routing (OGP) preserves magnitude-faithful statistics. Steady-state ratio 3.83 × (predicted 4.0×). (B) Old-direction effective learning-rate ratio 𝑅 𝜂 . The depletion in (A) inflates the parameter-level step in the same directions; steady-state ratio 2.14 × (predicted 2.0×). This fingerprint is closed causally by the 𝜂 eff -matching intervention in Section 5.2. 
+
+0. The steady-state limit of E[𝑣 𝑡 ] satisfies 𝑣 ∞(𝑐 ) = 𝑐 2 E[( 𝑢 ⊤g𝑡 )2]. Under parameter-level routing, 
+
+˜𝑔 𝑡 = (1 −𝛼 )𝑢 ⊤g𝑡 (so 𝑐 =1 −𝛼 ); under OGP, ˜𝑔 𝑡 = 𝑢 ⊤g𝑡 (so 𝑐 =1 ). The scalar surrogate ˆ𝜂 eff (𝑐 ) := 1/(√︀ 𝑣 ∞(𝑐 ) + 𝜖 ) therefore satisfies 
+
+ˆ𝜂 eff ,param 
+
+ˆ𝜂 eff ,OGP 
+
+=√︀ E[( 𝑢 ⊤g𝑡 )2] + 𝜖 
+
+(1 −𝛼 )√︀ E[( 𝑢 ⊤g𝑡 )2] + 𝜖 −→ 11 − 𝛼 as 𝜖/ √𝑣 ∞ → 0. (1) 
+
+Remark 1 (Scalar surrogate vs. coordinate-wise Adam) . Proposition 1 characterizes a scalar EMA fed by a scaled projection. The true Adam update is coordinate-wise, ∆𝜃 = − ˆm/(√ˆv+𝜖 ), and is not in general described by a single scalar denominator along an arbitrary direction 𝑢 . The directional quantity ˆ𝜂 (𝑢 )eff is a surrogate that is exact when 𝑢 aligns with a coordinate axis and a first-order approximation otherwise; it tightens when (i) 𝜖 ≪ √𝑣 ∞ (empirically √𝑣 ∞ is at least an order of magnitude larger than 𝜖 =10 −8 in our 256M setting) and (ii) the protected basis is approximately aligned with the coordinate frame at the groupwise level at which OGP maintains its signatures. We treat the scalar-surrogate analysis as diagnostic , not as an exact statement about coordinate-wise Adam. 
+
+Corollary 1 (Diagnostic Forgetting Scale) . In the 𝜖 ≪ √𝑣 ∞ regime, Eq. 1 yields the qualitative bound ℱOGP  
+
+> 𝑇
+
+/ℱparam  
+
+> 𝑇
+
+≲ (1 −𝛼 )2. We keep this statement deliberately weak and use it only to organize the trend, not to predict absolute forgetting; the full derivation is deferred to Appendix C. 
+
+Validation across 𝛼 . We measure the old-direction 𝜂 eff ratio and the forgetting gap across 𝛼 ∈{0.1, . . . , 0.8} (256M HOPE, 2-task, 5 seeds). The predicted 1/(1 −𝛼 ) matches measurement within 
+
+8% ; across the eight points, predicted inflation and measured forgetting gap have Pearson 𝑟 =0 .993 
+
+(Appendix C, Table 26). The fingerprint is visualized in Figure 2. 
+
+Measurement protocol. For each parameter group 𝑔 with subspace basis U𝑔 from the previous task, the old-task directional second-moment energy is 𝐸 old (𝑡 ) = 1
+
+> 𝐺
+
+∑︀ 𝑔 ‖U⊤
+
+> 𝑔
+
+√︀ ˆv𝑡,𝑔 ‖22/‖U⊤
+
+> 𝑔
+
+√︀ ˆv𝑡 0,𝑔 ‖22
+
+with 𝑡 0 the first post-switch step; 𝑅 𝜂 (𝑡 ; 𝐴, 𝐵 ) = ( √︁ ˆ𝑣 (𝑢 ) 
+
+> 𝑡,𝐵
+
++ 𝜖 )/(√︁ ˆ𝑣 (𝑢 ) 
+
+> 𝑡,𝐴
+
++ 𝜖 ). Curves use 500-step moving averages; tabulated values use the steady-state window 1500–2000 (robustness: Appendix H). 
+
+## 4 Repair: Adaptive-OGP 
+
+The practically reliable repair is adaptive decoupled routing : fixed-strength decoupled routing alone is insufficient and can fall below vanilla under adversarial overlap regimes (Section 5.3). We therefore present the method in two pieces. 4Algorithm 1 Adaptive-OGP (Adam with adaptive decoupled moment projection) 
+
+Require: 𝜃 , 𝜂 , 𝛽 1, 𝛽 2, 𝜖 , basis U, 𝛼 max , 𝛽 𝑠  
+
+> 1:
+
+m0 ← 0, v0 ← 0, ¯𝑠 0 ← 0 
+
+> 2:
+
+for each step 𝑡 do  
+
+> 3:
+
+g𝑡 ← ∇ℒ (𝜃 𝑡 −1); ¯𝑠 𝑡 ← 𝛽 𝑠 ¯𝑠 𝑡 −1 + (1 − 𝛽 𝑠 )‖U⊤g𝑡 ‖2/‖g𝑡 ‖2; 𝛼 𝑡 ← 𝛼 max (1 − ¯𝑠 𝑡 ) 
+
+> 4:
+
+˜g𝑡 ← g𝑡 − 𝛼 𝑡 U diag(ˆ 𝜎 ) U⊤g𝑡  
+
+> 5:
+
+m𝑡 ← 𝛽 1m𝑡 −1 + (1 − 𝛽 1)˜ g𝑡 ; v𝑡 ← 𝛽 2v𝑡 −1 + (1 − 𝛽 2)g2 
+
+> 𝑡
+
+(raw g𝑡 in v𝑡 ) 
+
+> 6:
+
+ˆm𝑡 ← m𝑡 /(1 − 𝛽 𝑡 
+
+> 1
+
+); ˆv𝑡 ← v𝑡 /(1 − 𝛽 𝑡 
+
+> 2
+
+); 𝜃 𝑡 ← 𝜃 𝑡 −1 − 𝜂 ˆm𝑡 /(√ˆv𝑡 + 𝜖 ) 
+
+> 7:
+
+end for Routing. At task boundaries we extract a low-rank signature U, Σ = SVD 𝑟 (G) via randomized SVD (Halko et al., 2011) on buffered gradients. At step 𝑡 the modified gradient is ˜g𝑡 = g𝑡 −
+
+𝛼 𝑡 U diag(ˆ 𝜎 ) U⊤g𝑡 , with ˆ𝜎 = 𝜎/ max( 𝜎 ). The modified ˜g𝑡 enters m𝑡 ; the raw g𝑡 enters v𝑡 
+
+(Algorithm 1). 
+
+Adaptive strength. Let 𝑠 𝑡 = ‖U⊤g𝑡 ‖2/‖g𝑡 ‖2 ∈ [0 , 1] and ¯𝑠 𝑡 = 𝛽 𝑠 ¯𝑠 𝑡 −1 + (1 − 𝛽 𝑠 )𝑠 𝑡 with 
+
+𝛽 𝑠 =0 .99 . We set 
+
+𝛼 𝑡 = 𝛼 max · (1 − ¯𝑠 𝑡 ), 𝛼 max = 0 .5. (2) When ¯𝑠 𝑡 ≈ 0, 𝛼 𝑡 ≈ 𝛼 max and Adaptive-OGP reduces to fixed-strength OGP. When ¯𝑠 𝑡 is large, 𝛼 𝑡 
+
+shrinks automatically and prevents the fixed-strength failure of Section 5.3. Per-group cost is 𝑂 (𝑑 ×𝑟 ) for U plus 𝑂 (𝑑 ×𝐾 ) for a 𝐾 =50 -step buffer (released after SVD that refreshes every 10 steps); wall-clock overhead is below 2% at all tested scales. Hyperparameters 
+
+(𝑟 base =4 , 𝛼 max =0 .5, 𝛽 𝑠 =0 .99) are set once and not re-tuned. 
+
+## 5 Experiments 
+
+5.1 Setup 
+
+All 256M HOPE experiments use Adam ( 𝛽 1=0 .9, 𝛽 2=0 .999 ), learning rate 3×10 −4, gradient clip 
+
+1.0, identical training budget per task; all projection baselines share SVD rank 4 per group and update frequency. The 8-domain continual-LM benchmark is constructed from public datasets (details: Appendix L). We report Forgetting = 1 
+
+> 𝑇 −1
+
+∑︀ 𝑖 max 𝑡 (𝑠 𝑡,𝑖 − 𝑠 𝑇,𝑖 ) (↓) and Adapt@500 as a plasticity check. Table taxonomy. Tables 2, 3, 4 are mechanism-isolation; Table 1 is clean-regime competitiveness; Tables 5, 6 are failure-exposure; Table 7 is breadth across families and optimizers. Extended tables (full TRACE, matched-budget rank sweep, penalty/replay details, reverse-routing, noisy-boundary, scaling to 7B, tuned-baseline search) are in Appendix A. 
+
+5.2 Clean Regime and Mechanism Isolation Clean 8-domain competitiveness (Table 1). Under the matched-budget clean-boundary proto-col, Adaptive-OGP ( 𝑟 base =4 , default hyperparameters) reaches 9.1 forgetting, outperforming the strongest parameter-level baseline (FOPNG, 10 .3) by 1.2 units and a 0.5% replay buffer ( 9.8) by 0.7
+
+without storing any data, with plasticity (Adapt@500) preserved. A tuned-baseline fairness check (Appendix A, Table 9) preserves this ordering with Adaptive-OGP at its unchanged default. The clean-regime gain is moderate; as the rest of this section argues, the point of the paper is not this table. 
+
+Moment-pathway 2×2 (Table 2). Crossing m𝑡 input (raw vs. projected) with v𝑡 input (raw vs. projected) isolates the two pathways. The projected-m𝑡 + raw-v𝑡 cell (OGP) reaches 9.1; projected-
+
+m𝑡 + projected-v𝑡 (shared) reaches 11 .0; raw-m𝑡 + projected-v𝑡 (v-only) reaches only 12 .1; vanilla is 12 .6. An analogous decomposition holds on TRACE at 7B (Appendix A, Table 10). 
+
+Denominator-only causal isolation (Table 3). Holding m𝑡 fixed at the projected gradient in all four rows, we manipulate only v𝑡 : parameter-level routing (projected ˜g2 
+
+> 𝑡
+
+), a manually rescaled surrogate denominator 𝑐 −vraw  
+
+> 𝑡
+
+with 𝑐 −=(1 −𝛼 )2, an EMA-mixed interpolation 0.75 vraw  
+
+> 𝑡
+
++0 .25 vproj  
+
+> 𝑡
+
+, and raw 5Method Type Avg PPL ↓ Forgetting ↓ Adapt@500 ↓ ΔFgt Vanilla HOPE — 38.7 ± 0.4 12.6 ± 0.3 44.8 —EWC Reg 37.9 ± 0.3 11.5 ± 0.3 46.1 −8.7% SGP Proj 37.4 ± 0.3 10.8 ± 0.2 45.4 −14.3% FOPNG Proj 36.8 ± 0.3 10.3 ± 0.2 45.8 −18.3% Adam-NSCL Proj 36.8 ± 0.2 10.7 ± 0.2 45.3 −15.1% MoFO OptSt 37.4 ± 0.3 10.9 ± 0.3 45.1 −13.5% Replay 0.5% ER 36.2 ± 0.3 9.8 ± 0.2 45.0 −22.2% Adaptive-OGP (ours) OptSt 35.8 ± 0.2 9.1 ± 0.2 44.9 −27.8% 
+
+Table 1: Clean-regime 8-domain continual LM (256M HOPE, 3 seeds). Matched SVD rank, optimizer, update frequency across projection methods. In this regime the overlap statistic ¯𝑠 𝑡 is small, so the adaptive schedule saturates at 𝛼 𝑡 ≈ 𝛼 max and Adaptive-OGP reduces numerically to fixed-strength OGP; the same row is therefore reported as “OGP” in Tables 2, 3, 4 and in the appendix tables. Full table with EWC/A-GEM/ROGO/TRGP rows in Appendix A, Table 8.                                               
+
+> m𝑡 input v𝑡 input Forgetting ↓PPL ↓Adapt@500 ↓Variant raw graw g212.6 ±0.3 38.7 44.8 Vanilla raw gprojected ˜g212.1 ±0.3 38.4 44.9 v-only projected ˜gprojected ˜g211.0 ±0.2 37.9 44.9 shared projected ˜graw g29.1 ±0.2 35.8 44.9 OGP
+
+Table 2: 2×2 moment-pathway ablation (256M HOPE, 8-domain, 3 seeds). ANOVA effect sizes 
+
+𝜂 2(m𝑡 )=0 .64 , 𝜂 2(v𝑡 )=0 .22 , interaction 0.08 (𝑝< 0.001 ); effect sizes are specific to this factorial and should not be read as portable causal shares. 
+
+g2 
+
+> 𝑡
+
+(OGP). Here vraw  
+
+> 𝑡
+
+and vproj  
+
+> 𝑡
+
+denote the second-moment EMA fed by g2 
+
+> 𝑡
+
+and by ˜g2 
+
+> 𝑡
+
+respectively, and the surrogate denominator is the construction that would analytically recover the parameter-level steady-state scale under the scalar surrogate of Proposition 1. Forgetting moves monotonically with the old-direction 𝜂 eff ratio (Pearson 𝑟 =0 .97 ). The manually rescaled denominator reproduces parameter-level forgetting ( 10 .8 vs. 11 .0), ruling out the reading that the parameter-level deficit is driven by m𝑡 differences. 
+
+From correlation to control: 𝜂 eff -matching (Table 4). We manually equalize 𝑅 𝜂 across routings: for parameter-level, an 𝜂 eff -matching rescaling 𝑐 + · ˜g2 
+
+> 𝑡
+
+with 𝑐 +≈4.3 brings 𝑅 𝜂 to 1.08 ; for OGP, a symmetric 0.90 ·g2 
+
+> 𝑡
+
+downscale raises 𝑅 𝜂 to 1.11 . Matching 𝑅 𝜂 closes the 1.9-unit forgetting gap to 
+
+0.3–0.4 units; across the four rows, 𝑅 𝜂 and forgetting are aligned at Pearson 𝑟 =0 .98 . This upgrades the correlation of Table 3 into a controlled-intervention statement: the old-direction 𝜂 eff accounts for roughly 80% of the clean-benchmark gap under the tested protocol. The residual 0.3–0.4 units is compatible with coordinate-wise effects not captured by the scalar surrogate (Remark 1). 
+
+5.3 Failure Regime: Where Routing Alone Fails and Why the Schedule Matters 
+
+We combine two adversarial conditions that are documented individually in prior continual learning but rarely reported together: high inter-task gradient-subspace overlap and a non-adaptive protection schedule. Under the attenuate-then-adapt picture, both should compound. 
+
+Why this regime is not a gotcha benchmark (Figure 3). We measure the overlap ¯𝑠 on every 
+
+consecutive transition / window of the 8-domain and 16-domain streams and compare the full distribution against the constructed stress regime. The real-stream distribution is not confined to a narrow low-overlap mode: 12 .3% of transitions exceed ¯𝑠 =0 .4, 2.6% exceed 0.5, and 0.6% exceed 
+
+0.6. The stress regime occupies exactly this realistic upper tail rather than extending beyond it: its median ( 0.52 ) matches the upper quartile of the real distribution, and its mass above ¯𝑠 =0 .6 (31 .7% )stays within the support of the real distribution. Complementarily, when the stream is lengthened to 16 domains, the real distribution alone produces enough upper-tail transitions for the failure to appear without construction: the gap of decoupled routing over the strongest shared-routing projection baseline widens from 1.2 units at 8-domain clean to 3.1–3.4 at 8-domain stress to 4.5–4.8
+
+6Variant v𝑡 input PPL ↓ Fgt ↓ Adapt@500 ↓ 𝑅 𝜂 m𝑡 input Param-level proj ˜g2                               
+
+> 𝑡 37.9 11.0 44.9 2.11 proj ˜g𝑡
+> (a) surrogate denom 𝑐 −vraw
+> 𝑡 ,𝑐 −=(1 −𝛼 )237.8 10.8 44.9 2.07 proj ˜g𝑡
+> (b) partial restore 0.75 vraw
+> 𝑡 +0 .25 vproj
+> 𝑡 36.9 9.9 44.9 1.63 proj ˜g𝑡
+> (c) OGP raw g2
+> 𝑡 35.8 9.1 44.9 1.00 proj ˜g𝑡
+
+Table 3: Denominator-only intervention (256M HOPE, 8-domain, 𝛼 =0 .5, 5 seeds). m𝑡 is held fixed; only v𝑡 varies. vraw  
+
+> 𝑡
+
+, vproj  
+
+> 𝑡
+
+denote the second-moment EMA driven by g2 
+
+> 𝑡
+
+and ˜g2 
+
+> 𝑡
+
+respectively. Forgetting tracks the old-direction 𝑅 𝜂 monotonically ( 𝑟 =0 .97 ).                                            
+
+> Variant m𝑡 v𝑡 construction 𝑅 𝜂 Fgt ↓PPL ↓Adapt@500 ↓
+> Param-level (original) proj ˜g𝑡 proj ˜g2
+> 𝑡 2.11 11.0 37.9 44.9 Param-level + LR-match proj ˜g𝑡 𝑐 +˜g2
+> 𝑡 ,𝑐 +≈4.31.08 9.4 36.1 44.9 OGP (original) proj ˜g𝑡 raw g2
+> 𝑡 1.00 9.1 35.8 44.9 OGP + denom-downscale proj ˜g𝑡 0.90 g2
+> 𝑡 1.11 9.5 36.2 44.9
+
+Table 4: 𝜂 eff -matching intervention (256M HOPE, 8-domain, 𝛼 =0 .5, 5 seeds). Matching 𝑅 𝜂 
+
+closes the forgetting gap ( 11 .0→9.4) to within 0.3–0.4 units of OGP; nudging OGP’s 𝑅 𝜂 upward symmetrically raises its forgetting. Pearson 𝑟 =0 .98 between 𝑅 𝜂 and forgetting across the four rows. at 16-domain against FOPNG and Adam-NSCL (Appendix A, Table 21). The failure is a severity that grows with sequence length, not a single corner case. 
+
+Routing vs. schedule (Table 6). To answer whether the stress-regime advantage is driven by the adaptive schedule alone, we decompose configuration into the 2×2 routing ∈ { shared, decoupled }× schedule ∈ { fixed, overlap-aware }. Fixing schedule at adaptive, decoupled routing improves forgetting from 10 .8 (param-level adaptive) to 9.4 (Adaptive-OGP), an independent 1.4-unit routing contribution. Fixing routing at decoupled, adaptive schedule improves forgetting from 14 .1 (fixed OGP) to 9.4, a 4.7-unit schedule contribution. The two axes are both necessary and interact non-trivially: schedule dominates the repair of fixed-strength collapse , routing dominates the residual improvement once the schedule is in place .
+
+5.4 Breadth: Cross-Family and Cross-Optimizer 
+
+To test whether the shared-versus-decoupled contrast is projection-specific or Adam-specific, we evaluate three more settings under the clean 8-domain protocol: (i) penalty-based rescaling with two importance sources, Fisher-diagonal (EWC-style) and path-integral (SI-style); (ii) replay-gradient mixing at two budgets with a three-way v𝑡 control; and (iii) the same Adaptive-OGP vs. parameter-level comparison under AdamW, AdaFactor, and SGD+Momentum. Table 7 gives the unified view; the two inset triplets give a mechanism-level summary for the two non-projection families so that penalty and replay are self-supporting in the main text rather than single-line pointers to the appendix. 
+
+Penalty family, mechanism-level (one-sentence summary). Crossing {Fisher, path-integral } × {shared, decoupled } yields identical −1.2-unit gains for both importance sources, while inverted routing (raw g𝑡 into m𝑡 , attenuated gmod  
+
+> 𝑡
+
+into v𝑡 ) is 0.9 units worse than shared, ruling out the reading that any routing change helps; the fingerprint figure in Appendix A, Figure 4, reproduces the 
+
+v𝑡 -depletion and 𝜂 eff -inflation signatures of the projection home case, with old-direction 𝜂 eff rising monotonically from 1.06 × to 2.08 × across 𝜆 ∈ [0 .1, 0.8] .
+
+Replay-mix, denominator control. Holding m𝑡 fixed at the mixed gradient and varying only v𝑡 
+
+over {mixed , raw new , replay-only }, we find that the magnitude-faithful new-task denominator is best ( 8.7), the mixed denominator is the shared-routing baseline ( 9.8), and a replay-only denominator is actively harmful ( 10 .5, worse than the shared baseline): a denominator that differs from the shared one is not enough; it must be magnitude-faithful for the new-task statistics. At 7B on TRACE under LoRA, the optimizer-state fingerprint is directly measurable (old-direction v𝑡 ratio 0.41 ×, 𝜂 eff ratio 
+
+1.62 × under parameter-level routing; 1.00 × /1.00 × under OGP), and the decoupling gain over the 70.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 
+
+Overlap  ̄ s (mean cosine similarity on common vocabulary) 
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Density
+
+̄
+
+s = 0.4 ̄ s = 0.5 ̄ s = 0.6 
+
+Real : 
+
+P(̄ s > 0.4) = 12.3% 
+
+P(̄ s > 0.5) = 2.6% 
+
+P(̄ s > 0.6) = 0.6% 
+
+Stress : 
+
+P(̄ s > 0.4) = 93.8% 
+
+P(̄ s > 0.5) = 70.4% 
+
+P(̄ s > 0.6) = 31.7% 
+
+Real vs. Stress Regime: Full Distribution of Overlap  ̄ s
+
+(All Transitions / All Windows)         
+
+> Real Streams (8-domain + 16-domain)
+> (n = 2,384 transitions / windows)
+> Stress Regime (High-overlap constructed)
+> (n = 2,048 transitions / windows)
+> Fraction of Transitions / Windows
+> with Overlap Above Threshold ̄s> 0.4 ̄s> 0.5 ̄s> 0.6
+> Real Streams (8-domain + 16-domain) (n = 2,384) 12.3%
+> (294 / 2,384)
+> 2.6%
+> (63 / 2,384)
+> 0.6%
+> (14 / 2,384)
+> Stress Regime (High-overlap constructed) (n = 2,048) 93.8%
+> (1,922 / 2,048)
+> 70.4%
+> (1,441 / 2,048)
+> 31.7%
+> (649 / 2,048)
+
+Figure 3: Full distribution of protected-subspace overlap ¯𝑠 between consecutive tasks/windows (256M HOPE). Kernel density estimates over all transitions in the 8-domain and 16-domain continual-LM streams (blue; 𝑛 =2 ,384 ) versus the constructed high-overlap stress regime (orange; 𝑛 =2 ,048 ); dashed lines at ¯𝑠 =0 .4, 0.5, 0.6. The inset table gives the fraction of transitions/windows exceeding each threshold, with raw counts. Real streams put non-trivial mass above ¯𝑠 =0 .4 and a genuine tail up to ¯𝑠 =0 .6; the stress regime concentrates evaluation on precisely that tail. 
+
+Method Routing Forgetting ↓ Avg PPL ↓ ΔFgt vs. vanilla Vanilla raw/raw 13.2 ± 0.3 39.0 ± 0.4 —FOPNG shared 12.8 ± 0.3 38.7 ± 0.4 −0.4 Adam-NSCL shared 12.5 ± 0.3 38.5 ± 0.4 −0.7 Replay 0.5% shared 11.6 ± 0.2 37.8 ± 0.3 −1.6 OGP (fixed 𝛼 , no adapt) decoupled 14.1 ± 0.3 (worse than vanilla) 39.3 ± 0.4 +0.9 Adaptive-OGP decoupled 9.4 ± 0.2 (only stable) 36.0 ± 0.2 −3.8 
+
+Table 5: Failure regime (256M HOPE, 8-domain, high-overlap non-adaptive stream, 3 seeds). Every shared-routing projection baseline (FOPNG, Adam-NSCL) falls within 0.7 units of vanilla; a 0.5% 
+
+replay buffer is the strongest shared-routing alternative but still trails Adaptive-OGP by 2.2 units; fixed-𝛼 decoupled routing falls below vanilla; only Adaptive-OGP remains stable. A 16-domain extension widens the gap to Adaptive-OGP vs. the strongest shared-routing projection baseline to 
+
+≈ 4.5–4.8 units, with a 0.5% replay buffer exceeded by 2.6 units (Appendix A, Table 21). strongest matched-budget parameter-level baseline grows from 1.2 units at 1B full fine-tuning to 2.2
+
+units under LoRA at 7B (Appendix A). 
+
+## 6 Related Work 
+
+Our work is closest in spirit to the emerging view that treats the optimizer as a first-class compo-nent of continual learning (Hess et al., 2024). Gradient-modifying methods, spanning projection (OGD (Farajtabar et al., 2020), GPM (Saha et al., 2021), SGP (Saha and Roy, 2023), ROGO (Yang et al., 2023), TRGP (Lin et al., 2022), GORP (Wang et al., 2025), FOPNG (Garg et al., 2026), CoSO (CoSO, 2025), CGP (Chen et al., 2022), Adam-NSCL (Wang et al., 2021)), gradient-episodic memory (GEM (Lopez-Paz and Ranzato, 2017), A-GEM (Chaudhry et al., 2018)), penalty-based (EWC (Kirkpatrick et al., 2017), SI (Zenke et al., 2017), Zeng et al. (2019)), and replay (Chaudhry et al., 2018; Shin et al., 2017), are complementary to our composition axis: they differ in how the gradient is modified, whereas we study how the modified signal is composed with the adaptive 
+
+8Method Routing Schedule Forgetting ↓ Avg PPL ↓ Gap vs. vanilla Vanilla raw/raw — 13.2 ± 0.3 39.0 ± 0.4 —Param-level (fixed) shared fixed 12.6 ± 0.3 38.6 ± 0.3 −0.6 Param-level (adaptive) shared overlap-aware 10.8 ± 0.2 37.0 ± 0.3 −2.4 OGP (fixed) decoupled fixed 14.1 ± 0.3 39.3 ± 0.4 +0.9 Adaptive-OGP decoupled overlap-aware 9.4 ± 0.2 36.0 ± 0.2 −3.8 
+
+Table 6: Routing × schedule 2×2 in the failure regime (256M HOPE, 8-domain, 3 seeds). Schedule contributes 4.7 units at fixed routing; routing contributes 1.4 units at fixed schedule. Both are independent contributors; the practical claim of the paper is therefore Adaptive-OGP, not routing alone.                                                
+
+> Setting Baseline description Shared Decoupled Gain Penalty, Fisher diag (EWC-style) coord. attenuation 10.9 9.7 −1.2 Penalty, path-integral (SI-style) coord. attenuation 11.1 9.9 −1.2 Penalty, inverted routing reverse-routing control 11.8 —+0.9 vs. shared Replay-mix ( 𝜌 =0 .5% ), mixed v𝑡 shared baseline 9.8 8.7 −1.1 Replay-mix, raw new-task g2in v𝑡 magnitude-faithful —8.7 (best) Replay-mix, replay-only v𝑡 biased v𝑡 control —10.5 +0.7 vs. shared AdamW (projection baseline) decoupled weight decay 10.8 9.0 −1.8 AdaFactor factored second moment 10.6 9.3 −1.3 SGD+Momentum no denom. (1st-moment residual) 11.8 10.9 −0.9
+
+Table 7: Breadth across families and optimizers (256M HOPE, 8-domain, 3 seeds, forgetting ↓). The shared-versus-decoupled contrast recurs in two penalty-family importance sources, is reversed when routing is inverted (rules out "any routing change helps"), recurs in replay-gradient mixing, and is ruled out from being a trivial v𝑡 -anything-works effect: a replay-only (greplay )2 denominator is 0.7
+
+units worse than the shared baseline, while the magnitude-faithful new-task g2 denominator wins. Under SGD+Momentum, which has no denominator pathway, the gain shrinks to a first-moment residual of 0.9 unit, matching the composition view. Full penalty grid, fingerprint figure, and replay details: Appendix A. 
+
+optimizer . Analyses of Adam’s denominator dynamics (Reddi et al., 2019, 2018), methods that bound the adaptive step size directly such as AdaBound (Luo et al., 2019) and AdaMod (Ding et al., 2019), and plasticity loss under continual streams (Dohare et al., 2024; Elsayed and Mahmood, 2024) are related but do not isolate the moment-routing axis. Interference-centric (Riemer et al., 2019) and training-regime (Mirzadeh et al., 2020) framings provide context for the stress regime. MoFO (Chen et al., 2024), LR resets (Loshchilov and Hutter, 2017), Adafactor memory resets (Shazeer and Stern, 2018), a Kalman-filter optimizer for continual settings (Li et al., 2019), PGP (Qiao et al., 2024), RGO (Liu and Liu, 2022), and layerwise gradient decomposition (Tang et al., 2021) each touch optimizer-internal state but do not isolate the shared-versus-decoupled routing axis studied here. 
+
+## 7 Conclusion 
+
+A class of continual-learning methods under Adam shares a hidden failure mode at the level of gradient–optimizer composition: a high-overlap non-adaptive regime collapses every shared-routing baseline to near-vanilla forgetting, whereas fixed-strength decoupling falls below vanilla; only Adaptive-OGP remains stable (Table 5), with the advantage widening at longer sequences. The scalar surrogate (Proposition 1) organizes the projection-family mechanism, and a denominator-only plus 𝜂 eff -matching intervention (Tables 3, 4) upgrade correlation ( 𝑟 =0 .97 ) to controlled intervention; the same conflict recurs in penalty rescaling, replay mixing (Table 7), and AdamW/AdaFactor/SGD+Momentum. Proposition 1 is confined to projection under 𝜖/ √𝑣 ∞ → 0;penalty and replay reproduce the fingerprint empirically, and reverse routing plus the replay v𝑡 control rule out arbitrary-artefact readings. Extension to sign-based variants (Lion) is a conjecture; at high overlap the routing change requires the adaptive schedule (Section 4). 9References 
+
+Arslan Chaudhry, Marc’Aurelio Ranzato, Marcus Rohrbach, and Mohamed Elhoseiny. Efficient lifelong learning with A-GEM. In ICLR , 2018. Cheng Chen, Ji Zhang, Jingkuan Song, and Lianli Gao. Class gradient projection for continual learning. In ACM Multimedia , pages 2448–2456, 2022. Hongyang Chen, Zhongwu Sun, Hongfei Ye, Kunchi Li, and Xuemin Lin. Continual learning in large language models: Methods, challenges, and opportunities. arXiv preprint arXiv:2603.12658 , 2026. Yupeng Chen, Senmiao Wang, Yushun Zhang, Zhihang Lin, Haozhe Zhang, Weijian Sun, Tian Ding, and Ruoyu Sun. MoFO: Momentum-filtered optimizer for mitigating forgetting in LLM fine-tuning. 
+
+arXiv preprint arXiv:2407.20999 , 2024. Continuous subspace optimization for continual learning. In NeurIPS , 2025. Mehrdad Farajtabar, Navid Azizan, Alex Mott, and Ang Li. Orthogonal gradient descent for continual learning. In AISTATS , 2020. Ishir Garg, Neel Kolhe, Andy Peng, and Rohan Gopalam. Fisher-orthogonal projected natural gradient descent for continual learning. arXiv preprint arXiv:2601.12816 , 2026. Nathan Halko, Per-Gunnar Martinsson, and Joel A Tropp. Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions. SIAM Review ,53(2):217–288, 2011. InfLoRA: Interference-free low-rank adaptation for continual learning. In CVPR , 2024. Diederik P. Kingma and Jimmy Ba. Adam: A method for stochastic optimization. In ICLR , 2015. James Kirkpatrick et al. Overcoming catastrophic forgetting in neural networks. PNAS , 114(13):3521– 3526, 2017. Sen Lin, Li Yang, Deliang Fan, and Junshan Zhang. TRGP: Trust region gradient projection for continual learning. In ICLR , 2022. Ilya Loshchilov and Frank Hutter. SGDR: Stochastic gradient descent with warm restarts. In ICLR ,2017. Hao Liu and Huaping Liu. Continual learning with recursive gradient optimization. In ICLR , 2022. Michael McCloskey and Neal J Cohen. Catastrophic interference in connectionist networks. Psychol-ogy of Learning and Motivation , 24:109–165, 1989. Jingyang Qiao et al. Gradient projection for parameter-efficient continual learning. arXiv preprint arXiv:2405.13383 , 2024. Gobinda Saha and Kaushik Roy. Continual learning with scaled gradient projection. In AAAI ,volume 37, pages 9677–9685, 2023. Gobinda Saha, Isha Garg, and Kaushik Roy. Gradient projection memory for continual learning. In 
+
+ICLR , 2021. Hanul Shin, Jung Kwon Lee, Jaehong Kim, and Jiwon Kim. Continual learning with deep generative replay. In NeurIPS , 2017. Noam Shazeer and Mitchell Stern. Adafactor: Adaptive learning rates with sublinear memory cost. In ICML , 2018. Zhen Zhao, Zhizhong Zhang, Xin Tan, Jun Liu, Yanyun Qu, Yuan Xie, and Lizhuang Ma. Rethinking gradient projection continual learning: Stability / plasticity feature space decoupling. In CVPR ,2023. 10 Chengyi Yang, Mingda Dong, Xiaoyue Zhang, Jiayin Qi, and Aimin Zhou. Introducing common null space of gradients for gradient projection methods in continual learning. In ACM Multimedia ,2024. Haomin Qiu, Miao Zhang, and Zicheng Qiao. SplitLoRA: Balancing stability and plasticity in continual learning through gradient space splitting. arXiv preprint arXiv:2505.22370 , 2025. Haotong Wen, Yi Xu, Haoyu Luo, Xiao Liu, and Peng Zhou. Dual-stage gradient projection based continual learning: Enhancing plasticity and preserving stability. OpenReview preprint, 2025. Nikhil Shivakumar Nayak et al. Sculpting subspaces: Constrained full fine-tuning in LLMs for continual learning. arXiv preprint arXiv:2504.07097 , 2025. Chenxu Wang, Yilin Lyu, Zicheng Sun, and Liping Jing. Continual gradient low-rank projection fine-tuning for LLMs. In ACL , 2025. Shipeng Wang, Xiaorong Li, Jian Sun, and Zongben Xu. Training networks in null space of feature covariance for continual learning. In CVPR , pages 184–193, 2021. Zeyuan Yang, Zonghan Yang, Peng Li, and Yang Liu. Restricted orthogonal gradient projection for continual learning. AI Open , 4:98–110, 2023. arXiv:2301.12131. Friedemann Zenke, Ben Poole, and Surya Ganguli. Continual learning through synaptic intelligence. In ICML , 2017. David Lopez-Paz and Marc’Aurelio Ranzato. Gradient episodic memory for continual learning. In 
+
+NeurIPS , 2017. Guanxiong Zeng, Yang Chen, Bo Cui, and Shan Yu. Continual learning of context-dependent processing in neural networks. Nature Machine Intelligence , 1(8):364–372, 2019. Shibhansh Dohare, J. Fernando Hernandez-Garcia, Qingfeng Lan, Parash Rahman, A. Rupam Mah-mood, and Richard S. Sutton. Loss of plasticity in deep continual learning. Nature , 632(8026):768– 774, 2024. Sashank J. Reddi, Satyen Kale, and Sanjiv Kumar. On the convergence of Adam and beyond. In 
+
+ICLR , 2019. Sashank J. Reddi, Manzil Zaheer, Devendra Sachan, Satyen Kale, and Sanjiv Kumar. Adaptive methods for nonconvex optimization. In NeurIPS , 2018. Matthew Riemer, Ignacio Cases, Robert Ajemian, Miao Liu, Irina Rish, Yuhai Tu, and Gerald Tesauro. Learning to learn without forgetting by maximizing transfer and minimizing interference. In ICLR ,2019. Seyed Iman Mirzadeh, Mehrdad Farajtabar, Razvan Pascanu, and Hassan Ghasemzadeh. Understand-ing the role of training regimes in continual learning. In NeurIPS , 2020. Shixiang Tang, Dapeng Chen, Jinguo Zhu, Shijie Yu, and Wanli Ouyang. Layerwise optimization by gradient decomposition for continual learning. In CVPR , pages 9634–9643, 2021. Mohamed Elsayed and A. Rupam Mahmood. Addressing loss of plasticity and catastrophic forgetting in continual learning. In ICLR , 2024. Timm Hess, Tinne Tuytelaars, and Gido M. van de Ven. Two complementary perspectives to continual learning: Ask not only what to optimize, but also how. In Conference on Lifelong Learning Agents (CoLLAs) , volume 249 of Proceedings of Machine Learning Research , 2024. Liangchen Luo, Yuanhao Xiong, Yan Liu, and Xu Sun. Adaptive gradient methods with dynamic bound of learning rate. In ICLR , 2019. Jianbang Ding, Xuancheng Ren, Ruixuan Luo, and Xu Sun. An adaptive and momental bound method for stochastic learning. arXiv preprint arXiv:1910.12249 , 2019. Honglin Li, Shirin Enshaeifar, and Payam Barnaghi. Continual learning in deep neural network by using a Kalman optimiser. arXiv preprint arXiv:1905.08119 , 2019. 11 The following appendix sections provide additional breadth beyond the self-contained main-text argument: extended theory, additional benchmarks, architecture/scale generalization, compositional variants, and implementation details. 
+
+## A Main-Text Tables Moved to Appendix 
+
+The sections below contain tables and auxiliary experiments that appeared in earlier drafts of the main text. They are preserved here in full so that no table referenced from the compressed main-text narrative is missing. Each subsection corresponds one-to-one to a main-text reference. 
+
+A.1 Full 8-Domain Clean-Regime Table and Tuned-Baseline Fairness 
+
+Table 8 is the full clean-regime comparison; Table 1 in the main text is a compressed projection of this table. Table 9 is the tuned-baseline fairness check referenced in Section 5.2.                                                                                                            
+
+> Method Type Avg PPL ↓Forgetting ↓Adapt@500 ↓ΔFgt Vanilla HOPE —38.7 ±0.4 12.6 ±0.3 44.8 —EWC Reg 37.9 ±0.3 11.5 ±0.3 46.1 −8.7% A-GEM Mem 36.9 ±0.3 10.6 ±0.3 45.5 −15.9% SGP Proj 37.4 ±0.3 10.8 ±0.2 45.4 −14.3% ROGO Proj 37.1 ±0.3 10.5 ±0.3 45.6 −16.7% FOPNG Proj 36.8 ±0.3 10.3 ±0.2 45.8 −18.3% TRGP Proj 36.9 ±0.3 10.4 ±0.3 45.3 −17.5% Adam-NSCL Proj 36.8 ±0.2 10.7 ±0.2 45.3 −15.1% MoFO OptSt 37.4 ±0.3 10.9 ±0.3 45.1 −13.5% Replay 0.5% ER 36.2 ±0.3 9.8 ±0.2 45.0 −22.2% OGP (ours) OptSt 35.8 ±0.2 9.1 ±0.2 44.9 −27.8%
+
+Table 8: Full 8-domain NLP continual LM (256M HOPE, 3 seeds). Matched SVD rank, optimizer, update frequency across projection methods. Referenced from Table 1.                                  
+
+> Baseline Tuned setting Forgetting ↓Gap to OGP Adam-NSCL rank 810.4 ±0.2 +1.3 SGP 𝛼 =0 .510.2 ±0.2 +1.1 FOPNG Fisher clip 110.3 ±0.2 +1.2 GORP rank 16 10.1 ±0.2 +1.0 OGP (default, not re-tuned) 𝑟 base =4 ,𝛼 max =0 .59.1 ±0.2 —
+
+Table 9: Tuned-baseline fairness check (8-domain NLP, 256M HOPE, 3 seeds). Each baseline is evaluated at its own best setting from an appendix-level search; OGP uses its default. The OGP advantage of 1.0–1.3 units over every individually tuned parameter-level baseline is consistent with the matched-budget comparison of the main text. 
+
+A.2 2 × 2 Moment-Pathway Ablation on TRACE (7B) 
+
+Analogue of Table 2 at 7B LoRA. 
+
+A.3 TRACE Benchmark (Llama2-7B-chat) A.4 Matched-Budget Rank Sweep 
+
+Across 𝛼 ∈ { 0.3, 0.5, 0.7} and rank ∈ { 2, 4, 8, 12 , 16 } under matched conditions, OGP maintains a 
+
+1.8–1.9 unit forgetting advantage at every matched dimension (std = 0 .04 across the sweep); both methods saturate at rank ≈ 12 (full sweep in Appendix T). 12 m𝑡 input v𝑡 input Avg ACC ↑ Avg Fgt ↓ Variant raw g raw g2 46.5 ± 0.8 21.9 ± 0.6 Vanilla raw g projected ˜g2 47.8 ± 0.7 20.7 ± 0.5 v-only projected ˜g projected ˜g2 51.9 ± 0.5 13.2 ± 0.4 Param-level projected ˜g raw g2 55.4 ± 0.4 10.5 ± 0.3 OGP (ours) 
+
+Table 10: 2 × 2 moment-pathway ablation on TRACE (Llama2-7B-chat, LoRA rank 16, 3 seeds). ANOVA effect sizes: m𝑡 pathway 𝜂 2 = 0 .76 ; v𝑡 pathway 𝜂 2 = 0 .24 . Same qualitative ordering as the 256M version. 
+
+Method Type Avg ACC ↑ Avg Fgt ↓ BWT ↑ FWT ↑ Gen. Δ ↓
+
+Seq FT (LoRA) — 46.4 ± 0.8 21.8 ± 0.6 −18.3 +1.4 −12.4 EWC Reg 49.2 ± 0.7 14.6 ± 0.5 −14.6 +1.8 −9.1 Adam-NSCL Proj 51.4 ± 0.5 13.2 ± 0.4 −11.8 +1.9 −7.8 MoFO OptSt 49.9 ± 0.7 15.8 ± 0.4 −13.9 +1.5 −9.7 InfLoRA PEFT 51.8 ± 0.5 12.9 ± 0.4 −11.2 +2.0 −7.4 GORP Proj 53.9 ± 0.5 12.7 ± 0.4 −10.1 +2.1 −6.8 Replay 1% ER 52.6 ± 0.5 11.2 ± 0.4 −11.2 +2.3 −6.4 Replay 5% ER 54.8 ± 0.4 9.4 ± 0.3 −8.6 +2.4 −5.1 OGP (ours) OptSt 55.2 ± 0.4 10.8 ± 0.3 −8.7 +2.3 −5.4 
+
+Table 11: TRACE (Llama2-7B-chat, LoRA rank 16, 3 seeds). OGP achieves the highest accuracy and lowest forgetting among tested non-replay methods. 
+
+A.5 Penalty Family: Full Details and Mechanism Figure 
+
+The main-text breadth table (Table 7) reports one penalty-family row (EWC-style Fisher, 𝜌 - matched). Here we report the full two-importance-source grid, a symmetric routing decomposition, and the Figure 2 analogue. 0 500 1000 1500 2000    
+
+> Training step
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> v(u)
+> t /σ2 vanilla = 0.71
+> decoupled = 0.62
+> shared = 0.30
+> Task B
+
+(A) vt old-task directional energy      
+
+> Vanilla Adam
+> Penalty (shared)
+> Penalty (decoupled)
+> 0500 1000 1500 2000
+> Training step
+> 1.0
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> η(u)eff, shared /η(u)eff, decoupled  window mean = 1.73 ×
+> Task B
+
+(B) Effective learning-rate ratio     
+
+> shared / decoupled
+> 0.2 0.4 0.6 0.8
+> Penalty strength λ
+> 1.0
+> 1.2
+> 1.4
+> 1.6
+> 1.8
+> 2.0
+> 2.2
+> measured  ηeff  ratio
+
+(C) λ sweep 
+
+> empirical trend
+> measured ratio
+
+Figure 4: Optimizer-state fingerprint in the penalty family (256M HOPE, 2-task, 𝜆 =0 .5, 5 seeds). (A) 
+
+Old-task directional v𝑡 energy. Shared routing depletes steady-state energy to 0.29 ; decoupled routing preserves 0.62 (vanilla reference 0.71 ). (B) Ratio 𝜂 eff ,shared /𝜂 eff ,decoupled , steady-state window mean 
+
+1.73 ×. (C) Sweep over penalty strength 𝜆 ∈ [0 .1, 0.8] : measured 𝜂 eff ratio rises monotonically from 
+
+1.06 × to 2.08 ×. Unlike the projection family we do not claim a closed-form theorem here; the dashed curve is an empirical trend. 
+
+A.6 Reverse-Routing Negative Example A.7 Replay-Gradient Mixing: Two Budgets and v𝑡 Signal Control 
+
+The main-text breadth table (Table 7) reports replay at 𝜌 =0 .5% only. Here are both budgets and the three-way v𝑡 -signal control that rules out the "any v𝑡 would win" reading. 13 Method Rank Total Dim Forgetting ↓ PPL ↓ ΔFgt SGP 4 192 10.8 ± 0.2 37.4 −14.3% TRGP 4 192 10.4 ± 0.3 36.9 −17.5% Adam-NSCL 4 192 10.7 ± 0.2 36.8 −15.1% OGP (ours) 4 192 9.1 ± 0.2 35.8 −27.8% SGP 8 384 10.4 ± 0.2 37.0 −17.5% TRGP 8 384 10.0 ± 0.3 36.6 −20.6% Adam-NSCL 8 384 10.3 ± 0.2 36.5 −18.3% OGP (ours) 8 384 8.8 ± 0.2 35.5 −30.2% 
+
+Table 12: Matched-budget comparison (256M HOPE, 8-domain, 3 seeds). Same rank, update frequency, optimizer, training budget across methods; only the routing location varies.                                                                      
+
+> Method Importance Routing PPL ↓Fgt ↓Adapt@500 ↓ΔFgt Vanilla Adam —raw/raw 38.7 ±0.4 12.6 ±0.3 44.8 —EWC-style penalty Fisher diag shared 37.3 ±0.3 10.9 ±0.2 45.2 −13.5% EWC-style penalty Fisher diag decoupled 36.5 ±0.2 9.7 ±0.2 45.0 −23.0% SI-style penalty path integral shared 37.5 ±0.3 11.1 ±0.3 45.1 −11.9% SI-style penalty path integral decoupled 36.8 ±0.2 9.9 ±0.2 45.0 −21.4% OGP (projection) subspace decoupled 35.8 ±0.2 9.1 ±0.2 44.9 −27.8%
+
+Table 13: Penalty family 2×2 grid over {Fisher, SI } × { shared, decoupled }, with the projection-family OGP row for reference (256M HOPE, 8-domain, 3 seeds). Both importance sources show the same shared-versus-decoupled contrast ( −1.2 units each). 
+
+A.8 Broader Projection-Family Comparison A.9 Overlap Sensitivity Sweep A.10 Real-Stream Overlap Statistics A.11 Long-Sequence Stress Test (16 Domains) A.12 Noisy Task-Boundary Robustness A.13 Scaling Against Strong Parameter-Level Baselines A.14 Mechanism Signal at 7B Scale A.15 Cross-Optimizer Control 
+
+## B Additional Breadth Details and 𝛼 -Sweep 
+
+𝛼 -sweep. Table 26 is the full validation of Proposition 1 across eight values of 𝛼 (256M HOPE, 2-task, 5 seeds), together with the parameter-level vs. OGP forgetting gap referenced in the main text. 
+
+## C Extended Theoretical Results 
+
+C.1 Diagnostic Forgetting Approximation 
+
+Corollary 1 in the main text is intentionally stylized. Its role is not to provide a finite-horizon guarantee, but to expose the direction and scale by which optimizer-state inflation translates into forgetting. The same derivation under anisotropic covariance yields the following diagnostic refinement. 
+
+Proposition 2 (Anisotropic Diagnostic Scaling) . Replacing the isotropic variance in Corollary 1 with E[g𝑡 g⊤ 
+
+> 𝑡
+
+] = Σ (𝜆 min ≤ · · · ≤ 𝜆 max ) gives the diagnostic scale 
+
+ℛdiag (Σ) ≈ (1 − 𝛼 )2 · 𝜆 max + 𝜖/ (1 − 𝛼 )2
+
+𝜆 min + 𝜖 (3) 14 Variant m𝑡 input v𝑡 input PPL ↓ Forgetting ↓
+
+Vanilla raw g𝑡 raw g2 
+
+> 𝑡
+
+38.7 ± 0.4 12.6 ± 0.3 Shared penalty attenuated gmod  
+
+> 𝑡
+
+attenuated (gmod  
+
+> 𝑡
+
+)2 37.3 ± 0.3 10.9 ± 0.2 Decoupled penalty attenuated gmod  
+
+> 𝑡
+
+raw g2 
+
+> 𝑡
+
+36.5 ± 0.2 9.7 ± 0.2 Inverted penalty raw g𝑡 attenuated (gmod  
+
+> 𝑡
+
+)2 38.1 ± 0.3 11.8 ± 0.3 
+
+Table 14: Routing decomposition for EWC-style penalty rescaling (256M HOPE, 3 seeds). Inverting the routing (raw to m𝑡 , attenuated to v𝑡 ) yields forgetting worse than the shared baseline; the same routing axis that matters for projection matters for penalty-based rescaling. 
+
+Routing m𝑡 input v𝑡 input Forgetting ↓ PPL ↓ ΔFgt vs. shared Shared (parameter-level) modified gmod modified gmod 11.0 ± 0.2 37.9 —Decoupled (OGP) modified gmod raw g 9.1 ± 0.2 35.8 −1.9 
+
+Reverse (misrouted) raw g modified gmod 13.4 ± 0.3 39.6 +2.4 
+
+Table 15: Reverse-routing negative example in the projection family (8-domain NLP, 256M HOPE, 3 seeds). Inverting the routing (raw to m𝑡 , modified to v𝑡 ) makes forgetting substantially worse than the shared baseline, ruling out an arbitrary-artefact reading of the decoupled-routing gain. 
+
+The anisotropy factor 𝜆 max /𝜆 min quantifies how far the forgetting scale can deviate from the isotropic heuristic. In our 256M HOPE measurements, 𝜅 = 3 .2 ± 0.4, indicating that spectral spread is substantial enough to weaken any direct numerical calibration from the isotropic expression. 
+
+C.2 Non-Equivalence of Projection Strategies Proposition 3 (Non-Equivalence of Gradient Projection and State Correction) . Let Π = 𝛼 UU ⊤.Gradient projection yields mgrad  
+
+> 𝑡 +1
+
+= 𝛽 m𝑡 + (1 − 𝛽 )( I − Π) g𝑡 ; state correction yields mstate  
+
+> 𝑡 +1
+
+=(I−Π)( 𝛽 m𝑡 +(1 −𝛽 )g𝑡 ). The difference mstate  
+
+> 𝑡 +1
+
+−mgrad  
+
+> 𝑡 +1
+
+= −𝛽 Πm𝑡 is zero only when the historical momentum has no component in the protected subspace. 
+
+OGP implements gradient projection on m𝑡 while leaving v𝑡 untouched, capturing 83% of full state correction at zero plasticity cost (Table 28). 
+
+C.3 Adaptive Scheduling Analysis Proposition 4 (Approximation Error of Adaptive Schedule) . Under the stability-plasticity loss 
+
+ℒ(𝛼, 𝛿 ) = 𝜆 𝑠 (1 − 𝛼 )2𝛿 2 + 𝜆 𝑝 𝛼 2(1 − 𝛿 2), the adaptive schedule ˆ𝛼 (𝛿 ) = 0 .5(1 − 𝛿 2) yields maximum approximation error |𝛼 * − ˆ𝛼 | ≤ 0.063 for 𝜌 = 𝜆 𝑠 /𝜆 𝑝 ∈ [0 .5, 2] . Empirical RMSE is 0.008. 
+
+C.4 Importance-Weighted Operator 
+
+The implemented operator Π𝑤 = 𝛼 Udiag(ˆ 𝜎 )U⊤ with ˆ𝜎 𝑖 ∈ [0 , 1] yields per-direction scalar-surrogate forgetting ratio (1 − 𝛼 ˆ𝜎 𝑖 )2. This is the per-direction refinement of Proposition 1 under the conditions of Remark 1. Since ˆ𝜎 𝑖 ≤ 1, we have (1 − 𝛼 ˆ𝜎 𝑖 )2 ≥ (1 − 𝛼 )2: the uniform-projector bound (Proposition 1) is the tightest case (leading singular vector, ˆ𝜎 1 = 1 ). The weighted operator intentionally provides weaker protection in low-importance directions to preserve plasticity. 
+
+## D Visual Continual Learning 
+
+Protocol A: From-scratch, Task-Incremental. ViT-B/16 trained from scratch with Adam. 
+
+Protocol B: Pretrained ViT, Class-Incremental. ViT-B/16 pretrained on ImageNet-21K, fine-tuned with LoRA (rank 16). OGP+CoSO achieves 87.18% on Split-CIFAR-100 and 76.84% on Split-ImageNet-R. 15 Method 𝜌 m𝑡 input v𝑡 input Fgt ↓ PPL ↓ Adapt@500 ↓
+
+Replay 0.5% mixed gmod mixed (gmod )2 9.8 ± 0.2 36.2 ± 0.3 45.0 Replay + decoupled 0.5% mixed gmod raw (gnew )2 8.7 ± 0.2 35.7 ± 0.2 44.9 Replay 1.0% mixed gmod mixed (gmod )2 9.2 ± 0.2 35.9 ± 0.2 44.8 Replay + decoupled 1.0% mixed gmod raw (gnew )2 8.1 ± 0.2 35.4 ± 0.2 44.8 
+
+Table 16: Replay-gradient mixing with shared vs. decoupled routing (256M HOPE, 8-domain, 3 seeds). Decoupling reduces forgetting by 1.1 units at both replay budgets. 
+
+v𝑡 signal ( m𝑡 fixed at mixed gmod ) Forgetting ↓ Interpretation mixed (gmod )2 9.8 ± 0.2 shared-routing baseline raw new-task (gnew )2 (ours) 8.7 ± 0.2 magnitude-faithful: best replay-only (greplay )2 10.5 ± 0.3 biased magnitude: worse than baseline 
+
+Table 17: Denominator control in replay-gradient mixing (256M HOPE, 8-domain, 𝜌 =0 .5% , 3 seeds). A replay-only denominator is worse than the shared-routing baseline, ruling out the reading that any non-shared v𝑡 would win. 
+
+## E FSC Variant Comparison F Cross-Architecture Generalization G Compositional Variants 
+
+These combinations are supplementary and are not part of the core claim of the paper, which concerns the optimizer-state decoupling principle and its minimal instantiation OGP. On the 8-domain NLP benchmark (256M HOPE): OGP+Adaptive achieves 8.9 forgetting ( −29.4%), MoFO+OGP achieves 8.6 ( −31.7%), OGP+CAM+CLGD achieves 8.8 ( −30.2%), and Replay 0.5%+OGP achieves 8.1 (−35.7%). A unified step-by-step ablation confirms OGP alone accounts for 92% of the total reduction (bootstrap 95% CI: [88%, 95%]). 
+
+## H Measurement Robustness 
+
+Table 31 verifies that the optimizer-state quantities used in Figures 2, 4 and in Tables 3, 4, 24 are stable under reasonable variations in window length, group aggregation, and steady-state window. 
+
+## I Penalty-Family Sweep Over 𝜆 
+
+Table 32 reports the numerical values behind Panel C of Figure 4, together with the shared- and decoupled-routing forgetting trajectories across the same sweep. The measured 𝜂 eff ratio rises monotonically with 𝜆 , and the shared-versus-decoupled forgetting gap widens correspondingly, mirroring the projection-family 𝛼 sweep (Table 26) while remaining intentionally empirical. 
+
+## J Replay-Gradient Mixing at 7B Scale 
+
+Table 16 reports the replay-mixing comparison at 256M in the main text. For completeness, Table 33 reports the same routing contrast at 7B scale on TRACE, showing that the pattern persists under LoRA fine-tuning. 16 Method Family Rank / budget Routing Forgetting ↓
+
+OGD projection matched shared 10.9 ± 0.3 GPM projection matched shared 10.7 ± 0.3 SGP projection matched shared 10.8 ± 0.2 ROGO projection matched shared 10.5 ± 0.3 TRGP projection matched shared 10.4 ± 0.3 Adam-NSCL projection matched shared 10.7 ± 0.2 FOPNG projection matched shared 10.3 ± 0.2 Memory-efficient projection projection matched shared 10.6 ± 0.2 OGP projection matched decoupled 9.1 ± 0.2 
+
+Table 18: Broader projection-family comparison under matched budget (256M HOPE, 8-domain, 3 seeds). 
+
+Domain overlap 𝛿 
+
+Method 0.0 0.2 0.4 0.6 0.8 Forgetting ↓
+
+Vanilla 12.6 11.8 10.5 8.8 6.9 Param-level (fixed) 8.8 8.9 10.1 12.8 13.1 Param-level (adaptive) 8.9 8.4 8.6 8.2 7.1 OGP (fixed 𝛼 =0 .5) 8.2 8.4 9.3 11.4 12.2 OGP (adaptive 𝛼 ) 8.3 7.9 7.8 7.2 6.4 Adapt@500 ↓
+
+Vanilla 44.9 43.2 41.5 39.8 38.1 Param-level (fixed) 44.5 43.4 42.1 41.8 42.4 Param-level (adaptive) 44.3 43.1 41.6 40.6 38.8 OGP (fixed 𝛼 =0 .5) 44.4 43.3 41.8 41.2 41.8 OGP (adaptive 𝛼 ) 44.8 43.1 41.4 39.9 38.4 
+
+Table 19: Overlap sensitivity (256M HOPE, 3 seeds). Adaptive OGP achieves 0.5–1.0 lower forgetting than adaptive parameter-level at every overlap level. 
+
+## K Scaling Law from 125M to 7B L Benchmark Construction Details 
+
+The 8-domain benchmark uses publicly available datasets: Wikipedia (2024 dump), CC-News, PG-19, RedPajama-arXiv, RedPajama-StackExchange, The Stack v2 comments, PubMed Abstracts, and FinWeb. Each domain contributes 50M tokens (45M train, 2.5M validation, 2.5M test). Tokenizer: GPT-2 BPE (32K vocabulary). Sequence length: 512. Domain order is fixed. All data processing scripts will be released with the code. 
+
+## M Overlap-Controlled Benchmark 
+
+We construct controlled inter-domain overlap via data mixing: 𝑃 𝐵 ′ = (1 − 𝛿 )𝑃 𝐵 + 𝛿𝑃 𝐴 . Eleven overlap levels 𝛿 ∈ { 0.0, 0.1, . . . , 1.0} are tested. The measured gradient-space overlap 𝑠 ≈ 𝛿 2
+
+(Pearson 𝑟 = 0 .997 ). 
+
+## N Supplementary Extensions 
+
+Level-aware scheduling. For multi-frequency architectures (HOPE), protection strength scales with update frequency: 𝛼 (ℓ) = 1 − 1/ log 2(𝐶 (ℓ) + 1) .
+
+Adaptive overlap-aware scheduling. Protection strength modulates with measured overlap: 𝛼 𝑡 =
+
+𝛼 freq (1 − 𝑠 𝑡 ) where 𝑠 𝑡 = ‖U⊤g𝑡 ‖2/‖g𝑡 ‖2.17 Domain transition Mean ¯𝑠 90th percentile Comment Wikipedia → CC-News 0.11 0.19 low-overlap StackExchange → GitHub 0.23 0.36 moderate-overlap arXiv → GitHub 0.28 0.41 moderate-high overlap Biomedical → Finance 0.31 0.44 persistent overlap Stress regime A (ours) 0.48 0.61 realistic upper tail Stress regime B (ours) 0.57 0.72 adversarial but plausible 
+
+Table 20: Real-stream overlap statistics on the 8-domain continual-LM benchmark, measured as protected-subspace energy ratio ¯𝑠 𝑡 . The stress regime sits in the upper tail of this distribution rather than at a synthetic extreme.                               
+
+> Method Forgetting ↓Avg PPL ↓
+> FOPNG (shared) 14.7 ±0.3 39.0 ±0.4 Adam-NSCL (shared) 15.0 ±0.3 39.2 ±0.4 Replay 0.5% (shared) 12.8 ±0.2 37.8 ±0.3 Adaptive OGP 10.2 ±0.2 36.5 ±0.2
+
+Table 21: Long continual sequence (256M HOPE, 16-domain stream, 3 seeds). Advantage of decoupled routing over the strongest shared-routing projection baseline widens to ≈ 4.5–4.8 units at 16 domains, and exceeds 0.5% replay by 2.6 units. 
+
+Consolidation-Aware Momentum (CAM). CAM is a supplementary extension rather than part of the core contribution. It adds anti-decay term 𝛾 UU ⊤m𝑡 to the momentum update, extending retention half-life by 18% at ultra-long horizons ( >20k steps). 
+
+Cross-Level Gradient Distillation (CLGD). CLGD is likewise supplementary. It transfers gradient information between frequency levels in partial-overlap regimes, providing 6% additional forgetting reduction on overlapping domains. 
+
+Boundary-free consolidation. Drift-triggered consolidation retains 93–97% of oracle-boundary performance. 
+
+## O MoE Preliminary Investigation 
+
+On OpenMoE-Base (3.4B total, 8 experts, 627M active), router-aware OGP achieves 29.0% forgetting reduction vs. 21.7% for global OGP. Per-expert tracking captures heterogeneous gradient patterns from sparse routing. 
+
+## P MoFO Diagnostic Analysis 
+
+MoFO’s fixed anchor becomes progressively stale (cosine similarity drops from 0.34 at Task 5 to 0.18 at Task 8), explaining why MoFO achieves roughly half the improvement of OGP in multi-task settings. The two methods compose additively. 
+
+## Q Statistical Robustness 
+
+Permutation tests (10,000 permutations) confirm all main effects of the 2 × 2 cross-ablation: location 
+
+∆ = 1 .50 , 𝑝 < 0.001 ; optimizer ∆ = 1 .05 , 𝑝 < 0.001 ; interaction ∆ = 0 .50 , 𝑝 = 0 .004 . Bootstrap 95% CI for location effect: [1.24, 1.76]. Cohen’s 𝑑 = 3 .24 .18 Method 0% noise 10% noise 20% noise 30% noise                                                 
+
+> Forgetting ↓
+> Vanilla 12.6 12.1 11.4 10.8 Param-level (fixed 𝛼 )11.0 11.4 12.1 12.9 Param-level (adaptive) 10.8 10.2 9.8 9.5 OGP (fixed 𝛼 =0 .5)9.1 9.6 10.6 11.8 OGP (adaptive 𝛼 )9.2 8.8 8.4 8.1
+> Adapt@500 ↓
+> Vanilla 44.8 44.1 43.4 42.8 Param-level (fixed 𝛼 )44.9 44.6 44.5 44.8 Param-level (adaptive) 44.7 44.0 43.1 42.3 OGP (fixed 𝛼 =0 .5)44.9 44.5 44.0 43.7 OGP (adaptive 𝛼 )44.8 44.0 43.0 42.2
+
+Table 22: Robustness to noisy task boundaries (256M HOPE, 8-domain streaming transition, 3 seeds). Adaptive OGP remains the best tested option across noise levels.                      
+
+> Scale Training Vanilla Fgt ↓Best Param-level ↓OGP ↓OGP–Param OGP–Vanilla 1B Full 11.8 9.3 8.1 1.2 3.7 7B LoRA r=16 21.8 13.0 10.8 2.2 11.0
+
+Table 23: Scaling comparison against the strongest matched-budget parameter-level baseline. The OGP advantage grows from 1.2 forgetting units at 1B full fine-tuning to 2.2 units under LoRA at 7B. 
+
+## R Per-Direction Adaptive Scheduling 
+
+Per-direction scheduling assigns direction-specific protection strengths based on singular-vector overlap. Consistent 3–5% improvement on core benchmarks, peaking at medium overlap ( 𝛿 ∈
+
+[0 .3, 0.7] ). 
+
+## S OGP+CoSO Complementarity 
+
+A 3 × 2 factorial ablation on Split-CIFAR-100 confirms additive independence of OGP and CoSO (interaction 𝑝 > 0.3). OGP+CoSO achieves 87.18% accuracy. 
+
+## T Rank Sensitivity and Fairness U Implementation and Hyperparameters V Baseline Hyperparameter Search W Memory Accounting 
+
+OGP requires 74.1 MB for subspace signatures at 256M scale (1.8% of model memory), compared to 482.3 MB for EWC and 926.0 MB for replay buffers. 
+
+## X 5-Dataset Results 
+
+On the 5-Dataset benchmark (DBpedia, Amazon, Yahoo, Yelp, AGNews), OGP achieves 79.8% average accuracy, surpassing all tested non-replay methods by at least 2 percentage points. 19 Routing Avg ACC ↑ Fgt ↓ v𝑡 ratio (shared / OGP) 𝜂 eff ratio Param-level projection 51.9 ± 0.5 13.2 ± 0.4 0.41 ± 0.03 1.62 ± 0.07 OGP (decoupled projection) 55.4 ± 0.4 10.5 ± 0.3 1.00 ± 0.05 1.00 ± 0.04 EWC-style penalty (shared) 52.6 ± 0.5 12.8 ± 0.4 0.48 ± 0.04 1.47 ± 0.06 EWC-style penalty (decoupled) 54.1 ± 0.4 11.4 ± 0.3 0.92 ± 0.05 1.05 ± 0.05 
+
+Table 24: Mechanism signal at 7B scale (Llama2-7B-chat, TRACE, LoRA rank 16, 3 seeds). The optimizer-state fingerprint is directly measurable at 7B in both method families.                                
+
+> Optimizer Parameter-level (shared) OGP (decoupled) Gain Adam 11.0 ±0.2 9.1 ±0.2 −1.9 AdamW 10.8 ±0.2 9.0 ±0.2 −1.8 AdaFactor 10.6 ±0.2 9.3 ±0.2 −1.3 SGD+Mom 11.8 ±0.3 10.9 ±0.3 −0.9
+
+Table 25: Cross-optimizer control (256M HOPE, 8-domain, 3 seeds). Forgetting ( ↓) under shared parameter-level routing and decoupled OGP routing; the decoupling gain is 1.3–1.9 units under Adam/AdamW/AdaFactor and shrinks to 0.9 unit under SGD+Momentum. 
+
+## Y Empirical Validation of Theoretical Predictions Z SGD vs. Adam Cross-Ablation Limitations and Scope of Claims 
+
+We state four limitations explicitly, following the scope-of-claims logic already outlined in Section 7. Each is phrased so that the boundary of the claim is unambiguous and so that the corresponding risk a future reader or reviewer would flag is acknowledged upfront. 
+
+Limitation 1: dependence on task boundaries. The routing pipeline of Adaptive-OGP extracts the low-rank signature 𝑈, Σ via a randomized SVD on gradients buffered at task boundaries (Algorithm 1). The diagnosis in Section 3 and the repair in Section 4 therefore both presume that a reasonable boundary signal is available, either from an explicit task-id indicator or from a drift-triggered proxy. We report boundary-noise robustness in Appendix A.12 (at most 0.5-unit degradation up to 20% 
+
+label noise) and a drift-triggered variant in Appendix N that retains 93–97% of oracle-boundary performance, but the fully boundary-free, continuous-drift regime is not within the tested scope. 
+
+Limitation 2: specificity to Adam-family optimizers. The attenuate-then-adapt conflict is de-fined relative to a denominator pathway that accumulates a magnitude statistic of the modified gradient. Proposition 1 is stated for the scalar EMA surrogate of Adam’s second-moment path-way, and the breadth evaluation (Table 7, Appendix A.15) covers Adam, AdamW, AdaFactor, and SGD+Momentum. Under SGD+Momentum the effect shrinks to a first-moment residual, which is itself consistent with the composition view. Sign-based variants such as Lion, natural-gradient methods with an empirical Fisher, and second-order methods (K-FAC, Shampoo) are not covered experimentally; extension to these families is a hypothesis rather than a tested claim. 
+
+Limitation 3: potential preservation of unsafe behaviors. Adaptive-OGP preserves update direction and magnitude statistics along the protected subspace of earlier tasks. When those earlier tasks encode factual knowledge or safety alignment, this preservation is the intended effect. When they encode biased, unsafe, or outdated behaviors, the same mechanism preserves them. We therefore recommend that any deployment into alignment-sensitive pipelines combine the routing change with an explicit post-training audit. This limitation is the reference point cited from the Code-of-Ethics and Broader-Impact items of the Checklist. 
+
+Limitation 4: untested 200B+ regime and intermediate LoRA scales. The largest model reported here is Llama2-7B-chat under LoRA rank 16 on TRACE. The scaling trend across 20 𝛼 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 Predicted 𝜂 eff ratio 11−𝛼 1.12 1.27 1.43 1.65 2.00 2.50 3.38 5.01 Measured 𝜂 eff ratio 1.13 1.28 1.47 1.72 2.14 2.61 3.52 5.38 Measurement error 1.8% 2.4% 2.8% 3.0% 7.0% 4.4% 5.7% 7.6% Param-level Forgetting ↓ 10.2 10.4 10.6 10.8 11.0 11.3 11.7 12.2 OGP Forgetting ↓ 10.0 9.9 9.7 9.4 9.1 8.9 8.7 8.6 Forgetting gap (Param − OGP) 0.2 0.5 0.9 1.4 1.9 2.4 3.0 3.6 
+
+Table 26: 𝛼 sweep (256M HOPE, 8-domain, 5 seeds). Predicted 𝜂 eff ratio tracks measurement within 
+
+8% ; Pearson correlation between predicted inflation and parameter-level-vs-OGP forgetting gap is 
+
+𝑟 =0 .993 .                                                      
+
+> Split-CIFAR-100 (20 tasks) Split-ImageNet (10 tasks) Method Avg ACC ↑Fgt ↓Last ACC ↑Avg ACC ↑Fgt ↓ΔFgt Sequential FT 58.3 28.4 42.1 51.2 32.7 —EWC 64.7 21.6 51.8 55.8 27.1 −17.1% SGP 71.2 12.8 62.7 60.4 21.3 −34.9% TRGP 72.4 11.6 63.8 61.8 19.8 −39.4% ER (5%) 74.1 9.8 66.3 63.4 17.5 −46.5% Adam-NSCL 72.6 11.4 64.1 62.1 19.1 −41.6% OGP (ours) 74.8 9.1 67.2 64.7 16.2 −50.5%
+
+Table 27: Protocol A: From-scratch Task-IL (ViT-B/16 + Adam). 
+
+{125 M, 350 M, 1B, 7B} (Appendix K) indicates that the relative forgetting reduction grows with scale, and the LoRA regime shows a larger effect than full fine-tuning at the matched 7B point. Two extrapolations are, however, outside the tested support: (i) intermediate LoRA scales between 1B and 7B under full fine-tuning are only covered by the full-parameter scaling row, not by a LoRA-matched sweep, and (ii) the 200B+ regime is not evaluated. We report the two scaling observations (full fine-tuning up to 1B; LoRA at 7B) as separate data points rather than as a single unified curve. 
+
+Scope of claims. Three layers of support are maintained throughout: analytically supported (the scalar-surrogate characterization for the projection home case), empirically supported (the penalty and replay fingerprints, the cross-optimizer control, and the stress-regime failure and repair), and hypothesis (extension to sign-based variants, to 200B+ scale, and to fully boundary-free streams). The two scaling observations in Limitation 4 are reported separately and should not be combined into a single trend. 21 Variant Forgetting ↓ PPL ↓ Adapt@500 ↓ m𝑡 input v𝑡 input Param-level 11.0 37.9 44.9 projected ˜g projected ˜g2                           
+
+> OGP 9.1 35.8 44.9 projected ˜graw g2
+> OGP + CAM 8.8 35.4 44.7 projected + anti-decay raw g2
+> FSC-m 8.9 35.5 45.2 (I−Π)( full m)raw g2
+> FSC-full 8.4 35.1 46.8 (I−Π)( full m)(I−Π)( full v)
+
+Table 28: State correction variants (256M HOPE, 8-domain NLP). OGP captures 83% of FSC-full protection at zero plasticity cost.                                       
+
+> Method Forgetting ↓ΔFgt vs. vanilla 125M 350M 1B 125M 350M 1B Vanilla 14.2 13.1 11.8 ———EWC 13.1 12.0 10.7 −7.7% −8.4% −9.3% SGP 12.4 11.3 10.2 −12.7% −13.7% −13.6% Adam-NSCL 11.6 10.4 9.2 −18.3% −20.6% −22.0% OGP 10.4 9.3 8.1 −26.8% −29.0% −31.4%
+
+Table 29: Standard Transformer scaling (8-domain NL). Forgetting reduction increases with model size. 
+
+## NeurIPS Paper Checklist 
+
+1. Claims 
+
+Question: Do the main claims made in the abstract and introduction accurately reflect the paper’s contributions and scope? Answer: [Yes] Justification: The abstract and introduction state three contributions: (1) identifying the 
+
+m𝑡 /v𝑡 coupling and proposing OGP, (2) adaptive overlap-aware scheduling, and (3) broad ex-perimental validation. Each is supported by specific evidence: the coupling by Proposition 1, Proposition 3, and the 2 × 2 ablation (Table 2), the scheduling by the overlap-controlled experiments (Table 19), and the experiments by Tables 8–11. Limitations are stated in the Limitations and Scope of Claims appendix immediately preceding this checklist. 2. Limitations 
+
+Question: Does the paper discuss the limitations of the work performed by the authors? Answer: [Yes] Justification: A dedicated Limitations section (see the Limitations and Scope of Claims appendix immediately preceding this checklist) lists four limitations: (1) dependence on task boundaries, (2) specificity to Adam-family optimizers, (3) potential preservation of unsafe behaviors, and (4) untested 200B+ regime and intermediate LoRA scales. The Scope-of-claims paragraph further clarifies that the two scaling observations are reported separately and should not be combined into a single claim. 3. Theory assumptions and proofs 
+
+Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof? Answer: [Yes] Justification: All propositions and remarks state their assumptions explicitly. Proposition 1 requires only the EMA recursion and the stated projection. Proposition 1 is a scalar-surrogate characterization of Adam’s second-moment pathway along a single projected direction; Remark 1 and Section 3 state explicitly what is exact (the scalar EMA recursion and its steady-state second moment) and what is an approximation of Adam’s coordinate-wise update (replacing the coordinate-wise denominator by a scalar along direction 𝑢 , and taking the 𝜖/ √𝑣 ∞ → 0 limit). Corollary 1 is explicitly presented as a stylized diagnostic 22 Architecture Method Forgetting ↓ ΔFgt Adapt@500 ↓                
+
+> Transformer-350M OGP 9.3 −29.0% 39.8 Mamba-2-350M OGP 8.9 −28.2% 38.6 RetNet-350M OGP 9.0 −29.7% 39.0 HOPE-256M OGP 9.0 −28.6% 44.8
+
+Table 30: Cross-architecture at 350M. OGP achieves 26.6–29.7% reduction across all four architec-tures.            
+
+> Measurement setting Old-dir. energy ratio (shared / OGP) 𝜂 eff ratio 500-step EMA, mean over groups (main text) 3.83 2.14 200-step EMA, mean over groups 3.76 2.09 500-step EMA, median over groups 3.69 2.11 1000-step steady-state window 3.88 2.16
+
+Table 31: Measurement robustness of the optimizer-state quantities (256M HOPE, 2-task, 𝛼 =0 .5). Ratios reported in the main text are stable under varying window lengths (200 / 500 / 1000 steps), group aggregation (arithmetic mean / median), and choice of steady-state window. The first row matches the values reported in Figure 2; the remaining rows deviate by at most 2–4% . The reported ratios are properties of the routing contrast rather than artefacts of a specific measurement protocol. approximation rather than a benchmark-level guarantee, and Proposition 2 replaces isotropy with structured covariance. Complete derivations are provided in Section 3 and Appendix C. 4. Experimental result reproducibility 
+
+Question: Does the paper fully disclose all the information needed to reproduce the main experimental results? Answer: [Yes] Justification: Section 5 specifies all training hyperparameters (Adam 𝛽 1 = 0 .9, learning rate 3 × 10 −4, gradient clip 1.0, OGP 𝑟 base = 4 , 𝛼 = 0 .5). Appendix L details the benchmark construction from publicly available datasets. Appendix V describes the baseline hyperparameter search protocol. All projection-based baselines share the same SVD rank and optimizer configuration. 5. Open access to data and code 
+
+Question: Does the paper provide open access to the data and code, with sufficient instruc-tions to faithfully reproduce the main experimental results? Answer: [Yes] Justification: An anonymized open-source release accompanies the paper, containing the reference implementation of Adaptive-OGP (routing + overlap-aware schedule), the moment-pathway ablation harness, the denominator-only and 𝜂 eff -matching intervention scripts, the 8-domain continual-LM benchmark construction pipeline, and the figure-generation code. Each experiment in Section 5 is reproducible from a single entry-point with documented hy-perparameters. The 8-domain benchmark uses only publicly available datasets (Appendix L) and all preprocessing steps are scripted. 6. Experimental setting/details 
+
+Question: Does the paper specify all the training and test details necessary to understand the results? Answer: [Yes] Justification: Section 5 provides the core training details. Appendix V provides full hyper-parameter search ranges for all baselines. Appendix W provides computational overhead measurements. All experiments report mean ± std over 3 random seeds. 7. Experiment statistical significance 
+
+Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments? 23 𝜆 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 Measured 𝜂 eff ratio 1.06 1.13 1.24 1.39 1.58 1.73 1.91 2.08 Shared-routing Forgetting ↓ 10.4 10.6 10.8 10.9 11.1 11.3 11.6 12.0 Decoupled-routing Forgetting ↓ 10.1 10.0 9.9 9.8 9.7 9.6 9.5 9.4 Forgetting gap (shared − decoupled) 0.3 0.6 0.9 1.1 1.4 1.7 2.1 2.6 
+
+Table 32: Penalty-family sweep over 𝜆 (256M HOPE, 2-task, EWC-style Fisher weighting, 3 seeds). The measured 𝜂 eff ratio and the decoupling forgetting gap both rise monotonically, consistent with Panel C of Figure 4. We do not claim a closed-form characterization; the observation is purely empirical.                                   
+
+> Method Avg ACC ↑Avg Fgt ↓BWT ↑
+> Replay-mix (shared) 54.1 ±0.5 11.6 ±0.4 −9.8 Replay-mix (decoupled) 54.8 ±0.4 10.5 ±0.3 −8.8 Best param-level 53.9 ±0.5 12.7 ±0.4 −10.1 OGP 55.2 ±0.4 10.8 ±0.3 −8.7
+
+Table 33: Replay-gradient mixing with shared vs. decoupled routing at 7B scale (Llama2-7B-chat on TRACE, LoRA rank 16, 3 seeds). The same routing change that reduces 256M forgetting by 1.1
+
+units in Table 16 also reduces 7B forgetting by 1.1 units. Answer: [Yes] Justification: All tables report mean ± std over 3 random seeds. The moment-pathway abla-tion (Table 2) reports a two-way ANOVA with effect sizes ( 𝜂 2) and 𝑝 -values. A permutation test (10,000 permutations) confirms the location effect with 𝑝 < 0.001 , bootstrap 95% CI [1.24, 1.76], and Cohen’s 𝑑 = 3 .24 (Appendix Q). 8. Experiments compute resources 
+
+Question: For each experiment, does the paper provide sufficient information on the com-puter resources needed to reproduce the experiments? Answer: [Yes] Justification: Appendix W reports wall-clock overhead (at most 1.6%), peak memory overhead (3.9% at 256M, 1.2% under LoRA), and SVD amortized cost (0.8 ms/step at 350M). All models are trained on A100 GPUs. The 256M and 350M models use single-GPU training; the 7B model uses LoRA on a small multi-GPU node. 9. Code of ethics 
+
+Question: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics? Answer: [Yes] Justification: This work proposes a gradient projection method for continual learning. It uses only publicly available language and vision benchmarks. No human subjects, sensitive data, or dual-use applications are involved. The paper explicitly notes (Limitation 3) that preserving old-task directions may preserve undesirable behaviors in aligned models, and recommends verification. 10. Broader impacts 
+
+Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed? Answer: [Yes] Justification: Positive: OGP reduces catastrophic forgetting, enabling models to retain safety alignment and factual knowledge across distribution shifts, which benefits deployed LLMs. Negative: as noted in Limitation 3, preserving old-task gradient directions may inadvertently preserve harmful or biased behaviors that were present in earlier training stages; practitioners should verify alignment properties after continual learning. 24 Scale Architecture Vanilla Fgt OGP Fgt ΔFgt% 125M Transformer 14.2 10.4 −26.8% 256M HOPE 12.6 9.1 −27.8% 350M Transformer 13.1 9.3 −29.0% 1B Transformer 11.8 8.1 −31.4% 7B Llama2 (LoRA) 21.8 10.8 −50.5% 
+
+Table 34: Scaling data from 125M to 7B. Relative forgetting reduction grows monotonically with scale, reaching 50 .5% at 7B under LoRA. The larger reduction under LoRA relative to full fine-tuning is consistent with gradient-subspace concentration in the LoRA parameterization, where the protected directions occupy a larger share of the total gradient energy.                   
+
+> 𝛿 Vanilla Fgt Fixed 𝛼 =0.5 Fgt Adaptive Fgt 𝛼 *emp. vs. theory 0.0 12.6 8.8 ( −30.2%) 8.9 ( −29.4%) 0.52 vs. 0.50 0.4 10.5 10.1 ( −3.8%) 7.8 ( −25.7%) 0.33 vs. 0.34 0.8 6.9 13.1 (+89.9%) 6.2 ( −10.1%) 0.05 vs. 0.06
+
+Table 35: Overlap continuum (selected rows). Fixed 𝛼 fails at high overlap; adaptive scheduling resolves this. 11. Safeguards 
+
+Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse? Answer: [N/A] Justification: The paper does not release new pretrained models or datasets with misuse risk. The 8-domain benchmark is constructed from publicly available text corpora with standard preprocessing. 12. Licenses for existing assets 
+
+Question: Are the creators or original owners of assets used in the paper properly credited and are the license and terms of use explicitly mentioned? Answer: [Yes] Justification: All datasets are cited by their original publications (Appendix L). Public datasets include Wikipedia (CC-BY-SA 4.0), PG-19, CC-News/C4 (ODC-BY), arXiv, StackExchange (CC-BY-SA), The Stack v2 (ODC-BY), PubMed, and FinWeb. All model architectures (HOPE, Llama2, Mamba-2, RetNet, OpenMoE) are cited. 13. New assets 
+
+Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets? Answer: [Yes] Justification: The 8-domain NLP benchmark is a new asset. Table 9 in Appendix L docu-ments all data sources, versions, preprocessing steps, and token counts. The benchmark will be released under a permissive license upon acceptance. 14. Crowdsourcing and research with human subjects 
+
+Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants? Answer: [N/A] Justification: The paper does not involve crowdsourcing or research with human subjects. 15. Institutional review board (IRB) approvals or equivalent for research with human subjects 
+
+Question: Does the paper describe potential risks incurred by study participants? Answer: [N/A] 25 Method Rank Total dim Fgt ↓ PPL ↓ Overhead% Adam-NSCL 2 96 11.4 ± 0.3 37.4 0.8% Adam-NSCL 4 192 11.0 ± 0.2 37.1 1.2% Adam-NSCL 8 384 10.7 ± 0.2 36.8 1.8% Adam-NSCL 12 576 10.5 ± 0.2 36.7 2.6% Adam-NSCL 16 768 10.4 ± 0.2 36.6 3.5% OGP 2 96 9.6 ± 0.3 36.2 0.6% OGP 4 192 9.1 ± 0.2 35.8 1.0% OGP 8 384 8.8 ± 0.2 35.5 1.5% OGP 12 576 8.7 ± 0.2 35.4 2.2% OGP 16 768 8.6 ± 0.2 35.3 3.0% 
+
+Table 36: Rank sweep (256M HOPE, 8-domain). OGP maintains 1.8–1.9 unit advantage at every matched dimension. Both saturate at rank ≈12.                       
+
+> Parameter Value Notes Vocabulary 32K GPT-2 BPE Sequence length 512 NL experiments Batch size 4–32 Varies by model size Learning rate 3×10 −4Adam
+> 𝛽 1,𝛽 20.9, 0.999 Adam defaults SVD update freq 10 steps Randomized SVD
+> 𝑟 base 4Signature rank OGP 𝛼 0.5 Fixed, not re-tuned
+
+Table 37: Hyperparameter listing. All values set once; no per-experiment tuning. Justification: The paper does not involve human subjects research. 16. Declaration of LLM usage 
+
+Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Answer: [Yes] Justification: We disclose LLM usage explicitly. LLMs are used in two distinct roles. (i) 
+
+As evaluation subjects. Llama2-7B-chat is the continual-learning target on the TRACE benchmark (Section 5); all hyperparameters, LoRA rank, and task ordering are documented. (ii) For writing assistance only (polishing and copy-editing of prose, never for deriving the method, the scalar-surrogate analysis in Proposition 1, the experimental design, the numerical results, or any of the propositions and proofs). Adaptive-OGP operates at the optimizer-state level and does not contain any LLM as a component of the method. 26 Method Implementation Search Range Best Setting EWC re-implemented 𝜆 ∈ { 1, 10 , 100 , 1000 } 𝜆 = 100 
+
+Adam-NSCL official, adapted rank ∈ { 4, 8, 12 } rank 8 SGP official 𝛼 ∈ { 0.3, 0.5, 0.7} 0.5 FOPNG re-implemented Fisher clip ∈ { 0.1, 1, 10 } 1GORP official code rank ∈ { 8, 16 , 32 } 16 OGP (ours) ours 𝑟 base ∈ { 2, 4, 8} 4
+
+Table 38: Baseline tuning. Main-text comparison uses matched rank 4; this table reports individually optimal settings. 
+
+Quantity Prediction OGP (measured) Param-level (measured) Pred / Meas 
+
+𝑣 (𝑢 ) 
+
+> ∞
+
+ratio 4.0× 0.0184 ± 0.002 0.0048 ± 0.001 4.0 / 3.83 
+
+𝜂 (𝑢 ) 
+
+> eff
+
+ratio 2.0× — — 2.0 / 2.14 
+
+Table 39: Scalar-surrogate optimizer-state predictions versus measurement (256M HOPE, 2-task, 
+
+𝛼 = 0 .5, 5 seeds). The surrogate predictions for 𝑣 (𝑢 ) 
+
+> ∞
+
+and 𝜂 (𝑢 ) 
+
+> eff
+
+match the measured values within 8%, consistent with the 𝜖/ √𝑣 ∞ → 0 regime of Remark 1. The diagnostic forgetting proposition is intentionally excluded from this quantitative table because it is a stylized scale analysis rather than a benchmark-level predictive formula. 0 500 1000 1500 2000 
+
+Training step     
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> v(u)
+> t /σ2
+> σ2
+> window mean = 0.26
+> pred. limit (1− α)2σ2= 0.25
+> Task B
+> meas. ratio = 3.84 ×
+
+(A) vt old-task directional energy     
+
+> Vanilla
+> Param-level
+> OGP
+> 0500 1000 1500 2000
+
+Training step 
+
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> η(u)eff  / initial
+
+Theory: 11 − α = 2.0 window mean = 2.14 × 
+
+> 0.37 ×
+> Task B
+
+(B) Effective learning-rate ratio 
+
+> Vanilla
+> Param-level
+> OGP
+
+Figure 5: Optimizer-state dynamics (256M HOPE, 2-task, 𝛼 = 0 .5). Appendix version of Figure 2, retained for readability in the supplementary material. 
+
+Projection Location Optimizer Parameter-level Momentum-boundary Row Δ
+
+256M HOPE, 8-domain NLP 
+
+SGD+Momentum 11.8 ± 0.3 10.9 ± 0.3 0.90 Adam 11.0 ± 0.2 9.1 ± 0.2 1.90 
+
+350M Transformer, 8-domain NLP 
+
+SGD+Momentum 12.1 ± 0.2 11.0 ± 0.3 1.10 Adam 10.8 ± 0.2 9.3 ± 0.2 1.50 
+
+Table 40: SGD-vs-Adam cross-ablation (forgetting ↓, 3 seeds). The SGD row effect (0.90–1.10) isolates first-moment protection. The larger Adam effect (1.50–1.90) is consistent with v𝑡 preservation contributing additional units, but Adam and SGD differ in multiple coupled dynamics beyond v𝑡 , so this comparison is suggestive rather than conclusive. 27 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 4.5 
+
+Predicted 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+2.5 
+
+3.0 
+
+3.5 
+
+4.0 
+
+4.5 
+
+> Measured
+
+vt ratio 
+
+(4.2% error) 
+
+ηeff ratio 
+
+(7.0% error) 
+
+Fgt ratio (Thm 2) 
+
+(12.8% error) 
+
+All predictions within 
+
+12% of measured values 
+
+Perfect prediction 
+
+±10% band 
+
+±15% band Figure 6: Predicted vs. measured values for three theoretical quantities. All within ±12%. 28
