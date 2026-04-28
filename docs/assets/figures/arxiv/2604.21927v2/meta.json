@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.21927v2/fig-001.webp",
+      "caption": "Figure 2: Ranking sensitivity persists across other benchmarks. Each panel shows the mean Kendall’s τ between regime specific method rankings, averaged over 11 randomly sampled task orders. Lower τ values indicate lower agreement between regimes in the ranking of the considered continual learning algorithms: online EWC, LwF, SI, and GEM. This disagreement is consistently observed across all considered benchmarks, namely Fashion MNIST, CIFAR-100, MNIST, QMNIST, and KMNIST, indicating that the relative ordering of these algorithms depends strongly on the fine-tuning regime used throughout the continual learning run.",
+      "page": 6,
+      "index": 1,
+      "width": 979,
+      "height": 871
+    },
+    {
+      "url": "assets/figures/arxiv/2604.21927v2/fig-002.webp",
+      "caption": "Table 1: Notation used in the theoretical analysis",
+      "page": 13,
+      "index": 2,
+      "width": 951,
+      "height": 567
+    },
+    {
+      "url": "assets/figures/arxiv/2604.21927v2/fig-003.webp",
+      "caption": "Figure 1: fine-tuning regime changes comparative conclusions (Fashion MNIST). (a) Standard continual learning methods exhibit different accuracy trends as the fine-tuning regime changes, with very large stds. (b) Pairwise Kendall’s τ between rankings of CL algorithms under different fine-tuning regimes shows frequent changes in their relative ordering. (c,d) Two representative task orders illustrate that ranking stability can vary substantially, from low agreement across regimes to relatively high agreement. Together, these results show that trainable depth can alter the relative ranking of CL algorithms, even within the same benchmark. Reported values are mean and std for the final accuracy metrics, for the considered CL methods (online EWC, LwF, SI, and GEM) over 11 sampled task orders.",
+      "page": 5,
+      "index": 3,
+      "width": 979,
+      "height": 888
+    }
+  ]
+}

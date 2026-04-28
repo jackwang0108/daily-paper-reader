@@ -1,0 +1,468 @@
+Title: Fine-Tuning Regimes Define Distinct Continual Learning Problems
+
+URL Source: https://arxiv.org/pdf/2604.21927v2
+
+Published Time: Tue, 28 Apr 2026 01:54:42 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+Preprint. 
+
+# FINE -T UNING REGIMES DEFINE DISTINCT CONTINUAL 
+
+# LEARNING PROBLEMS 
+
+Paul-Tiberiu Iordache 
+
+Bitdefender, Romania 
+
+tiiordache@bitdefender.com 
+
+Elena Burceanu 
+
+Bitdefender, Romania Politehnica University of Bucharest, Romania 
+
+eburceanu@bitdefender.com 
+
+## ABSTRACT 
+
+Continual learning (CL) studies how models acquire tasks sequentially while retaining previously learned knowledge. Despite substantial progress in benchmarking CL methods, comparative eval-uations typically keep the fine-tuning regime fixed. In this paper, we argue that the fine-tuning regime, defined by the trainable parameter subspace, is itself a key evaluation variable. We formalize adaptation regimes as projected optimization over fixed trainable subspaces, showing that changing the trainable depth alters the effective update signal through which both current task fitting and knowledge preservation operate. This analysis motivates the hypothesis that method comparisons need not be invariant across regimes. We test this hypothesis in task incremental CL, five trainable depth regimes, and four standard methods: online EWC, LwF, SI, and GEM. Across five benchmark datasets, namely MNIST, Fashion MNIST, KMNIST, QMNIST, and CIFAR-100, and across 11 task orders per dataset, we find that the relative ranking of methods is not consistently preserved across regimes. We further show that deeper adaptation regimes are associated with larger update magnitudes, higher forgetting, and a stronger relationship between the two. These results show that comparative conclusions in CL can depend strongly on the chosen fine-tuning regime, motivating regime-aware evaluation protocols that treat trainable depth as an explicit experimental factor. 
+
+## 1 INTRODUCTION 
+
+Continual learning (CL) studies how models acquire tasks sequentially while retaining prior knowledge, a challenge central to deploying machine learning systems in dynamic, real-world environments (Parisi et al., 2019; De Lange et al., 2022). At the core of CL lies the plasticity-stability trade-off: a model must remain plastic enough to learn new tasks while stable enough to avoid overwriting previously acquired knowledge, a phenomenon known as catastrophic forgetting (McCloskey & Cohen, 1989; Kirkpatrick et al., 2017). A rich ecosystem of methods has emerged to address this, spanning regularization-based approaches (Kirkpatrick et al., 2017; Zenke et al., 2017), distillation-based methods (Li & Hoiem, 2017), and gradient-projection strategies (Lopez-Paz & Ranzato, 2022), each making different assumptions about the nature of task interference. Yet despite this progress, these methods are almost universally evaluated under a single fixed training setup (Farquhar & Gal, 2018; van de Ven & Tolias, 2019), making it difficult to draw conclusions that generalize across different deployment conditions. A key factor that is routinely left uncontrolled is the adaptation regime, that is, which parameters are kept trainable throughout the CL sequence. This choice directly shapes the optimization geometry available to the model (Goodfellow et al., 2013) and fundamentally alters how the plasticity-stability trade-off manifests for each method. Regularization-based methods such as online Elastic Weight Consolidation (online EWC) and Synaptic Intelligence (SI) (Schwarz et al., 2018; Zenke et al., 2017), distillation-based approaches like Learning without Forgetting (LwF) (Li & Hoiem, 2017), and gradient-projection methods such as Gradient Episodic Memory (GEM) (Lopez-Paz & Ranzato, 2022) each interact differently with the trainable subspace. Notably, none of these methods is normative with respect to which subset of parameters should remain trainable, nor do they provide explicit guidance on this choice. As a result, there is no reason to expect their relative effectiveness to remain constant as the trainable depth varies (Kumar et al., 2022). Yet this interaction is almost never studied explicitly, and method comparisons are routinely drawn under a single fixed regime without acknowledging the dependence this introduces (Biesialska et al., 2020). We study this interaction by treating fine-tuning regimes as constrained optimization over parameter subspaces, enabling a systematic analysis of how CL method rankings depend on trainable depth and motivating the need for more controlled, regime-aware evaluation protocols. 1
+
+> arXiv:2604.21927v2 [cs.LG] 27 Apr 2026
+
+Preprint. The choice of trainable depth fundamentally reshapes the geometry and capacity of the optimization space in which learning unfolds. When updates are restricted to a limited subset of layers, the model is compelled to encode all incoming task-specific information within a constrained parameter subspace, effectively compressing both adaptation and retention mechanisms into a narrower channel. This concentration of representational burden amplifies competition between tasks, as newly acquired knowledge must coexist with, and often overwrite, previously stored information within the same limited set of parameters. In contrast, full-network fine-tuning allows updates to be distributed across a higher-dimensional space, enabling the model to allocate distinct regions of the parameter space to different tasks and thereby mitigate interference. As a result, the degree of trainable depth directly governs not only the model’s expressive flexibility but also the dynamics of interference and retention, making the performance of any continual learning algorithm inherently dependent on the structure and dimensionality of the underlying trainable subspace. Standard benchmarks typically evaluate methods using full-parameter updates across the entire architecture (Lomonaco & Maltoni, 2017; Hsu et al., 2018; van de Ven & Tolias, 2019), which may present an incomplete picture of algorithmic performance. If method rankings shift when the trainable subspace is restricted, then the perceived superiority of an algorithm might be conditional on the training regime rather than its intrinsic logic. This suggests that many comparative conclusions in the literature are regime-specific, necessitating more controlled, regime-aware protocols to ensure the robustness of continual learning methods. 
+
+Contributions: 
+
+• A subspace view of adaptation regimes. We formalize fine-tuning regimes in continual learning as constrained optimization over fixed trainable subspaces. Under this view, changing the regime changes not only the number of trainable parameters, but the feasible subspace in which optimization can occur throughout the task sequence. This makes explicit why adaptation regime affects the effective update signal seen by the learner, and why it should be treated as a meaningful evaluation variable rather than a background implementation detail. • A systematic empirical study across methods, datasets, and depths. We compare four standard continual learning methods, online EWC, LwF, SI, and GEM, across five trainable depth regimes, from training only the last residual block to full fine-tuning. We evaluate these methods on five benchmark datasets, namely MNIST, Fashion MNIST, KMNIST, QMNIST, and CIFAR-100, and across 11 sampled task orders for each dataset. Our results show that the relative ranking of methods can change substantially across regimes, demonstrating that comparative conclusions in continual learning may depend strongly on the chosen fine-tuning setup. • An optimization level interpretation of regime sensitivity. Beyond comparative ranking changes, we analyze how regime choice affects the underlying optimization behavior. We show that deeper adaptation is associated with larger update magnitudes, higher forgetting, and a stronger relationship between the two quantities. This provides an optimization level interpretation of regime sensitivity and helps explain why more permissive adaptation settings can produce different method behavior. 
+
+## 2 RELATED WORK 
+
+Relation to task ordering and benchmark variability. Several works have observed that the order in which tasks are presented can substantially affect CL performance, yet this dependence is typically treated as noise rather than as a structured property of the problem (Wołczyk et al., 2021; Evron et al., 2023). Benchmarks such as CLiMB (Srinivasan et al., 2022) highlight the variability induced by different task sequences, particularly in complex multimodal settings, but stop short of analyzing how this variability interacts with the training setup. Our work builds on this line of research and goes further by demonstrating that sensitivity to task ordering is itself regime-dependent: the same task ordering can lead to very different relative rankings of methods depending on which parameters are kept trainable, and this interaction must be treated as a joint design variable in CL evaluation. 
+
+Relation to parameter isolation and subspace adaptation. A prominent line of work seeks to reduce inter-task interference by isolating or decomposing parameters across tasks (Yoon et al., 2019; Konishi et al., 2023; Liang & Li, 2024). These methods implicitly acknowledge that the trainable subspace matters for CL, treating subspace selection as a mechanism for preventing forgetting by ensuring that parameters important for past tasks are not modified when learning new ones. However, they do so as an algorithmic component rather than as an evaluation variable. In contrast, we fix the subspace throughout the CL sequence and study how its choice affects the comparative performance of standard methods across a range of trainable depths, from the last block of a ResNet-18 to full fine-tuning, treating it as an explicit axis of analysis rather than a design choice internal to any single algorithm. 
+
+Relation to plasticity, stability, and the role of network depth. The plasticity-stability trade-off has been studied from multiple angles, including the effect of network architecture and layer-wise learning dynamics on forgetting 2Preprint. (Raghu et al., 2019; Achille et al., 2018). It is well established that different layers of a deep network encode information at different levels of abstraction, with earlier layers capturing more general, transferable features and later layers encoding task-specific representations (Yosinski et al., 2014). This layer-wise asymmetry has direct implications for CL: the choice of which layers to update determines both how much plasticity the model retains for new tasks and how vulnerable previously acquired representations are to overwriting. While prior work has explored freezing early layers as a heuristic for reducing forgetting (De Lange et al., 2022), no systematic study has examined how this choice interacts with and alters the comparative effectiveness of standard CL algorithms. Our work fills this gap by treating trainable depth as an explicit experimental variable rather than a fixed implementation detail. 
+
+Relation to evaluation methodology and reproducibility in continual learning. Rigorous evaluation in CL has received increasing attention, with several works arguing that existing benchmarks and protocols suffer from inconsistencies that limit the reproducibility and comparability of results (Farquhar & Gal, 2018; van de Ven & Tolias, 2019; Biesialska et al., 2020). Concerns include the choice of metrics, the influence of task ordering, and the sensitivity of conclusions to hyperparameter tuning, all of which can reverse method rankings across studies (Wortsman et al., 2020). Our work contributes a complementary and underexplored dimension to this discussion: the fine-tuning regime itself. We show that even when task ordering, architecture, and hyperparameters are held fixed, varying only the trainable parameter subspace is sufficient to reverse the relative ranking of well-established CL methods. This finding suggests that the adaptation regime should be treated as a first-class evaluation variable in future CL benchmarking efforts, alongside the task sequence and algorithm choice. 
+
+## 3 OUR APPROACH 
+
+Our key claim is that an adaptation regime is not merely a choice of how many parameters remain trainable. It determines which update directions remain available throughout the task sequence, and therefore changes the effective optimization signal seen by the learner. In continual learning, this matters because the learner must simultaneously fit the current task and preserve previously acquired knowledge. 
+
+Setup. We consider a sequence of tasks T1, . . . , TT learned sequentially by a model with parameters θ ∈ Rd. At task 
+
+t, the learner minimizes 
+
+Jt(θ) = Lt(θ) + λ Ωt(θ; θ1: t−1), (1) where Lt is the current-task loss and Ωt is the method-specific term used to preserve previously acquired knowledge. The purpose of Equation 1 is simply to separate the two forces that coexist in continual learning: fitting the new task and preserving the past. 
+
+Adaptation regime. An adaptation regime is defined by a fixed subset of trainable coordinates S ⊆ { 1, . . . , d },kept unchanged throughout the full continual learning run. We denote by PS the orthogonal projector that keeps the coordinates in S and zeros out all others. In other words, once a regime is fixed, only the gradient components on trainable parameters can induce updates. Under a first-order method with step size η > 0, the update at task t becomes 
+
+θ(m+1)  
+
+> t
+
+= θ(m) 
+
+> t
+
+− η P S ∇J t(θ(m) 
+
+> t
+
+), (2) where m indexes optimization steps within task t. Equation 2 is the key equation in this section: it makes explicit that the optimizer does not follow the full gradient of the objective, but only the component that lies in the trainable subspace. 
+
+Decomposing the update signal. To understand what changes across regimes, we decompose the projected gradient update in Equation 2 into the part coming from the current-task loss and the part coming from the preservation term: 
+
+g(S) 
+
+> t
+
+(θ) := PS ∇L t(θ), r(S) 
+
+> t
+
+(θ) := PS ∇Ωt(θ; θ1: t−1). (3) Using Equation 1, the projected gradient can then be written as 
+
+PS ∇J t(θ) = g(S) 
+
+> t
+
+(θ) + λr (S) 
+
+> t
+
+(θ). (4) The point of Equation 3 and Equation 4 is to isolate the two components of the projected update that every continual learning method must balance. The term g(S) 
+
+> t
+
+is the update signal coming from the current task, while r(S) 
+
+> t
+
+is the update signal induced by the preservation mechanism. A simple summary of their interaction is 
+
+Γt(S; θ) := ⟨g(S) 
+
+> t
+
+(θ), r (S) 
+
+> t
+
+(θ)⟩. (5) 3Preprint. If Γt(S; θ) is positive, the two signals are locally compatible in the trainable subspace. If it is negative, fitting the current task and preserving previous knowledge compete for the same feasible directions. 
+
+Why the regime matters. The regime changes all three quantities above. It changes the current-task update signal because some gradient directions become inaccessible when parts of the network are frozen. It changes the preservation signal because the continual learning mechanism can only act through the same trainable coordinates. And it changes their interaction because alignment or conflict is evaluated only in feasible directions. This is the sense in which trainable depth changes the effective optimization signal, not just the number of trainable parameters. 
+
+A minimal optimization consequence. Under standard smoothness assumptions, local progress depends on the norm of the projected update in Equation 2, not on the norm of the full gradient. Concretely, if Jt is L-smooth and 
+
+θ+ = θ − ηP S ∇J t(θ), (6) then for a sufficiently small step size, 
+
+Jt(θ+) ≤ J t(θ) − cη ∥PS ∇J t(θ)∥2 for some cη > 0. (7) A proof is given in Appendix A. The role of Equation 7 is limited but important: it does not prove rank changes across methods. Rather, it shows that under a fixed regime, the quantity governing local progress is the projected update, not the full gradient. This is why our analysis focuses on projected quantities. Combining Equation 4 with Equation 7 shows that local progress depends on the current-task signal, the preservation signal, and their interaction inside the trainable subspace. Changing the regime therefore changes the update that actually drives learning. 
+
+From theory to empirical validation. The analysis above yields direct empirical predictions, which we test in Section 4. At the comparative level, Figures 1 and 2 show that method rankings are not preserved across adaptation regimes, both within a single benchmark and across benchmark families. This is the observable consequence of changing the feasible update subspace through PS : once the effective optimization signal changes, different CL methods need not retain the same relative ordering. To probe the mechanism behind this effect, we then analyze measurable projected quantities. In particular, for each task, order, method, and regime, we consider the magnitude of the projected current-task signal ∥g(S) 
+
+> t
+
+∥, the magnitude of the projected preservation signal ∥r(S) 
+
+> t
+
+∥, their interaction Γt(S; θ), and the norm of the resulting projected update, ∥PS ∇J t(θ)∥2. Figure 3 examines one concrete instance of this mechanism by relating gradient magnitude to forgetting, showing that both increase with trainable depth and that their coupling becomes stronger in more permissive regimes. 
+
+Why depth can change comparative conclusions. Different continual learning methods induce different preservation signals r(S) 
+
+> t
+
+, and their relative effectiveness depends on how these signals interact with the current-task signal g(S)
+
+> t
+
+inside the trainable subspace. In deep networks, changing the regime alters not only the size of this subspace, but also where adaptation is allowed to occur. Shallow regimes restrict updates to late layers, favoring feature reuse and local adjustment, whereas deeper regimes expose more representation-changing directions and more opportunities for interference. Consequently, changing trainable depth changes the effective balance between plasticity and stability, which can alter method behavior and comparative rankings across regimes. 
+
+## 4 EXPERIMENTS 
+
+We organize the experiments to validate that trainable depth is a consequential evaluation variable in continual learning and to characterize the mechanisms underlying this sensitivity. We first describe the common experimental setup, including the datasets, CL methods, fine-tuning regimes, and evaluation protocol (Sec. 4.1). We then test whether changing only the fine-tuning regime alters comparative conclusions (Sec. 4.2). Next, we examine how gradient magnitude and forgetting co-vary across regimes to better understand what drives the observed ranking instability (Sec. 4.3). 4.1 EXPERIMENTAL SETUP 
+
+Continual learning setting. We study task incremental continual learning over a sequence of T tasks, {T 1, . . . , TT },where task identity is available at both training and test time. Each task contains C disjoint classes. We use a shared backbone together with a global T × C classifier, and at inference time we select the logits corresponding to the current task. Task boundaries are assumed to be known throughout training. No data from previous tasks is retained unless this is explicitly required by the method, as in GEM. 4Preprint.     
+
+> (a) Final accuracy across regimes (b) Mean Kendall’s τbetween regime specific rankings
+> (c) A task order with low ranking agreement across regimes (d) A task order with high ranking agreement across regimes
+
+Figure 1: fine-tuning regime changes comparative conclusions (Fashion MNIST). (a) Standard continual learning methods exhibit different accuracy trends as the fine-tuning regime changes, with very large stds. (b) Pairwise Kendall’s 
+
+τ between rankings of CL algorithms under different fine-tuning regimes shows frequent changes in their relative ordering. (c,d) Two representative task orders illustrate that ranking stability can vary substantially, from low agreement across regimes to relatively high agreement. Together, these results show that trainable depth can alter the relative ranking of CL algorithms, even within the same benchmark. Reported values are mean and std for the final accuracy metrics, for the considered CL methods (online EWC, LwF, SI, and GEM) over 11 sampled task orders. 
+
+Model and fine-tuning regimes. Our backbone is a randomly initialized ResNet-18 (He et al., 2015). To study the effect of trainable depth, we define five fine-tuning regimes by varying the number of trainable residual blocks: training only the last block, the last 2 blocks, the last 3 blocks, the last 6 blocks, or all 8 blocks, corresponding to full fine-tuning. All remaining parameters are frozen throughout the CL sequence. This design lets us span a spectrum from highly constrained adaptation to fully flexible adaptation, where the entire network is allowed to drift over time. 
+
+Datasets. We evaluate on five benchmarks spanning two dataset families: four MNIST based benchmarks, namely MNIST, Fashion MNIST, KMNIST, and QMNIST, and one more complex natural image benchmark, CIFAR-100. Each dataset is partitioned into T disjoint tasks with C classes per task, following standard task incremental protocols. The MNIST based datasets enable controlled comparisons across benchmarks with similar structure but different visual 5Preprint.   
+
+> (a) CIFAR-100 (b) QMNIST
+> (c) MNIST (d) KMNIST
+
+Figure 2: Ranking sensitivity persists across other benchmarks. Each panel shows the mean Kendall’s τ between regime specific method rankings, averaged over 11 randomly sampled task orders. Lower τ values indicate lower agreement between regimes in the ranking of the considered continual learning algorithms: online EWC, LwF, SI, and GEM. This disagreement is consistently observed across all considered benchmarks, namely Fashion MNIST, CIFAR-100, MNIST, QMNIST, and KMNIST, indicating that the relative ordering of these algorithms depends strongly on the fine-tuning regime used throughout the continual learning run. characteristics, while CIFAR-100 provides a more challenging setting with richer visual features and greater inter task diversity. 
+
+Baselines. We compare four standard continual learning methods: online EWC (Schwarz et al., 2018), LwF (Li & Hoiem, 2017), SI (Zenke et al., 2017), and GEM (Lopez-Paz & Ranzato, 2022). These methods cover several major CL families, including regularization based, distillation based, and gradient projection based approaches. 
+
+Evaluation protocol. For each dataset, fine-tuning regime, and CL method, we evaluate Nord = 11 task orders: one canonical ordering and ten randomly sampled orderings. The same set of task orders is reused across all methods and regimes to ensure a fair comparison. Our main goal is not only to compare raw performance, but also to assess whether the relative ranking of methods is preserved as trainable depth changes. To this end, we compute Kendall’s 
+
+τ rank correlation between the method rankings induced by different fine-tuning regimes. High τ indicates that two 6Preprint. regimes produce similar comparative conclusions, whereas low τ indicates that changing the fine-tuning regime alters the relative ordering of methods. 
+
+Evaluation metrics. We report two standard CL metrics. The first is average accuracy, defined as the mean final accuracy over all tasks, ¯A = 1
+
+> T
+
+PTi=1 A(i) 
+
+> T
+
+, where A(i) 
+
+> T
+
+denotes the accuracy on task i after training on the full sequence of T tasks. The second is average forgetting, which measures the extent to which performance on previous tasks deteriorates over time, ¯F = 1 
+
+> T−1
+
+PT −1
+
+> i=1
+
+
+
+max t≤T A(i) 
+
+> t
+
+− A(i)
+
+> T
+
+
+
+. Higher forgetting values indicate a larger loss of previously acquired knowledge by the end of training, whereas values closer to zero indicate better retention. 
+
+Ranking stability analysis. Beyond raw performance, our central diagnostic is the stability of method rankings across fine-tuning regimes. For each task order, we rank CL methods according to their average accuracy within each regime, and then compute Kendall’s τ (Kendall, 1938) for every pair of regimes. This provides a direct measure of how consistently methods are ordered as trainable depth varies. A value of τ = 1 indicates perfect agreement, meaning that two regimes induce the same method ranking, while τ = −1 indicates a complete reversal. Values near zero indicate weak agreement, suggesting that conclusions drawn under one regime may not transfer reliably to another. To summarize this effect at the dataset level, we average the pairwise τ values over all 11 task orders, yielding a single matrix that captures rank stability across the full evaluation. In the gradient based analysis of Figure 3, we use the same statistic to quantify how consistently regimes are ordered when ranked by gradient magnitude and by forgetting. 4.2 TRAINABLE DEPTH CHANGES COMPARATIVE CONCLUSIONS IN CONTINUAL LEARNING 
+
+We investigate whether the ranking of standard CL methods is stable across fine-tuning regimes, or whether it depends on the trainable depth used throughout the CL run. This question is important because comparative CL evaluations are typically performed under a single adaptation setting, implicitly assuming that the resulting ranking is method specific rather than configuration dependent. To test this assumption, we evaluate online EWC, LwF, SI, and GEM under multiple fine-tuning regimes and compare the resulting method rankings using pairwise Kendall’s τ .Figure 1 first illustrates the effect on Fashion MNIST. Varying trainable depth changes both the accuracy profiles of the methods and their induced rankings, with representative task orders showing that the same set of methods can exhibit either relatively stable or strongly unstable rankings depending on the sequence. Figure 2 then shows that this phenomenon persists across all considered benchmarks when Kendall’s τ is averaged over 11 randomly sampled task orders per dataset. Across datasets, regime specific rankings exhibit only partial agreement, with mean τ ranging from 0.42 on Fashion MNIST to 0.72 on KMNIST. The strongest disagreements consistently occur between the most restrictive and most permissive regimes, confirming that trainable depth is a consequential evaluation variable. At the dataset level, two patterns emerge. Ranking instability remains evident, with method crossovers appearing across task orders even when mean accuracy curves indicate only minor performance differences. Taken together, these results show that comparative conclusions in CL are sensitive to the fine-tuning regime under which they are drawn. Therefore, trainable depth should be treated as a first class evaluation variable when comparing CL methods. 4.3 GRADIENT MAGNITUDE BECOMES MORE PREDICTIVE OF FORGETTING IN PERMISSIVE REGIMES 
+
+Our theoretical analysis suggests that the effect of an adaptation regime is not exhausted by the number of trainable parameters. By changing the projector PS , the regime changes the feasible update directions and therefore the effective optimization signal that can propagate through the network. In more permissive regimes, the learner has access to a larger trainable subspace, which creates more room for representational change. In continual learning, this additional freedom should have two observable consequences: stronger update magnitudes and a higher risk that these updates interfere with previously acquired knowledge. To test this prediction, we analyze the relationship between gradient magnitude and forgetting across fine-tuning depths using a single CL method, namely LwF, on a single dataset, namely Fashion MNIST. We focus on LwF because its training objective is most directly aligned with the decomposition in Equation 4, where the projected gradient of the full objective is written as the sum of a current task term and a preservation term. In LwF, the preservation mechanism enters as an explicit distillation loss added to the current task loss, so the resulting update is naturally described by the projected objective gradient ∥PS ∇Jt(θ)∥2. This makes LwF a particularly clean setting in which to study how update magnitude relates to final forgetting across adaptation regimes. 7Preprint.    
+
+> (a) Gradient magnitude increases with trainable depth (b) Forgetting increases with trainable depth
+> (c) Across fine-tuning regimes, larger gradient magnitudes are associated with higher forgetting
+> (d) The Kendall τcorrelation between gradient magnitude and forgetting becomes stronger in more permissive regimes
+
+Figure 3: Gradient magnitude and forgetting both increase with trainable depth, but the main effect goes beyond these parallel trends. As adaptation becomes more permissive, forgetting becomes increasingly tied to gradient magnitude. (a) Mean gradient magnitude increases as more parameters are made trainable. (b) Average forgetting also increases with trainable depth. (c) Across regimes, larger gradient magnitudes are associated with higher forgetting. (d) The Kendall τ
+
+correlation between gradient magnitude and forgetting becomes stronger in more permissive regimes, indicating that gradient magnitude becomes increasingly informative of forgetting. For each regime, we compute a summary measure of the projected gradient magnitude during training and relate it to the final average forgetting at the end of the task sequence. We then examine how these two quantities vary across regimes and how consistently regimes are ordered when ranked by gradient magnitude and by forgetting. Figure 3 supports this view. As trainable depth increases, mean gradient magnitude rises (Figure 3a) and average forgetting rises as well (Figure 3b). However, the main result goes beyond these parallel trends. Across regimes, larger gradient magnitudes are associated with higher forgetting (Figure 3c), and this association becomes progressively stronger in more permissive regimes, as shown by the increasing Kendall τ correlation in Figure 3d. This pattern is consistent with the interpretation developed in Section 3. When the regime is restrictive, the optimizer is confined to a limited set of feasible update directions, and the resulting dynamics are strongly shaped by the prior imposed by the frozen backbone. Under shallow adaptation, this structural prior limits both update flow and the scope of interference. As the regime becomes more permissive, optimization is less constrained by that prior and increasingly shaped by task driven gradients, making method behavior more regime dependent. In this sense, deeper adaptation does not merely increase how much the network changes; it also makes those changes more consequential for previously learned tasks. 8Preprint. 
+
+## 5 LIMITATIONS 
+
+Hyperparameter Selection Across Adaptation Regimes. A limitation of our study is that hyperparameters are not tuned separately for each adaptation regime. Since the same optimization and method specific settings are used across all trainable depth configurations, some of the observed ranking differences may reflect regime dependent hyperparameter effects in addition to differences caused by trainable depth itself. 
+
+Narrow Axis of Regime Variation. A limitation of our study is that we vary the adaptation regime only through trainable depth. Although this is enough to reveal substantial changes in comparative method rankings, it covers only a narrow portion of the possible adaptation space. Alternative trainable subspace choices, such as sparse masks, low rank updates, or structured pruning, may interact differently with continual learning dynamics. Therefore, our results should be interpreted as establishing sensitivity to trainable depth in particular, rather than exhaustively characterizing all forms of regime variation. 
+
+Restriction to task incremental continual learning. Our study is restricted to the task incremental setting, where task identity is available at both training and test time and inference is performed only over the logits of the current task. This setting allows for a controlled comparison of methods and regimes, but it is more structured than other continual learning scenarios. In particular, the role of the fine-tuning regime may differ in class incremental or task agnostic settings, where interference is typically stronger and the absence of task labels makes the optimization problem more challenging. 
+
+Limited architectural scope. The empirical study is limited to a single backbone, namely ResNet-18. While this architecture provides a standard and well understood testbed, different model families may exhibit different forms of regime sensitivity due to differences in depth, parameterization, feature reuse, or optimization dynamics. Extending the analysis to other architectures would help determine how broadly the observed effects transfer beyond the specific setting studied here. 
+
+Partial empirical validation of the optimization view. The projected optimization perspective introduced in Section 4 is intended as a lens for interpreting regime sensitivity, rather than as a complete mechanistic account. While the empirical results are consistent with this view, we do not directly measure all projected quantities from the analysis across methods, tasks, and regimes. A more complete empirical validation of the proposed mechanism would require tracking these quantities more systematically throughout training. 
+
+## 6 CONCLUSIONS 
+
+We studied whether comparative conclusions in continual learning (CL) remain stable when the fine-tuning regime changes. Our main finding is that they often do not. When the trainable parameter subspace is varied through trainable depth, the relative ranking of standard CL methods can change substantially, even when the architecture, task orders, and training pipeline are otherwise held fixed. This effect is consistent across multiple datasets and repeated task orderings, indicating that the adaptation regime is not a secondary implementation detail but a meaningful source of variation in CL evaluation. Our analysis provides a simple lens for interpreting this result. By constraining optimization to a fixed trainable subspace, the fine-tuning regime changes the update directions available to both task fitting and preservation terms, thereby altering the effective optimization signal seen by the learner. Empirically, more permissive regimes are associated with larger update magnitudes, greater forgetting, and a stronger link between the two, which is consistent with the view that deeper adaptation exposes more interference prone directions. Taken together, these results suggest that CL benchmarks should treat the fine-tuning regime as an explicit experimental factor. Reporting results under a single adaptation setting can lead to regime-specific comparative conclusions that do not necessarily transfer across training configurations. A more informative evaluation protocol should therefore account for adaptation regime alongside algorithm choice and task order. 9Preprint. 
+
+## REFERENCES 
+
+Alessandro Achille, Matteo Rovere, and Stefano Soatto. Critical learning periods in deep neural networks. arXiv preprint arXiv:1711.08856 , 2018. URL https://arxiv.org/abs/1711.08856 .Magdalena Biesialska, Katarzyna Biesialska, and Marta R. Costa-jussà. Continual lifelong learning in natural language processing: A survey. 2020. URL https://arxiv.org/abs/2012.09823 .Matthias De Lange, Rahaf Aljundi, Marc Masana, Sarah Parisot, Xu Jia, Ales Leonardis, Gregory Slabaugh, and Tinne Tuytelaars. A continual learning survey: Defying forgetting in classification tasks. IEEE Transactions on Pattern Analysis and Machine Intelligence , 2022. URL https://doi.org/10.1109/TPAMI.2021.3057446 .Itay Evron, E. Moroshko, G. Buzaglo, Maroun Khriesh, B. Marjieh, N. Srebro, and Daniel Soudry. Continual learning in linear classification on separable data. In International Conference on Machine Learning , 2023. URL 
+
+https://arxiv.org/pdf/2306.03534.pdf .Sebastian Farquhar and Yarin Gal. Towards robust evaluations of continual learning. 2018. URL https://arxiv. org/abs/1805.09733 .Ian J. Goodfellow, Mehdi Mirza, Da Xiao, Aaron Courville, and Yoshua Bengio. An empirical investigation of catastrophic forgetting in gradient-based neural networks. 2013. URL https://arxiv.org/abs/1312. 6211 .Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. Deep residual learning for image recognition, 2015. URL 
+
+https://arxiv.org/abs/1512.03385 .Yen-Chang Hsu, Yen-Yu Lin, Shih-Chieh Xu, Shao-Hua Sun, and Chu-Song Chen. Re-evaluating continual learning scenarios: A focus on class-incremental learning. arXiv preprint arXiv:1810.12488 , 2018. URL https://arxiv. org/abs/1810.12488 .Maurice G. Kendall. A new measure of rank correlation. Biometrika , 30(1–2):81–93, 1938. doi: 10.1093/biomet/30. 1-2.81. James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, et al. Overcoming catastrophic forgetting in neural networks. 
+
+Proceedings of the National Academy of Sciences , 114(13):3521–3526, 2017. doi: 10.1073/pnas.1611835114. URL 
+
+https://doi.org/10.1073/pnas.1611835114 .Tatsuya Konishi, M. Kurokawa, C. Ono, Zixuan Ke, Gyuhak Kim, and Bin Liu. Parameter-level soft-masking for continual learning. ArXiv , abs/2306.14775, 2023. URL https://api.semanticscholar.org/CorpusId: 259251475 .Ananya Kumar, Aditi Raghunathan, Robbie Jones, Tengyu Ma, and Percy Liang. Fine-tuning can distort pretrained features and underperform out-of-distribution. 2022. URL https://arxiv.org/abs/2202.10054 .Zhizhong Li and Derek Hoiem. Learning without forgetting, 2017. URL https://arxiv.org/abs/1606. 09282 .Yan-Shuo Liang and Wu-Jun Li. Inflora: Interference-free low-rank adaptation for continual learning. 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pp. 23638–23647, 2024. URL http:// ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10658274 .Vincenzo Lomonaco and Davide Maltoni. Core50: a new dataset and benchmark for continuous object recognition. In 
+
+Proceedings of the 1st Annual Conference on Robot Learning , volume 78 of Proceedings of Machine Learning Re-search , pp. 17–26. PMLR, 2017. URL https://proceedings.mlr.press/v78/lomonaco17a.html .David Lopez-Paz and Marc’Aurelio Ranzato. Gradient episodic memory for continual learning, 2022. URL https: //arxiv.org/abs/1706.08840 .Michael McCloskey and Neal J. Cohen. Catastrophic interference in connectionist networks: The sequential learning problem. In Psychology of Learning and Motivation , volume 24, pp. 109–165. Academic Press, 1989. doi: 10.1016/S0079-7421(08)60536-8. URL https://doi.org/10.1016/S0079-7421(08)60536-8 .German I. Parisi, Ronald Kemker, Jose L. Part, Christopher Kanan, and Stefan Wermter. Continual lifelong learning with neural networks: A review. Neural Networks , 2019. URL https://doi.org/10.1016/j.neunet. 2019.01.012 .10 Preprint. Maithra Raghu, Chiyuan Zhang, Jon Kleinberg, and Samy Bengio. Transfusion: Understanding transfer learning for medical imaging. 2019. URL https://arxiv.org/abs/1902.07208 .Jonathan Schwarz, Wojciech M. Czarnecki, Jelena Luketina, A. Grabska-Barwinska, Y. Teh, Razvan Pascanu, and R. Hadsell. Progress & compress: A scalable framework for continual learning. ArXiv , abs/1805.06370, 2018. URL 
+
+https://api.semanticscholar.org/CorpusId:21718339 .Tejas Srinivasan, Ting-Yun Chang, Leticia Pinto-Alva, Georgios Chochlakis, Mohammad Rostami, and Jesse Thomason. Climb: A continual learning benchmark for vision-and-language tasks. ArXiv , abs/2206.09059, 2022. URL 
+
+https://api.semanticscholar.org/CorpusId:249889382 .Gido M. van de Ven and Andreas S. Tolias. Three scenarios for continual learning. 2019. URL https://arxiv. org/abs/1904.07734 .Mitchell Wortsman, Vivek Ramanujan, Rosanne Liu, Aniruddha Kembhavi, Mohammad Rastegari, Jason Yosinski, and Ali Farhadi. Supermasks in superposition. In Advances in Neural Information Process-ing Systems , volume 33, 2020. URL https://proceedings.neurips.cc/paper/2020/hash/ ad1f8bb9b51f023cdc80cf94bb615aa9-Abstract.html .Maciej Wołczyk, Michał Zaj ˛ ac, Razvan Pascanu, Łukasz Kuci´ nski, and Piotr Miło´ s. Continual world: A robotic benchmark for continual reinforcement learning, 2021. URL https://arxiv.org/abs/2105.10919 .Jaehong Yoon, Saehoon Kim, Eunho Yang, and Sung Ju Hwang. Scalable and order-robust continual learning with additive parameter decomposition. arXiv: Learning , 2019. URL https://arxiv.org/pdf/1902.09432. pdf .Jason Yosinski, Jeff Clune, Yoshua Bengio, and Hod Lipson. How transferable are features in deep neural networks? In Advances in Neural Information Processing Systems , volume 27, 2014. URL https://proceedings. neurips.cc/paper/2014/hash/375c71349b295fbe2dcdca9206851369-Abstract.html .Friedemann Zenke, Ben Poole, and Surya Ganguli. Continual learning through synaptic intelligence, 2017. URL 
+
+https://arxiv.org/abs/1703.04200 .11 Preprint. 
+
+## APPENDIX 
+
+## A ADDITIONAL THEORETICAL DETAILS 
+
+For completeness, we restate the progress bound used in the main text. 
+
+Progress bound under projected updates. Let 
+
+θ+ = θ − ηP S ∇J t(θ), (8) where PS is the orthogonal projector associated with the fixed trainable subset S. Assume that Jt is L-smooth on a neighborhood containing both θ and θ+. Then 
+
+Jt(θ+) ≤ J t(θ) − η∥PS ∇J t(θ)∥2 + Lη 2
+
+2 ∥PS ∇J t(θ)∥2. (9) Equivalently, 
+
+Jt(θ+) ≤ J t(θ) − η
+
+
+
+1 − Lη 
+
+2
+
+
+
+∥PS ∇J t(θ)∥2. (10) In particular, if 0 < η ≤ 1/L , then 
+
+Jt(θ+) ≤ J t(θ) − η
+
+2 ∥PS ∇J t(θ)∥2. (11) 
+
+Proof. Since Jt is L-smooth, for any x, y in the neighborhood of interest, 
+
+Jt(y) ≤ J t(x) + ⟨∇J t(x), y − x⟩ + L
+
+2 ∥y − x∥2. (12) Apply 12 with x = θ and y = θ+. Using 8, 
+
+θ+ − θ = −ηP S ∇J t(θ). (13) Substituting into 12 gives 
+
+Jt(θ+) ≤ J t(θ) + ∇J t(θ), θ + − θ + L
+
+2 ∥θ+ − θ∥2 (14) 
+
+= Jt(θ) − η ⟨∇J t(θ), P S ∇J t(θ)⟩ + Lη 2
+
+2 ∥PS ∇J t(θ)∥2. (15) Now use that PS is an orthogonal projector. Hence it is symmetric and idempotent: 
+
+P ⊤ 
+
+> S
+
+= PS , P 2 
+
+> S
+
+= PS . (16) Therefore, 
+
+⟨∇J t(θ), P S ∇J t(θ)⟩ = ∇J t(θ)⊤PS ∇J t(θ) (17) 
+
+= ∇J t(θ)⊤P ⊤ 
+
+> S
+
+PS ∇J t(θ) (18) 
+
+= ∥PS ∇J t(θ)∥2. (19) Substituting 19 into 15 yields 9. Rearranging gives 10. Finally, if 0 < η ≤ 1/L , then 
+
+1 − Lη 
+
+2 ≥ 12 , (20) which implies 11. □
+
+12 Preprint. 
+
+## B NOTATION SUMMARY 
+
+In Tab. 1, we provide an overview of the mathematical notation. Table 1: Notation used in the theoretical analysis 
+
+Symbol Meaning 
+
+T1, . . . , TT Sequence of tasks observed in continual learning. 
+
+T Number of tasks in the continual learning sequence. 
+
+θ ∈ Rd Full model parameter vector. 
+
+d Total number of model parameters. 
+
+t Task index. 
+
+m Optimization-step index within task t.
+
+θt Parameters after completing training on task t.
+
+θ(m) 
+
+> t
+
+Parameters after m optimization steps on task t.
+
+Lt(θ) Current-task loss at task t.
+
+Ωt(θ; θ1: t−1) Method-specific term that preserves previously acquired knowledge. 
+
+λ Weight of the preservation term. 
+
+Jt(θ) Full task-t objective, defined as Lt(θ) + λΩt(θ; θ1: t−1).
+
+S ⊆ { 1, . . . , d } Fixed subset of trainable parameter coordinates defining an adaptation regime. 
+
+PS Orthogonal projector that keeps coordinates in S and zeros out all others. 
+
+η Step size used by the first-order optimizer. 
+
+g(S) 
+
+> t
+
+(θ) Projected current-task update signal, defined as PS ∇L t(θ).
+
+r(S) 
+
+> t
+
+(θ) Projected preservation update signal, defined as PS ∇Ωt(θ; θ1: t−1).
+
+Γt(S; θ) Interaction term between projected current-task and preservation signals, defined as 
+
+⟨g(S) 
+
+> t
+
+(θ), r (S) 
+
+> t
+
+(θ)⟩.
+
+PS ∇J t(θ) Projected gradient of the full task-t objective. 
+
+L Smoothness constant of Jt.
+
+θ+ One-step projected update from θ, defined in 8. 
+
+∥ · ∥ Euclidean norm. 
+
+⟨· , ·⟩ Standard Euclidean inner product. 
+
+## C ADDITIONAL EXPERIMENTAL VALUES 
+
+Tables 2, 3, 4, 5, and 6 report the numerical values underlying the results shown in Figures 1 and 2, listing average accuracy and average forgetting per training regime for each algorithm across CIFAR-100, MNIST, Fashion MNIST, QMNIST, and KMNIST, together with standard deviations computed over task orderings. 13 Preprint. Table 2: Average Accuracy and Average Forgetting per ordering ± std. across different training regimes on the CIFAR-100 dataset 
+
+Algorithm / Regime Last Block Last 2 Blocks Last 3 Blocks Last 6 Blocks Full Finetune (8 Blocks) 
+
+Acc Forget Acc Forget Acc Forget Acc Forget Acc Forget EWC 0.52 ± 0.009 0.02 ± 0.008 0.59 ± 0.010 0.02 ± 0.006 0.62 ± 0.013 0.02 ± 0.009 0.64 ± 0.017 0.03 ± 0.006 0.65 ± 0.016 0.03 ± 0.008 
+
+LwF 0.62 ± 0.008 0.05 ± 0.005 0.70 ± 0.006 0.08 ± 0.004 0.75 ± 0.004 0.08 ± 0.005 0.79 ± 0.008 0.07 ± 0.007 0.80 ± 0.008 0.07 ± 0.008 
+
+SI 0.57 ± 0.007 0.04 ± 0.006 0.61 ± 0.013 0.09 ± 0.012 0.62 ± 0.021 0.14 ± 0.019 0.62 ± 0.018 0.18 ± 0.015 0.63 ± 0.017 0.18 ± 0.017 
+
+GEM 0.52 ± 0.008 0.15 ± 0.010 0.55 ± 0.010 0.21 ± 0.011 0.57 ± 0.012 0.26 ± 0.011 0.61 ± 0.012 0.26 ± 0.014 0.71 ± 0.008 0.16 ± 0.011 
+
+Table 3: Average Accuracy and Average Forgetting per ordering ± std. across different training regimes on the MNIST dataset 
+
+Algorithm / Regime Last Block Last 2 Blocks Last 3 Blocks Last 6 Blocks Full Finetune (8 Blocks) 
+
+Acc Forget Acc Forget Acc Forget Acc Forget Acc Forget EWC 0.98 ± 0.012 0.02 ± 0.015 0.91 ± 0.082 0.11 ± 0.103 0.87 ± 0.083 0.16 ± 0.104 0.86 ± 0.060 0.18 ± 0.075 0.89 ± 0.078 0.14 ± 0.097 
+
+LwF 0.99 ± 0.002 0.01 ± 0.003 0.99 ± 0.007 0.01 ± 0.009 0.99 ± 0.007 0.01 ± 0.009 0.99 ± 0.004 0.01 ± 0.005 0.99 ± 0.011 0.01 ± 0.014 
+
+SI 0.96 ± 0.018 0.04 ± 0.021 0.86 ± 0.090 0.17 ± 0.113 0.84 ± 0.095 0.20 ± 0.119 0.80 ± 0.072 0.25 ± 0.090 0.80 ± 0.056 0.25 ± 0.070 
+
+GEM 0.96 ± 0.024 0.04 ± 0.030 0.94 ± 0.038 0.08 ± 0.047 0.92 ± 0.059 0.10 ± 0.075 0.93 ± 0.053 0.09 ± 0.067 0.95 ± 0.037 0.06 ± 0.047 
+
+Table 4: Average Accuracy and Average Forgetting per ordering ± std. across different training regimes on the Fashion MNIST dataset 
+
+Algorithm / Regime Last Block Last 2 Blocks Last 3 Blocks Last 6 Blocks Full Finetune (8 Blocks) 
+
+Acc Forget Acc Forget Acc Forget Acc Forget Acc Forget EWC 0.92 ± 0.043 0.09 ± 0.054 0.91 ± 0.057 0.10 ± 0.072 0.86 ± 0.063 0.16 ± 0.079 0.81 ± 0.082 0.23 ± 0.103 0.85 ± 0.041 0.17 ± 0.051 
+
+LwF 0.91 ± 0.042 0.10 ± 0.053 0.90 ± 0.059 0.12 ± 0.074 0.86 ± 0.084 0.17 ± 0.105 0.85 ± 0.077 0.17 ± 0.097 0.82 ± 0.049 0.21 ± 0.061 
+
+SI 0.92 ± 0.027 0.09 ± 0.035 0.93 ± 0.022 0.08 ± 0.027 0.88 ± 0.057 0.14 ± 0.071 0.89 ± 0.059 0.13 ± 0.075 0.87 ± 0.063 0.16 ± 0.080 
+
+GEM 0.97 ± 0.012 0.02 ± 0.013 0.96 ± 0.016 0.03 ± 0.019 0.95 ± 0.030 0.05 ± 0.041 0.91 ± 0.037 0.08 ± 0.051 0.94 ± 0.034 0.06 ± 0.042 
+
+Table 5: Average Accuracy and Average Forgetting per ordering ± std. across different training regimes on the QMNIST dataset 
+
+Algorithm / Regime Last Block Last 2 Blocks Last 3 Blocks Last 6 Blocks Full Finetune (8 Blocks) 
+
+Acc Forget Acc Forget Acc Forget Acc Forget Acc Forget EWC 0.98 ± 0.008 0.01 ± 0.010 0.91 ± 0.073 0.10 ± 0.090 0.90 ± 0.061 0.12 ± 0.076 0.92 ± 0.053 0.10 ± 0.067 0.85 ± 0.084 0.19 ± 0.104 
+
+LwF 0.99 ± 0.004 0.01 ± 0.005 0.99 ± 0.004 0.01 ± 0.004 0.99 ± 0.004 0.01 ± 0.005 0.98 ± 0.030 0.03 ± 0.036 0.98 ± 0.026 0.03 ± 0.033 
+
+SI 0.97 ± 0.025 0.03 ± 0.033 0.85 ± 0.095 0.18 ± 0.120 0.79 ± 0.127 0.25 ± 0.158 0.82 ± 0.068 0.23 ± 0.085 0.85 ± 0.101 0.18 ± 0.127 
+
+GEM 0.96 ± 0.014 0.04 ± 0.018 0.93 ± 0.047 0.08 ± 0.059 0.93 ± 0.045 0.08 ± 0.056 0.94 ± 0.052 0.08 ± 0.065 0.95 ± 0.049 0.06 ± 0.061 
+
+Table 6: Average Accuracy and Average Forgetting per ordering ± std. across different training regimes on the KMNIST dataset 
+
+Algorithm / Regime Last Block Last 2 Blocks Last 3 Blocks Last 6 Blocks Full Finetune (8 Blocks) 
+
+Acc Forget Acc Forget Acc Forget Acc Forget Acc Forget EWC 0.94 ± 0.010 −0.00 ± 0.009 0.95 ± 0.016 0.03 ± 0.022 0.93 ± 0.028 0.06 ± 0.037 0.92 ± 0.033 0.08 ± 0.045 0.93 ± 0.026 0.06 ± 0.033 
+
+LwF 0.95 ± 0.009 0.02 ± 0.008 0.97 ± 0.012 0.02 ± 0.014 0.97 ± 0.008 0.03 ± 0.010 0.96 ± 0.008 0.03 ± 0.010 0.97 ± 0.009 0.03 ± 0.010 
+
+SI 0.91 ± 0.025 0.05 ± 0.037 0.86 ± 0.035 0.14 ± 0.045 0.86 ± 0.050 0.15 ± 0.061 0.82 ± 0.047 0.20 ± 0.057 0.84 ± 0.081 0.17 ± 0.099 
+
+GEM 0.91 ± 0.014 0.07 ± 0.017 0.91 ± 0.016 0.10 ± 0.019 0.91 ± 0.016 0.10 ± 0.021 0.92 ± 0.014 0.09 ± 0.018 0.92 ± 0.020 0.09 ± 0.026 
+
+14

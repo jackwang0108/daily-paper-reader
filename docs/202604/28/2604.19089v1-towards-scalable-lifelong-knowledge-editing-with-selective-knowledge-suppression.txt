@@ -1,0 +1,545 @@
+Title: Towards Scalable Lifelong Knowledge Editing with Selective Knowledge Suppression
+
+URL Source: https://arxiv.org/pdf/2604.19089v1
+
+Published Time: Wed, 22 Apr 2026 00:37:56 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Towards Scalable Lifelong Knowledge Editing with Selective Knowledge Suppression 
+
+Dahyun Jung Jaewook Lee Heuiseok Lim *
+
+Department of Computer Science and Engineering, Korea University 
+
+{dhaabb55,jaewook133,limhseok}@korea.ac.kr 
+
+Abstract 
+
+Large language models (LLMs) require fre-quent knowledge updates to reflect chang-ing facts and mitigate hallucinations. To meet this demand, lifelong knowledge editing has emerged as a continual approach to modify spe-cific pieces of knowledge without retraining the entire model. Existing parameter-editing methods struggle with stability during sequen-tial edits due to catastrophic forgetting. While retrieval-based approaches are proposed to al-leviate this issue, their applicability remains limited across various datasets because of high training costs. To address these limitations and enhance scalability in lifelong settings, we pro-pose LightEdit. Our framework first selects relevant knowledge from retrieved informa-tion to modify the query effectively. It then incorporates a decoding strategy to suppress the model’s original knowledge probabilities, thereby enabling efficient edits based on the selected information. Extensive experiments on ZSRE, Counterfact, and RIPE benchmarks demonstrate that LightEdit outperforms exist-ing lifelong knowledge editing methods. Fur-thermore, by minimizing training costs, LightE-dit achieves cost-effective scalability, enabling easy adaptation to various datasets. 1
+
+1 Introduction 
+
+Large language models (LLMs) have demonstrated impressive performance across a wide range of natural language processing (NLP) tasks, primar-ily attributed to their pretraining on large-scale corpora (Alabdulmohsin et al., 2022; Jiang et al., 2023; Haviv et al., 2023; OpenAI, 2023; Zhao et al., 2025). However, LLMs continue to exhibit limita-tions (e.g., hallucination and bias). They struggle to incorporate continually evolving knowledge due to their reliance on static pre-training data (Pagnoni  
+
+> *Corresponding author.
+> 1Our code is available at https://github.com/ekgus9/ LightEdit .
+
+et al., 2021; Ji et al., 2023; Shi et al., 2024). While retraining offers a potential solution, it remains prohibitively expensive in terms of computational resources (Lazaridou et al., 2021). Knowledge editing is proposed to modify spe-cific knowledge of LLMs without costly retrain-ing (Mitchell et al., 2022; Yao et al., 2023; Pinter and Elhadad, 2023; Wang et al., 2024b; Zhang et al., 2024). Existing knowledge editing stud-ies mainly focus on scenarios involving editing a single or multiple knowledge entries simultane-ously (Meng et al., 2023b; Tan et al., 2024; Sharma et al., 2024; Xie et al., 2024; Jiang et al., 2025). However, real-world applications require continual updates to knowledge, necessitating consideration of lifelong knowledge editing scenarios (Huang et al., 2023; Hartvigsen et al., 2023a; Hu et al., 2024). Existing lifelong knowledge editing methods suffer from catastrophic forgetting, where new ed-its interfere with prior knowledge, and model col-lapse, which degrades the model’s original capa-bilities (Gupta et al., 2024; Ma et al., 2025; Qi et al., 2025). To address these challenges, retrieval-augmented approaches such as LTE (Jiang et al., 2024) and RECIPE (Chen et al., 2024) are pro-posed. These methods enhance stability by incor-porating retrieved knowledge into models explic-itly trained for editing, enabling them to produce revised outputs. However, their dataset-specific op-timization leads to performance degradation when applied to unseen datasets, necessitating frequent retraining (Figure 1(a)). Furthermore, they impose substantial costs in data requirements, training time, and computational resources (Figure 1(b)). This undermines their scalability and limits their applicability in lifelong learning settings. To mitigate these issues, we propose LightEdit ,a lightweight framework for effective lifelong knowledge editing with minimal training overhead (Figure 1(c)). We hypothesize that, given the edited                       
+
+> arXiv:2604.19089v1 [cs.AI] 21 Apr 2026 Large Language
+> Model
+> Input:
+> (a) Editing Performance on ZSRE Benchmark
+> (b) Training Resource and Cost Evaluation
+> Parameters Frozen
+> Parameters Trained
+> (c) LightEdit
+> Instruction Context 𝑠 1,𝑟 1,𝑜 1
+> ∗,𝑠 2,𝑟 2,𝑜 2
+> ∗,…,(𝑠 𝑖 ,𝑟 𝑖 ,𝑜 𝑖
+> ∗)Query Who is the president of US?
+> Edited Knowledge
+> Edit -Aware
+> Selector
+> 𝑠 ,𝑟 ,𝑜 ∗Who is the president of US?
+> Query
+> Who is the president of US?
+> Large Language
+> Model
+> Out -of -scope
+> In -scope
+> In -Context Decoding
+> …
+> Joe
+> Donald
+> …
+> Query
+> Instruction Context Query
+
+Figure 1: Experimental comparison with previous lifelong knowledge editing methods and the overall framework of LightEdit. (a) demonstrates that LightEdit significantly improves editing performance, while RECIPE suffers from substantial performance degradation when evaluated on datasets different from those used during training. (b) shows that LightEdit is also more efficient in terms of training time and data volume than existing methods. These advantages arise from the architecture illustrated in (c). We employ an edit-aware selector to retrieve the knowledge necessary for query editing. When modified knowledge is selected, we mitigate potential knowledge conflicts during inference by applying in-context decoding, which downweights the generation probability of outdated knowledge. 
+
+knowledge in the input context, LLM outputs can be steered by simply suppressing the original prob-ability distribution, without requiring model re-training. To this end, LightEdit employs an edit-aware selector that identifies relevant knowledge re-quiring modification from retrieved candidates, ex-erting minimal influence when no edits are needed. Furthermore, we introduce in-context decoding, which suppresses the probability of pre-edit knowl-edge inferred from contextual cues, thereby guid-ing the model to integrate the updated knowledge within a single inference pass. To validate LightEdit, we conduct extensive ex-periments across lifelong knowledge editing bench-marks using LLaMA-3 (Llama Team, 2024) and GPT-J (Wang and Komatsuzaki, 2021) on the ZSRE (Levy et al., 2017), Counterfact (Meng et al., 2023a), and RIPE (Cohen et al., 2024). Results demonstrate that LightEdit achieves strong and consistent performance in lifelong settings, offer-ing an efficient solution that preserves the origi-nal model parameters while significantly reducing computational overhead. Our approach alleviates dataset dependency and improves scalability, sug-gesting promising directions for future research in knowledge editing for LLMs. Our main contributions are as follows: • We identify the excessive training costs in ex-isting lifelong knowledge editing approaches, highlighting their limited scalability to differ-ent datasets. • We propose LightEdit, a lightweight knowl-edge editing framework that effectively ad-justs LLM outputs by minimizing pre-edit probabilities based on selected knowledge. • Through comprehensive experiments on mul-tiple datasets and LLMs, we demonstrate that LightEdit effectively performs lifelong knowledge editing while consuming fewer re-sources than existing baselines. 
+
+2 Related Work 
+
+Knowledge editing aims to correct factual errors encoded in a model with significantly lower com-putational cost than full retraining (Wang et al., 2024b; Zhang et al., 2024). Existing methods are broadly categorized into parameter-preserving and parameter-modifying approaches. Parameter-preserving methods update model behavior with-out altering its internal parameters. For instance, SERAC (Mitchell et al., 2022) maintains knowl-edge edits in an external memory module and ad-justs responses accordingly, while IKE (Zheng et al., 2023) adopts an in-context learning frame-work to perform edits via prompt manipulation. These approaches mitigate catastrophic forgetting by avoiding parameter updates. Earlier parameter-modifying approaches often employed fine-tuning techniques via multi-loss optimization (Sinitsin et al., 2020). However, fine-tuning methods carry risks of overfitting, motivating subsequent devel-opments in hyperparameter-based optimization methods. ROME (Meng et al., 2023a) locates multi-layer perceptrons storing factual knowledge and inserts new key-value pairs into these multi-layer perceptrons to update the model’s knowledge. MEMIT (Meng et al., 2023b) extends ROME by enabling simultaneous edits of substantial amounts of knowledge. Prior research primarily focuses on single or batch editing scenarios, neglecting the incremental toxicity accumulation inherent in se-quential parameter modifications. Consequently, these methods have limitations in continuous knowledge editing settings. Recognizing the need to accommodate multi-ple sequential edits in realistic scenarios, lifelong editing research has emerged (Hu et al., 2024). GRACE (Hartvigsen et al., 2023b) maps keys onto the latent space without altering model weights, constructing a localized codebook for effective knowledge editing. R-ROME (Gupta et al., 2024) and PRUNE (Ma et al., 2025) address model degra-dation during sequential edits in existing parameter modification approaches. LTE (Jiang et al., 2024) and RECIPE (Chen et al., 2024) enhance editing capabilities by training models to adapt edits dy-namically during inference. RECIPE specifically addresses LTE’s potential overfitting risks by in-tegrating dynamic retrieval mechanisms with p-tuning (Li and Liang, 2021; Liu et al., 2022). How-ever, these methods either inherit the limitations of prior approaches or demand substantial computa-tional resources, thereby limiting their scalability in practical settings. To overcome these challenges, we propose a lifelong knowledge editing frame-work that minimizes training overhead while pre-serving editing effectiveness 2.
+
+3 Preliminary 
+
+Knowledge editing aims to update the knowledge encoded in an LLM f by replacing outdated or incorrect information with accurate content. We 
+
+> 2A more in-depth comparison with previous approaches is provided in Appendix A.
+
+represent knowledge as triples (s, r, o ), where s
+
+denotes the subject, r the relation, and o the ob-ject. Given an outdated triple (s, r, o ), the editing process replaces the object with a new value o∗, re-sulting in an updated triple (s, r, o ∗). The target set of edited knowledge that the model should reflect is defined as: 
+
+G∗ = {(si, r i, o ∗ 
+
+> i
+
+)}Ni=1 . (1) In particular, this study does not assume an ide-alized scenario where all knowledge is simultane-ously updated. Instead, we adopt a more realistic lifelong knowledge editing scenario, wherein N
+
+knowledge triples in G∗ are sequentially incorpo-rated into the model. Under this setting, an input query q is classified as in-scope if it pertains to any edited knowledge triples (si, r i, o ∗ 
+
+> i
+
+); otherwise, it is considered out-of-scope. The edited model f ∗
+
+must satisfy reliability and generality criteria for in-scope queries, and locality for out-of-scope queries. These evaluation criteria are formalized as follows: 
+
+Reliability , a key attribute prioritized in the edit-ing process, assesses whether the model accurately reflects the intended edits. It is defined as: Reliability (qrel i ) = I[f ∗(qrel i ) = o∗ 
+
+> i
+
+], (2) where qrel i is a query explicitly containing the edited knowledge, and I denotes the indicator func-tion. 
+
+Generality ensures that the edited knowledge re-mains robustly accessible even when queries are paraphrased. This criterion evaluates the model’s ability to output the updated object o∗ 
+
+> i
+
+given a para-phrased prompt qgen i . It must satisfy the following condition: Generality (qgen i ) = I[f ∗(qgen i ) = o∗ 
+
+> i
+
+]. (3) 
+
+Locality ensures that edits do not inadvertently disrupt unedited knowledge. The updated model must precisely modify only the targeted informa-tion while preserving unrelated knowledge. Hence, the responses to original queries qloc j must remain unchanged before and after editing: Locality (qloc j ) = I[f ∗(qloc j ) = f (qloc j )] . (4) 
+
+4 LightEdit 
+
+The proposed method, LightEdit, is designed to minimize training overhead in lifelong knowledge editing scenarios. When a user provides a new fact (s, r, o ∗), it is stored in an external, edited knowledge memory G∗ in natural language form. Upon receiving a natural language query q, rele-vant entries are retrieved from this memory. To identify which retrieved facts are pertinent for an-swering the query, we introduce an edit-aware se-lector, a cross-encoder-based module that assesses the relevance between the query and each candi-date knowledge item, filtering out irrelevant entries and retaining only those closely aligned with the query intent. The selected knowledge is then com-bined with the query and provided as input to the LLM. To incorporate the updated knowledge ef-fectively during inference, we propose in-context decoding, which adjusts the model’s output by ex-plicitly downweighting the log probability of the first token in the original object o. This approach allows the model to suppress outdated knowledge and incorporate new information in a single for-ward pass, thereby enabling flexible and scalable inference without modifying model parameters. 
+
+4.1 Edit-Aware Selector 
+
+Our approach is inspired by the findings of Zheng et al. (2023), which highlight the potential of achieving effective knowledge editing purely through in-context learning. However, their method relies solely on editing-focused prompts, which may compromise the general performance of the underlying LLM. To address this, we propose a se-lective editing mechanism that allows the unedited model to handle queries unrelated to edited knowl-edge, while incorporating relevant knowledge only when necessary. Prior work typically selects knowl-edge based on semantic similarity (Han et al., 2023; Chen et al., 2024), but such methods often depend on shallow query-knowledge similarity matching and may retrieve irrelevant or omit essential infor-mation. To this end, we employ an edit-aware selec-tor that judges the relevance between a query and retrieved knowledge. We cast this decision as a natural language inference (NLI) task (Da-gan et al., 2005; Bowman et al., 2015): for each query-knowledge pair, the knowledge item serves as the premise and the query as the hypothesis, and the selector predicts entailment (relevant) vs. non-entailment (irrelevant). Concretely, the selec-tor utilizes a pre-trained cross-encoder language model to perform binary classification of the rel-evance of each query-knowledge pair. The input consists of a user query q and a set of knowledge items G∗ 
+
+> ret
+
+returned from an external retrieval sys-tem. G∗ 
+
+> ret
+
+comprises the top-k most relevant facts with respect to q, retrieved from the full edited memory G∗, and is defined as: 
+
+G∗ 
+
+> ret
+
+= {(si, r i, o ∗ 
+
+> i
+
+)}ki=1 . (5) The goal is to predict a binary relevance label 
+
+yi ∈ { 0, 1} for each candidate knowledge item 
+
+(si, r i, o ∗ 
+
+> i
+
+), indicating whether it is pertinent to the query q and should be included in response genera-tion. Each query–knowledge pair (q, (si, r i, o ∗ 
+
+> i
+
+)) is concatenated into a single input sequence in the for-mat: [CLS] q [SEP] (si, r i, o ∗ 
+
+> i
+
+) [SEP] , and fed into XLM-RoBERTa (Conneau et al., 2020). The out-put embedding corresponding to the [CLS] token, denoted h[CLS] , is used to compute the selection probability pi as follows: 
+
+pi = σ(w⊤h[CLS] + b), (6) where σ(·) is the sigmoid activation function, and 
+
+w and b are learnable parameters. The resulting probability pi reflects the likelihood that the knowl-edge item (si, r i, o ∗ 
+
+> i
+
+) is relevant to the query. A binary decision yi is made by thresholding pi at 0.5: if yi = 1 , the knowledge is included in the selected set G∗
+
+> select
+
+. If no items are selected (i.e., 
+
+G∗ 
+
+> select
+
+= ∅), the query is processed by the unedited LLM f without any modification. The edit-aware selector is trained in a super-vised learning, where each query–knowledge pair 
+
+(q, (si, r i, o ∗ 
+
+> i
+
+)) is annotated with a ground-truth la-bel yi indicating whether the knowledge item is relevant to the query. The training minimizes bi-nary cross-entropy loss: 
+
+L = −
+
+> n
+
+X
+
+> i=1
+
+[yi log pi + (1 − yi) log(1 − pi)] , (7) where n is the number of training samples. 
+
+4.2 In-Context Decoding 
+
+As shown in Figure 2, this work proposes a non-parametric, probability-based inference approach that dynamically constructs context reflecting new information, enabling more accurate and consistent reasoning in LLMs. Inspired by Li et al. (2023), our method steers model predictions by adjusting contextual information during inference, without retraining model parameters. While the original method aims to enhance target model preferences University of Michigan 
+
+> …
+> University
+> Illinois
+> …
+> What university did Watts Humphrey attend?
+> Context
+> University of Michigan
+> Query
+> …
+> University
+> Illinois
+> …
+> INPUT
+> What university did Watts Humphrey take part in?
+> LLM
+> …
+> University
+> Illinois
+> …
+> OUTPUT
+
+Figure 2: An illustration of in-context decoding. This figure depicts a knowledge conflict scenario where the original response (“Illinois Institute of Technology”) has a high probability. In-context decoding suppresses the influence of this prior knowledge, enabling the model to ultimately select the edited information (“Uni-versity of Michigan”) provided in the context. 
+
+by capturing likelihood differences across mod-els, our approach instead modulates the genera-tion probability based on the contrast between pre-existing and newly edited knowledge within a single model. This enables dynamic knowledge modification, allowing the model to incorporate new information without conflicting with existing knowledge. Specifically, we construct a context C includ-ing the set of new facts G∗
+
+> select
+
+. Given context C
+
+and query q, the validity of candidate response sequences x = x1: T is defined by the model’s au-toregressive probability. To guide the LLM toward generating responses aligned with the newly edited knowledge, we focus on adjusting the generation probability of the first token. Inspired by Turner et al. (2024), we aim to influence the model’s re-sponse trajectory by modulating the probability distribution of the first token x13. Given the con-text of a factual triple (s, r ), the model, based on its pre-trained knowledge, is likely to generate a response corresponding to the original object o,with the first token xo reflecting that answer. The generation probability in this case is defined as: 
+
+ℓprior = 1
+
+|G ∗
+
+> select
+
+|
+
+X
+
+> (s,r,o ∗)∈G ∗
+> select
+
+log p(xo | s, r ). (8) In contrast, with the updated context C and query 
+
+> 3
+
+An analysis of the first-token control strategy can be found in §5.3 and Appendix C.3. 
+
+q, the new context-based generation probability for the first token x1 is: 
+
+ℓnew = log p(x1 | C , q ). (9) We encourage the model to favor the newly pro-vided context over its pre-existing knowledge dur-ing inference by comparing these two generation probabilities. Specifically, we define the adjusted log probability to guide the model toward newly edited knowledge as: 
+
+log p′(x1) ≜ ℓnew − αℓ prior , (10) where α is a hyperparameter controlling the influ-ence of prior knowledge. In cases where the updated fact (s, r, o ∗) con-flicts with the model’s existing knowledge, the generation probability for the original object o
+
+may still remain high. However, by reducing its influence within the new context-based generation probability p(x1 | C , q ), the model can be flexibly guided to reconstruct its output around the updated knowledge. This approach mitigates knowledge conflicts solely by adjusting the probability dis-tribution of the first token, without requiring any parameter updates. This goes beyond simply pro-ducing the correct answer—it demonstrates that an LLM can dynamically restructure its reasoning by revising knowledge. 
+
+5 Experiments 
+
+5.1 Experimental Setting Datasets and Metrics We adopt three widely-used evaluation datasets from knowledge editing: ZSRE (Levy et al., 2017), Counterfact (Meng et al., 2023a), and RIPE (Cohen et al., 2024). Counter-fact contains counterfactual knowledge, statements with lower generation probabilities than factual knowledge, provided as new editing knowledge. ZSRE is a context-free question-answering dataset designed for zero-shot relation extraction. RIPE evaluates the ripple effects of injecting new knowl-edge into related facts. Models are evaluated based on accuracy for reliability, generality, and locality. Further details about the datasets and metrics can be found in Appendix B.1 and Appendix B.2. 
+
+Baselines The first baseline is the unedited model. FT fine-tunes all parameters of the base model. ROME (Meng et al., 2023a) is an optimization-based method tailored for single-editing tasks, while MEMIT (Meng et al., 2023b) ZSRE Counterfact RIPE                                                                                                                                     
+
+> Method AVG Reliability Generality Locality AVG Reliability Generality Locality AVG Reliability Generality Locality BASE 0.5182 0.2845 0.2700 1.0000 0.3377 0.0081 0.0050 1.0000 0.5222 0.2960 0.2706 1.0000 FT 0.0916 0.1399 0.1187 0.0161 0.0203 0.0560 0.0050 0.0000 0.0246 0.0352 0.0235 0.0152 ROME 0.0363 0.0418 0.0316 0.0354 0.0300 0.0480 0.0420 0.0000 0.0030 0.0058 0.0031 0.0000 MEMIT 0.0105 0.0000 0.0000 0.0316 0.0013 0.0000 0.0000 0.0040 0.0026 0.0000 0.0000 0.0079 GRACE 0.5185 0.2851 0.2705 1.0000 0.3567 0.0650 0.0050 1.0000 0.5474 0.3700 0.2721 1.0000
+> R-ROME 0.0362 0.0417 0.0315 0.0354 0.0043 0.0030 0.0100 0.0000 0.0084 0.0162 0.0085 0.0005 AlphaEdit 0.6220 0.9143 0.5725 0.3793 0.6295 0.7144 0.6409 0.5333 0.5835 0.9825 0.4820 0.2860 LTE 0.7934 0.9772 0.7129 0.6900 0.8753 0.9751 0.8556 0.7952 0.8980 0.9962 0.8629 0.8350 RECIPE 0.9380 0.9226 0.9162 0.9752 0.7664 0.8890 0.7995 0.6108 0.5473 0.5683 0.5053 0.5684 LightEdit 0.9664 0.9543 0.9483 0.9966 0.9296 0.9968 0.8141 0.9780 0.9818 0.9848 0.9625 0.9981
+
+Table 1: Comparison of methods on ZSRE, Counterfact, and RIPE. The highest score is bolded . AVG denotes the average of the Reliability, Generality, and Locality scores. 
+
+extends ROME to enable large-scale knowledge editing in a single pass. We incorporate strong base-lines specifically designed for lifelong editing sce-narios. GRACE (Hartvigsen et al., 2023b) trains only one layer, storing the edited parameters in memory and applying them when an edited query is encountered. R-ROME (Gupta et al., 2024) mini-mizes model collapse associated with ROME edits and enhances stability during sequential editing. AlphaEdit (Fang et al., 2025) resolves disturbances to existing knowledge caused by the perturbations in locating-then-edit methods using null-space con-straints. LTE (Jiang et al., 2024), a retrieval-based lifelong editing method, leverages fine-tuning to learn the knowledge editing task. RECIPE (Chen et al., 2024) employs p-tuning to mitigate overfit-ting induced by fine-tuning. 
+
+Implementation Details We conduct our ex-periments using LLaMA-3 (8B) (Llama Team, 2024) and GPT-J (6B) (Wang and Komatsuzaki, 2021) 4. The model checkpoints used are ‘meta-llama/Llama-3.1-8B’ and ‘EleutherAI/gpt-j-6B’, both accessible via HuggingFace 5. For the re-trieval step, we adopt ‘multi-qa-mpnet-base-dot-v1’ (Reimers and Gurevych, 2019) as the re-trieval model following Jiang et al. (2024). For the edit-aware selector, we utilize XLM-RoBERTa-large (Conneau et al., 2020) with the checkpoint ‘FacebookAI/xlm-roberta-large’, trained using the AdamW optimizer with a learning rate of 1e-5, 1 epoch, and batch size of 4. We randomly sample 1,000 instances from the training dataset for train-ing, which is conducted using an NVIDIA A100 GPU. The instruction for in-context decoding is provided in Table 7, and we set k = 5 and α = 0 .2.
+
+> 4
+
+Experiments performed with LLaMA-3 are replicated with GPT-J, detailed in Appendix C. 
+
+> 5
+
+https://huggingface.co/ 
+
+For LTE and RECIPE, we follow the training and evaluation protocols, including datasets and set-tings, as described in their papers. All other base-lines are trained and evaluated using the same con-figurations as EasyEdit (Wang et al., 2024a). 
+
+5.2 Main Result 
+
+Table 1 presents the performance of various meth-ods on 1,000 sequential knowledge editing across the ZSRE, Counterfact, and RIPE. The FT exhibits a significant decline in reliability and generality, highlighting that straightforward fine-tuning over-fits to training data, consequently introducing in-correct edits. Existing editing methods, such as ROME, MEMIT, GRACE, and AlphaEdit, demon-strate specialization in locality or accuracy but fail to achieve high performance across all three met-rics. GRACE maintains perfect locality and higher reliability than BASE, yet its limited generality re-stricts effectiveness for unseen queries. Conversely, ROME and MEMIT, which modify internal model representations locally, fail to generalize these edits effectively, resulting in poor performance in both reliability and generality. LTE and RECIPE, recent retrieval-based editing methods, achieve relatively higher performance. LTE emphasizes reliability and generality at the expense of locality. In con-trast, RECIPE demonstrates strong average perfor-mance on ZSRE but lacks consistency on RIPE and Counterfact. Unlike previous methods with clear trade-offs, LightEdit balances the three metrics through selective editing and probabilistic control. Its two components—the edit-aware selector and in-context decoding—play complementary roles: the former filters relevant knowledge to preserve locality, while the latter adjusts token probabilities to enhance reliability and generality. Figure 3 visualizes the performance trends of ZSRE 
+
+Counterfact 
+
+RIPE Figure 3: Scaling curves that represent editing performance based on the size of edits.                                                                                       
+
+> ZSRE Counterfact RIPE
+> αAVG Reliability Generality Locality AVG Reliability Generality Locality AVG Reliability Generality Locality 00.9312 0.8978 0.8978 0.9979 0.8978 0.9800 0.7305 0.9830 0.9528 0.9520 0.9077 0.9987
+> 0.1 0.9567 0.9366 0.9363 0.9971 0.9198 0.9805 0.7960 0.9830 0.9759 0.9857 0.9433 0.9987
+> 0.2 0.9664 0.9543 0.9483 0.9966 0.9361 0.9972 0.8180 0.9930 0.9818 0.9848 0.9625 0.9981 0.3 0.9644 0.9492 0.9476 0.9964 0.8947 0.9810 0.7250 0.9780 0.9763 0.9747 0.9557 0.9984 0.4 0.9523 0.9304 0.9300 0.9964 0.8857 0.9830 0.6960 0.9780 0.9609 0.9472 0.9376 0.9978 0.5 0.9142 0.8687 0.8777 0.9962 0.8732 0.9800 0.6625 0.9770 0.9333 0.9041 0.8979 0.9978
+
+Table 2: Comparison of the effect of the hyperparameter α.
+
+various methods across different steps. While exist-ing methods exhibit rapid performance degradation in reliability, generality, and locality with increas-ing steps, LightEdit maintains consistently high initial performance and demonstrates remarkable stability across all metrics, even as the number of editing steps increases. Whereas existing meth-ods excel primarily in specific metrics or bench-marks (e.g., GRACE’s locality or RECIPE’s perfor-mance on ZSRE), LightEdit consistently achieves balanced performance across all benchmarks and editing steps. This empirically confirms that the components effectively mitigate the typical trade-offs between reliability, generality, and locality. 
+
+5.3 Analysis Optimal Reduction Rate of the Original Knowl-edge Likelihood. Table 2 shows the effect of dif-ferent ratios of prior knowledge probability reduc-tion on editing performance. Generally, increasing the ratio gradually decreased reliability and gen-erality, while locality remained stable across all ratios. Notably, at a ratio of 0.2, the model main-tained high average performance and reliability with minimal reduction in generality, achieving av-erage accuracies of 0.9818 and 0.9664 on RIPE and ZSRE, respectively. Based on these results, we set α = 0 .2, confirming that this setting suf-ficiently improves the model’s ability to reflect edited knowledge without causing excessive knowl-edge loss. Figure 4: Performance variation according to the num-ber of retrieved knowledge.                      
+
+> EAS ICD AVG Reliability Generality Locality
+> ✓✓0.9664 0.9543 0.9483 0.9966
+> ✓0.9312 0.8978 0.8978 0.9979
+> ✓0.7541 0.8898 0.9112 0.4612 0.7615 0.9019 0.9223 0.4603
+
+Table 3: Ablation of LightEdit components. EAS is Edit-Aware Selector, and ICD is In-Context Decoding. 
+
+Performance Variation by Number of Retrieved Knowledge. We conduct additional experiments to analyze the performance variation according to the top-k value in the retrieval process. Experi-ments are performed with k ∈ { 0, 1, 5, 10 }, mea-suring each evaluation metric on ZSRE. Results shown in Figure 4 demonstrate significant perfor-mance degradation in all metrics when retrieval is not used ( k = 0 ). Applying retrieval from k = 1 
+
+enhances performance across all metrics, quickly reaching near-optimal levels. While a slight per-formance gain is observed when increasing k to 5, further increasing it to 10 does not yield meaning-ful additional improvements. Thus, we conclude that setting k = 5 provides optimal performance, and increasing the candidates further does not yield significant additional benefits. 
+
+Ablation Study. Table 3 presents the ablation re-sults assessing the contribution of each component. Removing EAS maintains reliability and generality at relatively high levels but significantly degrades locality, highlighting its key role in filtering query-relevant knowledge. Removing ICD preserves lo-cality but lowers reliability and generality, indi-cating its importance for generating reliable and generalized responses. When both components are removed, performance shows only minor improve-ment over the ICD-only setting. It remains signifi-cantly below that of LightEdit, suggesting that the absence of EAS allows irrelevant information to be incorporated during decoding. Overall, EAS and                               
+
+> Method Edit Time Inference Time Total Time
+> FT 0.3594 0.1847 0.5441 ROME 6.0958 0.1883 6.2841 MEMIT 11.7519 0.1919 11.9438 GRACE 4.3634 0.1939 4.5573 R-ROME 5.7078 0.1897 5.8975 AlphaEdit 13.8527 0.1844 14.0371 LTE 0.0000 0.2111 0.2111 RECIPE 0.0099 0.1944 0.2043 LightEdit 0.0000 0.2024 0.2024
+
+Table 4: Comparison of edit, inference, and total times measured in seconds. Darker cells indicate better (lower) time.                                                        
+
+> Method CSQA MMLU ANLI TriviaQA AVG
+> BASE 0.7715 0.6810 0.4661 0.5183 0.6092 FT 0.6298 0.5518 0.4657 0.0030 0.4126 ROME 0.1998 0.2686 0.3330 0.0002 0.2004 MEMIT 0.1835 0.2352 0.3521 0.0007 0.1929 GRACE 0.7715 0.6810 0.4661 0.5183 0.6092 R-ROME 0.2023 0.2558 0.3270 0.0002 0.1963 AlphaEdit 0.2031 0.3656 0.3247 0.0401 0.2334 LTE 0.7224 0.6171 0.3952 0.0461 0.4452 RECIPE 0.7715 0.6805 0.4640 0.5183 0.6086 LightEdit 0.7715 0.6801 0.4738 0.5179 0.6108
+
+Table 5: Performance comparison across multiple LLM datasets. 
+
+ICD are complementary: EAS ensures precise edit localization, while ICD enhances response quality, and their combination yields substantial gains over standard RAG. 
+
+Comparison of Editing and Inference Times. 
+
+We analyze editing efficiency by comparing edit-ing, inference, and total times. As shown in Table 4, existing editing methods require substantial editing time, with MEMIT and AlphaEdit taking approxi-mately 12 and 14 seconds. In contrast, LightEdit stores knowledge in memory without additional parameter modifications, achieving significantly faster editing. Although LightEdit inevitably incurs a slight delay during inference due to the necessity of determining whether editing is required, this step only involves a simple binary classification and thus adds minimal overhead. These results sug-gest that LightEdit is efficient for real-world appli-cations that demand on-the-fly knowledge editing. 
+
+Performance Comparison Across Various LLM Capability Benchmarks. We conduct additional experiments to ensure that knowledge editing does not compromise the various capabilities of LLMs. The evaluation is performed using the LLM har-Method AVG Reliability Generality Locality         
+
+> LightEdit (first token) 0.9664 0.9543 0.9483 0.9966
+> All tokens 0.9174 0.8477 0.9101 0.9944
+> Table 6: Comparison between controlling only the first token and all tokens on the ZSRE dataset.
+
+ness 6, and the metric is the F1 score. Further details on the benchmark are given in Appendix B.1. Ta-ble 5 shows significant performance drops after editing for ROME, MEMIT, and AlphaEdit, com-pared to the base model. In contrast, GRACE and RECIPE maintain performance levels comparable to the base model, while our method slightly im-proves upon the base model’s performance. These results demonstrate that LightEdit effectively per-forms knowledge editing without substantially im-pairing the model’s general capabilities. 
+
+Controlling Only the First Token. To maintain model fluency while effectively guiding generation, we control the probability distribution of only the first token. This strategy leverages the cascade ef-fect, where the first token influences the subsequent generation process. Extending control to all tokens was also examined to assess its effect on perfor-mance. As shown in Table 6, controlling all tokens resulted in noticeable performance degradation, in-dicating over-regularization. These results suggest that controlling only the first token achieves an effective balance between control strength and flu-ency. 
+
+6 Conclusion 
+
+In this study, we proposed LightEdit, a knowledge editing framework that enhances the reliability and scalability of LLMs in continually evolving knowl-edge environments. Unlike parameter modification-based methods prone to catastrophic forgetting and retrieval-based approaches with high train-ing costs and limited generalizability, LightEdit combines retrieval-based knowledge filtering with probabilistic decoding for efficient lifelong editing. Our approach minimizes retraining while maintain-ing high editing accuracy and demonstrates strong scalability across diverse datasets, underscoring its practicality for continuous LLM updates and maintenance. 
+
+> 6https://github.com/EleutherAI/ lm-evaluation-harness
+
+Limitations 
+
+While LightEdit demonstrates promising results in lifelong knowledge editing with minimal computa-tional overhead, several limitations remain. First, the edit-aware selector relies on a pre-trained cross-encoder (e.g., XLM-RoBERTa), which requires supervision and additional training. Although this cost is relatively small compared to full fine-tuning approaches, it still presents a barrier in truly zero-shot or resource-constrained environments. Moreover, as the number of edits increases, the amount of input grows accordingly, which may introduce additional inference overhead during the selection process. Second, while the proposed approach is evalu-ated across three benchmark datasets (ZSRE, Coun-terfact, RIPE), these datasets may not fully repre-sent the diversity of reasoning and factual incon-sistency found in complex real-world applications such as open-domain QA, scientific knowledge up-dates, or multilingual settings. Lastly, LightEdit’s reliance on adjusting log probabilities during decoding may be sensitive to hyperparameters, such as the suppression coeffi-cient. Although we show robustness at α = 0 .2,tuning this value across domains or models may re-quire nontrivial effort and domain-specific insight. 
+
+Ethical Statement 
+
+This work focuses on improving factual correct-ness and edit locality in large language models through continual knowledge editing. While our method enhances scalability and reduces training cost, we acknowledge that it does not directly ad-dress concerns related to fairness, safety, or the potential misuse of selective knowledge manipula-tion. The ability to suppress or alter model outputs based on external information raises essential ethi-cal considerations, including the risk of reinforcing biases or enabling automated misinformation. We believe future research should investigate robust safeguards and transparency mechanisms to ensure the responsible deployment of knowledge editing systems in sensitive or high-stakes applications. 
+
+Acknowledgments 
+
+This work was supported by the Commercial-ization Promotion Agency for R&D Outcomes (COMPA) grant funded by the Korea government (Ministry of Science and ICT) (2710086166). This work was supported by Institute for Information & communications Technology Promotion (IITP) grant funded by the Korea government (MSIT) (RS-2024-00398115, Research on the reliability and coherence of outcomes produced by Genera-tive AI). This work was supported by Institute of Information & communications Technology Plan-ning & Evaluation (IITP) under the Leading Gen-erative AI Human Resources Development (IITP-2026-RS-2024-00397085) grant funded by the Ko-rea government (MSIT). This work was supported by the Ministry of Education of the Republic of Korea and the National Research Foundation of Korea (NRF-2023S1A5C2A07095987). 
+
+References 
+
+Ibrahim M Alabdulmohsin, Behnam Neyshabur, and Xiaohua Zhai. 2022. Revisiting neural scaling laws in language and vision. Advances in Neural Informa-tion Processing Systems , 35:22300–22312. Samuel R. Bowman, Gabor Angeli, Christopher Potts, and Christopher D. Manning. 2015. A large anno-tated corpus for learning natural language inference. In Proceedings of the 2015 Conference on Empiri-cal Methods in Natural Language Processing , pages 632–642, Lisbon, Portugal. Association for Compu-tational Linguistics. Qizhou Chen, Dakan Wang, Taolin Zhang, Zaoming Yan, Chengsong You, Chengyu Wang, and Xiaofeng He. 2025. Uniedit: A unified knowledge editing benchmark for large language models. Preprint ,arXiv:2505.12345. Qizhou Chen, Taolin Zhang, Xiaofeng He, Dongyang Li, Chengyu Wang, Longtao Huang, and Hui Xue’. 2024. Lifelong knowledge editing for LLMs with retrieval-augmented continuous prompt learning. In 
+
+Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 13565–13580, Miami, Florida, USA. Association for Computational Linguistics. Roi Cohen, Eden Biran, Ori Yoran, Amir Globerson, and Mor Geva. 2024. Evaluating the ripple effects of knowledge editing in language models. Transactions of the Association for Computational Linguistics ,12:283–298. Alexis Conneau, Kartikay Khandelwal, Naman Goyal, Vishrav Chaudhary, Guillaume Wenzek, Francisco Guzmán, Edouard Grave, Myle Ott, Luke Zettle-moyer, and Veselin Stoyanov. 2020. Unsupervised cross-lingual representation learning at scale. In 
+
+Proceedings of the 58th Annual Meeting of the Asso-ciation for Computational Linguistics , pages 8440– 8451, Online. Association for Computational Lin-guistics. Ido Dagan, Oren Glickman, and Bernardo Magnini. 2005. The pascal recognising textual entailment challenge. In Machine learning challenges work-shop , pages 177–190. Springer. Junfeng Fang, Houcheng Jiang, Kun Wang, Yunshan Ma, Shi Jie, Xiang Wang, Xiangnan He, and Tat seng Chua. 2025. Alphaedit: Null-space constrained knowledge editing for language models. Preprint ,arXiv:2410.02355. Akshat Gupta, Sidharth Baskaran, and Gopala Anu-manchipalli. 2024. Rebuilding ROME : Resolving model collapse during sequential model editing. In 
+
+Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing , pages 21738–21744, Miami, Florida, USA. Association for Computational Linguistics. Xiaoqi Han, Ru Li, Hongye Tan, Wang Yuanlong, Qinghua Chai, and Jeff Pan. 2023. Improving se-quential model editing with fact retrieval. In Find-ings of the Association for Computational Linguis-tics: EMNLP 2023 , pages 11209–11224, Singapore. Association for Computational Linguistics. Thomas Hartvigsen, Swami Sankaranarayanan, Hamid Palangi, Yoon Kim, and Marzyeh Ghassemi. 2023a. Aging with grace: Lifelong model edit-ing with discrete key-value adaptors. Preprint ,arXiv:2211.11031. Tom Hartvigsen, Swami Sankaranarayanan, Hamid Palangi, Yoon Kim, and Marzyeh Ghassemi. 2023b. Aging with grace: Lifelong model editing with dis-crete key-value adaptors. Advances in Neural Infor-mation Processing Systems , 36:47934–47959. Adi Haviv, Ido Cohen, Jacob Gidron, Roei Schuster, Yoav Goldberg, and Mor Geva. 2023. Understand-ing transformer memorization recall through idioms. In Proceedings of the 17th Conference of the Euro-pean Chapter of the Association for Computational Linguistics , pages 248–264, Dubrovnik, Croatia. As-sociation for Computational Linguistics. Dan Hendrycks, Collin Burns, Steven Basart, Andy Zou, Mantas Mazeika, Dawn Song, and Jacob Stein-hardt. 2021. Measuring massive multitask language understanding. Preprint , arXiv:2009.03300. Chenhui Hu, Pengfei Cao, Yubo Chen, Kang Liu, and Jun Zhao. 2024. WilKE: Wise-layer knowledge ed-itor for lifelong knowledge editing. In Findings of the Association for Computational Linguistics: ACL 2024 , pages 3476–3503, Bangkok, Thailand. Associ-ation for Computational Linguistics. Zeyu Huang, Yikang Shen, Xiaofeng Zhang, Jie Zhou, Wenge Rong, and Zhang Xiong. 2023. Transformer-patcher: One mistake worth one neuron. Preprint ,arXiv:2301.09785. Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea Madotto, and Pascale Fung. 2023. Survey of hallu-cination in natural language generation. ACM Com-puting Surveys , 55(12):1–38. Albert Q Jiang, Alexandre Sablayrolles, Arthur Men-sch, Chris Bamford, Devendra Singh Chaplot, Diego de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile Saulnier, and 1 others. 2023. Mistral 7b. arXiv preprint arXiv:2310.06825 .Houcheng Jiang, Junfeng Fang, Ningyu Zhang, Guo-jun Ma, Mingyang Wan, Xiang Wang, Xiangnan He, and Tat seng Chua. 2025. Anyedit: Edit any knowledge encoded in language models. Preprint ,arXiv:2502.05628. Yuxin Jiang, Yufei Wang, Chuhan Wu, Wanjun Zhong, Xingshan Zeng, Jiahui Gao, Liangyou Li, Xin Jiang, Lifeng Shang, Ruiming Tang, Qun Liu, and Wei Wang. 2024. Learning to edit: Aligning LLMs with knowledge editing. In Proceedings of the 62nd An-nual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 4689– 4705, Bangkok, Thailand. Association for Computa-tional Linguistics. Mandar Joshi, Eunsol Choi, Daniel Weld, and Luke Zettlemoyer. 2017. TriviaQA: A large scale distantly supervised challenge dataset for reading comprehen-sion. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Vol-ume 1: Long Papers) , pages 1601–1611, Vancouver, Canada. Association for Computational Linguistics. Angeliki Lazaridou, Adhi Kuncoro, Elena Gribovskaya, Devang Agrawal, Adam Liska, Tayfun Terzi, Mai Gimenez, Cyprien de Masson d’Autume, Tomas Ko-cisky, Sebastian Ruder, and 1 others. 2021. Mind the gap: Assessing temporal generalization in neural language models. Advances in Neural Information Processing Systems , 34:29348–29363. Omer Levy, Minjoon Seo, Eunsol Choi, and Luke Zettlemoyer. 2017. Zero-shot relation extrac-tion via reading comprehension. arXiv preprint arXiv:1706.04115 .Xiang Lisa Li, Ari Holtzman, Daniel Fried, Percy Liang, Jason Eisner, Tatsunori Hashimoto, Luke Zettle-moyer, and Mike Lewis. 2023. Contrastive decod-ing: Open-ended text generation as optimization. In 
+
+Proceedings of the 61st Annual Meeting of the As-sociation for Computational Linguistics (Volume 1: Long Papers) , pages 12286–12312, Toronto, Canada. Association for Computational Linguistics. Xiang Lisa Li and Percy Liang. 2021. Prefix-tuning: Optimizing continuous prompts for generation. In 
+
+Proceedings of the 59th Annual Meeting of the Asso-ciation for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 1: Long Papers) , pages 4582– 4597, Online. Association for Computational Lin-guistics. Xiao Liu, Kaixuan Ji, Yicheng Fu, Weng Tam, Zhengx-iao Du, Zhilin Yang, and Jie Tang. 2022. P-tuning: Prompt tuning can be comparable to fine-tuning across scales and tasks. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers) , pages 61–68, Dublin, Ireland. Association for Computational Lin-guistics. Llama Team. 2024. The llama 3 herd of models. 
+
+Preprint , arXiv:2407.21783. Jun-Yu Ma, Hong Wang, Hao-Xiang Xu, Zhen-Hua Ling, and Jia-Chen Gu. 2025. Perturbation-restrained sequential model editing. Preprint ,arXiv:2405.16821. Kevin Meng, David Bau, Alex Andonian, and Yonatan Belinkov. 2023a. Locating and editing factual asso-ciations in gpt. Preprint , arXiv:2202.05262. Kevin Meng, Arnab Sen Sharma, Alex Andonian, Yonatan Belinkov, and David Bau. 2023b. Mass-editing memory in a transformer. Preprint ,arXiv:2210.07229. Eric Mitchell, Charles Lin, Antoine Bosselut, Christo-pher D Manning, and Chelsea Finn. 2022. Memory-based model editing at scale. In International Con-ference on Machine Learning , pages 15817–15831. PMLR. Yixin Nie, Adina Williams, Emily Dinan, Mohit Bansal, Jason Weston, and Douwe Kiela. 2020. Adversarial NLI: A new benchmark for natural language under-standing. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics ,pages 4885–4901, Online. Association for Computa-tional Linguistics. OpenAI. 2023. Gpt-4 technical report. Preprint ,arXiv:2303.08774. Artidoro Pagnoni, Vidhisha Balachandran, and Yulia Tsvetkov. 2021. Understanding factuality in abstrac-tive summarization with FRANK: A benchmark for factuality metrics. In Proceedings of the 2021 Con-ference of the North American Chapter of the Asso-ciation for Computational Linguistics: Human Lan-guage Technologies , pages 4812–4829, Online. As-sociation for Computational Linguistics. Yuval Pinter and Michael Elhadad. 2023. Emptying the ocean with a spoon: Should we edit models? In Find-ings of the Association for Computational Linguis-tics: EMNLP 2023 , pages 15164–15172, Singapore. Association for Computational Linguistics. Siyuan Qi, Bangcheng Yang, Kailin Jiang, Xiaobo Wang, Jiaqi Li, Yifan Zhong, Yaodong Yang, and Zilong Zheng. 2025. In-context editing: Learning knowledge from self-induced distributions. Preprint ,arXiv:2406.11194. Nils Reimers and Iryna Gurevych. 2019. Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Process-ing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP) ,pages 3982–3992, Hong Kong, China. Association for Computational Linguistics. Arnab Sen Sharma, David Atkinson, and David Bau. 2024. Locating and editing factual associations in mamba. Preprint , arXiv:2404.03646. Haizhou Shi, Zihao Xu, Hengyi Wang, Weiyi Qin, Wenyuan Wang, Yibin Wang, Zifeng Wang, Sayna Ebrahimi, and Hao Wang. 2024. Continual learning of large language models: A comprehensive survey. 
+
+Preprint , arXiv:2404.16789. Anton Sinitsin, Vsevolod Plokhotnyuk, Dmitriy Pyrkin, Sergei Popov, and Artem Babenko. 2020. Editable neural networks. arXiv preprint arXiv:2004.00345 .Alon Talmor, Jonathan Herzig, Nicholas Lourie, and Jonathan Berant. 2019. CommonsenseQA: A ques-tion answering challenge targeting commonsense knowledge. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Tech-nologies, Volume 1 (Long and Short Papers) , pages 4149–4158, Minneapolis, Minnesota. Association for Computational Linguistics. Chenmien Tan, Ge Zhang, and Jie Fu. 2024. Massive editing for large language models via meta learning. 
+
+Preprint , arXiv:2311.04661. Alexander Matt Turner, Lisa Thiergart, Gavin Leech, David Udell, Juan J. Vazquez, Ulisse Mini, and Monte MacDiarmid. 2024. Steering language models with activation engineering. Preprint ,arXiv:2308.10248. Ben Wang and Aran Komatsuzaki. 2021. GPT-J-6B: A 6 Billion Parameter Autoregressive Lan-guage Model. https://github.com/kingoflolz/ mesh-transformer-jax .Peng Wang, Ningyu Zhang, Bozhong Tian, Zekun Xi, Yunzhi Yao, Ziwen Xu, Mengru Wang, Shengyu Mao, Xiaohan Wang, Siyuan Cheng, Kangwei Liu, Yuansheng Ni, Guozhou Zheng, and Huajun Chen. 2024a. EasyEdit: An easy-to-use knowledge editing framework for large language models. In Proceed-ings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations) , pages 82–93, Bangkok, Thailand. Association for Computational Linguistics. Song Wang, Yaochen Zhu, Haochen Liu, Zaiyi Zheng, Chen Chen, and Jundong Li. 2024b. Knowledge editing for large language models: A survey. ACM Computing Surveys , 57(3):1–37. Jiakuan Xie, Pengfei Cao, Yuheng Chen, Yubo Chen, Kang Liu, and Jun Zhao. 2024. Memla: Enhancing multilingual knowledge editing with neuron-masked low-rank adaptation. Preprint , arXiv:2406.11566. Yunzhi Yao, Peng Wang, Bozhong Tian, Siyuan Cheng, Zhoubo Li, Shumin Deng, Huajun Chen, and Ningyu Zhang. 2023. Editing large language models: Prob-lems, methods, and opportunities. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing , pages 10222–10240, Singapore. Association for Computational Linguis-tics. Ningyu Zhang, Yunzhi Yao, Bozhong Tian, Peng Wang, Shumin Deng, Mengru Wang, Zekun Xi, Shengyu Mao, Jintian Zhang, Yuansheng Ni, Siyuan Cheng, Ziwen Xu, Xin Xu, Jia-Chen Gu, Yong Jiang, Pengjun Xie, Fei Huang, Lei Liang, Zhiqiang Zhang, and 3 others. 2024. A comprehensive study of knowl-edge editing for large language models. Preprint ,arXiv:2401.01286. Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen Zhang, Junjie Zhang, Zican Dong, Yifan Du, Chen Yang, Yushuo Chen, Zhipeng Chen, Jinhao Jiang, Ruiyang Ren, Yifan Li, Xinyu Tang, Zikang Liu, and 3 others. 2025. A survey of large language models. 
+
+Preprint , arXiv:2303.18223. Ce Zheng, Lei Li, Qingxiu Dong, Yuxuan Fan, Zhiyong Wu, Jingjing Xu, and Baobao Chang. 2023. Can we edit factual knowledge by in-context learning? In Proceedings of the 2023 Conference on Empiri-cal Methods in Natural Language Processing , pages 4862–4876, Singapore. Association for Computa-tional Linguistics. 
+
+A More Related Work 
+
+Recent approaches to sequential knowledge editing draw on memory-based methods but typically in-cur high training costs. We introduce a lightweight framework that reduces these costs while improv-ing reliability, thereby overcoming the limitations of memory-based techniques designed for single edits. For example, IKE (Zheng et al., 2023) tar-gets the single-edit setting and induces edits via few-shot prompting, which constrains its scalabil-ity to iterative or large-scale knowledge updates. In contrast, LightEdit applies training-free in-context decoding at inference time to amplify the proba-bility of edited knowledge while suppressing out-dated knowledge, thereby enabling continual edit-ing without requiring model parameter updates. SERAC (Mitchell et al., 2022), by comparison, re-quires a separate counterfactual generator and a scope classifier, leading to substantial model over-head and training expense. In contrast, LightEdit operates through training-free probabilistic control of the target LLM, delivering a lightweight frame-work. {knowledge 1} ... {knowledge i} Please apply this information to the follow-ing sentence instead of the actual facts. You must use this information to answer the fol-lowing questions with one token. {query}         
+
+> Table 7: An example of the instruction used for in-context decoding.
+> Dataset Train Samples Test Samples
+> ZSRE 162,555 19,009 Counterfact 10,000 10,000 RIPE 3,000 1,388
+> Table 8: Dataset statistics for ZSRE, Counterfact, and RIPE.
+
+B More Implementation Details 
+
+B.1 Datasets Details 
+
+We evaluate the overall performance of continual knowledge editing using three benchmark datasets: ZSRE (Levy et al., 2017), Counterfact (Meng et al., 2023a), and RIPE (Cohen et al., 2024). Table 8 summarizes key statistics of these datasets. To en-sure consistency and fair comparison across set-tings, we randomly sample 1,000 instances from the test set for evaluation, considering the limited size of the RIPE dataset. In addition to assessing the general capabilities of LLMs beyond knowledge editing, we utilize four representative benchmarks: 
+
+CSQA (Talmor et al., 2019) is a multiple-choice benchmark designed to evaluate commonsense rea-soning abilities. Questions are based on Concept-Net and typically require general world knowledge and reasoning skills. 
+
+MMLU (Hendrycks et al., 2021) includes ques-tions from 57 diverse domains, covering academic and professional topics. Each question is four-choice multiple-choice and evaluates specialized knowledge and problem-solving ability. 
+
+ANLI (Nie et al., 2020) is a natural language in-ference dataset comprising examples generated by humans specifically to challenge language models.       
+
+> Dataset ZSRE Counterfact RIPE Accuracy 1.0000 0.8325 0.9616
+> Table 9: Binary classification accuracy of edit-aware selector on each dataset.
+
+It consists of three rounds (R1, R2, R3) of increas-ing difficulty and is designed to test a model’s logical reasoning and generalization capabilities. 
+
+TriviaQA (Joshi et al., 2017) is a large-scale open-domain question answering dataset, built from complex fact-based questions paired with ev-idence from Wikipedia documents. It measures a model’s ability to perform contextual retrieval and factual answer generation. 
+
+B.2 Metrics Details 
+
+We follow the evaluation metrics used in ZSRE, Counterfact, and RIPE, as defined by Chen et al. (2024). To assess the success of knowledge editing, we adopt three core criteria: reliability, generality, and locality. 
+
+Reliability measures whether the edited model produces the correct, updated answer for queries explicitly targeting the modified knowledge. That is, it evaluates whether the intended edit has been successfully reflected in the model’s output. For example, given the query “Who is the president of Mexico?” denoted as qrel i , and assuming the updated answer is “Claudia Sheinbaum”, the re-liability is 1 if the model outputs the correct new object. Formally, reliability is defined as: 
+
+1
+
+|Xrel |
+
+> |Xrel |
+
+X
+
+> i=1
+
+I(f ∗(qrel i ) = o∗ 
+
+> i
+
+), (11) where Xrel is the set of queries used for evaluating reliability, f ∗ denotes the edited model, and o∗ 
+
+> i
+
+is the correct updated answer. 
+
+Generality assesses whether the edit is consis-tently reflected across semantically equivalent vari-ations of the edited query. In other words, the model should continue to generate the correct up-dated answer even when the question is rephrased. For example, given a paraphrased query qgen i , such as “Who currently leads Mexico?”, the model should still return the updated answer “Claudia Sheinbaum” to achieve high Generality. This met-ZSRE Counterfact RIPE                                                                                                                                     
+
+> Method AVG Reliability Generality Locality AVG Reliability Generality Locality AVG Reliability Generality Locality BASE 0.4790 0.2215 0.2156 1.0000 0.3351 0.0031 0.0022 1.0000 0.4920 0.2411 0.2348 1.0000 FT 0.3116 0.4879 0.4129 0.0340 0.1546 0.3275 0.1175 0.0189 0.4792 0.6443 0.5855 0.2077 ROME 0.0120 0.0191 0.0170 0.0000 0.0003 0.0010 0.0000 0.0000 0.0046 0.0054 0.0031 0.0054 MEMIT 0.8005 0.8534 0.7927 0.7555 0.6787 0.9579 0.4460 0.6323 0.4251 0.5229 0.3418 0.4107 GRACE 0.5249 0.3586 0.2161 1.0000 0.3558 0.0640 0.0033 1.0000 0.5160 0.3108 0.2372 1.0000
+> R-ROME 0.0404 0.0156 0.0148 0.0909 0.0510 0.0640 0.0890 0.0000 0.0049 0.0063 0.0058 0.0025 AlphaEdit 0.6597 0.9943 0.6621 0.3225 0.8563 0.9307 0.7477 0.8906 0.7307 0.9930 0.4090 0.7900 LTE 0.7831 0.9819 0.6978 0.6695 0.8787 0.9775 0.8770 0.7815 0.9007 0.9976 0.8748 0.8296 RECIPE 0.9612 0.9459 0.9377 1.0000 0.7482 0.7565 0.6830 0.8050 0.4877 0.5813 0.4834 0.3983 LightEdit 0.9776 0.9939 0.9405 0.9984 0.8993 0.9910 0.7320 0.9750 0.9864 0.9942 0.9661 0.9988
+
+Table 10: Comparison of methods on ZSRE, Counterfact, and RIPE using GPT-J. 
+
+ric is formally defined as: 
+
+1
+
+|Xgen |
+
+> |Xgen |
+
+X
+
+> i=1
+
+I(f ∗(qgen i ) = o∗ 
+
+> i
+
+), (12) where Xgen denotes the set of paraphrased queries used to evaluate generality. 
+
+Locality evaluates whether the edit has left unre-lated knowledge intact. For queries unrelated to the edited fact, the model’s responses should remain unchanged before and after the edit. For example, if the query is “What is the capital of France?”—a fact that has not been edited—the model should continue to answer “Paris” both before and after the edit. Any deviation indicates a violation of Lo-cality. The metric is formally defined as: 
+
+1
+
+|Xloc |
+
+> |Xloc |
+
+X
+
+> i=1
+
+I(f ∗(qloc i ) = f (qloc i )) , (13) where Xloc denotes the set of locality-checking queries, f is the original model, and f ∗ is the edited model. 
+
+B.3 Fine-tuning Details of Edit-Aware Selector 
+
+Edit-aware selector is a binary classifier based on XLM-RoBERTa, fine-tuned to determine whether a given knowledge edit candidate should be applied. For fine-tuning, we randomly sampled a total of 1,000 instances from the publicly available training sets of ZSRE, Counterfact, and RIPE. All samples were selected in a reproducible manner with a fixed random seed (random_state = 42), and no overlap was allowed between training and evaluation sam-ples. As shown in Table 9, the model performance was evaluated on 1,000 unseen samples from each dataset, using binary classification accuracy as the evaluation metric. The perfect accuracy on ZSRE suggests that the signal for edit applicability is rela-tively clear in this dataset. In contrast, Counterfact shows lower accuracy due to the greater diversity of factual inversion cases, while RIPE maintains high performance. These results confirm that our module can consistently distinguish whether an edit should be applied across diverse knowledge editing datasets. 
+
+C More Experimental Results 
+
+C.1 Main Result using GPT-J 
+
+In this section, we comprehensively compare and analyze the performance of various knowledge edit-ing methods using GPT-J as the base model. Ta-ble 10 reports the average scores and the three core evaluation metrics, while Figure 5 visualizes how each method’s performance evolves across editing steps, highlighting their robustness and generaliza-tion capabilities. As shown in Table 10, LightEdit achieves the highest average performance across all bench-marks and metrics. Notably, it consistently main-tains a locality score above 0.99 on all datasets, in-dicating minimal interference with unedited knowl-edge. This trend is further supported by Figure 5, where LightEdit demonstrates remarkable stability across all editing steps. In contrast, existing meth-ods such as ROME, FT, and MEMIT show steep declines in reliability and generality as the number of editing steps increases. For instance, in ZSRE, LightEdit sustains its initial reliability throughout the sequence, whereas other methods either start with low performance or deteriorate rapidly over time. Moreover, while certain baselines specialize in isolated metrics, such as GRACE achieving per-ZSRE 
+
+Counterfact 
+
+RIPE Figure 5: Scaling curves that represent editing performance based on the size of edits using GPT-J.                                                                                       
+
+> ZSRE Counterfact RIPE
+> αAVG Reliability Generality Locality AVG Reliability Generality Locality AVG Reliability Generality Locality 0.0 0.8473 0.9420 0.6190 0.9810 0.9145 0.9442 0.8013 0.9981 0.9556 0.9313 0.9368 0.9988
+> 0.1 0.8897 0.9820 0.7080 0.9790 0.9657 0.9883 0.9107 0.9981 0.9880 0.9981 0.9672 0.9988
+> 0.2 0.8993 0.9910 0.7320 0.9750 0.9776 0.9939 0.9405 0.9984 0.9864 0.9942 0.9661 0.9988
+> 0.3 0.9027 0.9900 0.7430 0.9750 0.9708 0.9877 0.9273 0.9975 0.9790 0.9827 0.9557 0.9985 0.4 0.8967 0.9910 0.7240 0.9750 0.9505 0.9688 0.8865 0.9962 0.9540 0.9314 0.9329 0.9977 0.5 0.8883 0.9860 0.7040 0.9750 0.9155 0.9224 0.8281 0.9959 0.9031 0.8342 0.8775 0.9977
+
+Table 11: Comparison of the effect of the hyperparameter α using GPT-J. 
+
+fect locality or RECIPE being highly optimized for ZSRE, LightEdit uniquely balances all three metrics, effectively overcoming their typical trade-offs. This is attributed to its core components: the edit-aware selector, which ensures precise knowl-edge targeting, and in-context decoding, which preserves original knowledge without parameter updates. These results clearly demonstrate that LightEdit offers superior accuracy and robustness compared to parameter-modifying and retrieval-based approaches. 
+
+C.2 Ablation Study on α using GPT-J 
+
+Table 11 presents a quantitative analysis of how the editing performance of LightEdit varies with dif-ferent values of the key hyperparameter α, which controls the degree of suppression applied to the original knowledge probability. As α increases, the suppression generally becomes stronger. Over-all, α = 0 .2 yields the best balance across all three benchmarks, demonstrating LightEdit’s abil-ity to effectively manage trade-offs between met-rics through probability-based control. In contrast, setting α too low or too high tends to degrade per-formance in either generality or reliability, high-lighting the critical role of proper hyperparameter tuning in achieving optimal performance. 
+
+C.3 Semantic Space Shift Before and After In-Context Decoding 
+
+Figure 6 visualizes how the token probability distri-butions change before and after applying in-context decoding. For each generated token t, we extract the embeddings of the top-10 most probable to-Figure 6: Visualization of next-token distributions before and after applying in-context decoding. Each panel corresponds to one generated token ( t = 1 , . . . , 10 ), where blue points represent the Before distribution and orange points represent the After distribution. Point size is proportional to the square root of token probability, and the title of each panel indicates the Top-1 token for both sides (Before / After).             
+
+> #Edits AVG Reliability Generality Locality
+> 5,000 0.9633 0.9538 0.9417 0.9944 1,000 0.9664 0.9543 0.9483 0.9966
+
+Table 12: Performance comparison when increasing the number of edits (#Edits). 
+
+kens from the model’s embedding space, project them into two dimensions using PCA. In this ex-periment, we edited the fact in the prompt “The na-tionality of Antoine Laurent Dantan is?” to set the new target as German . We then queried a seman-tically different expression, “Is Antoine Laurent Dantan’s nationality?” , to evaluate the model’s generalization after editing. Without in-context de-coding, the model failed to incorporate the updated knowledge and continued to output the original an-swer, French . The embedding distributions show that, at early decoding steps, the probability mass is widely dispersed and does not focus toward the correct candidate. In contrast, with in-context de-coding applied, the center of the distribution shifts toward “German” from the very first token step. This indicates that in-context decoding realigns the semantic space at the first decoding step, allowing the updated knowledge to be directly reflected in the subsequent token prediction process. In sum-mary, in-context decoding does not merely adjust token probabilities; It modifies the embedding dis-tribution itself at the first token step, guiding the model to integrate the newly edited knowledge se-mantically and converge to the correct answer.                          
+
+> Method #Edits AVG Reliability Generality Locality
+> LightEdit 10.9892 0.9872 0.9809 0.9994
+> LightEdit 10 0.9892 0.9872 0.9809 0.9994
+> IKE 10.8342 0.9980 0.8487 0.6559 IKE 10 0.8236 0.9969 0.7789 0.6949
+
+Table 13: Comparison between IKE and LightEdit on the ZSRE dataset under limited context length. 
+
+C.4 Performance Degradation When Increasing the Number of Edits 
+
+Our proposed method shows minimal performance degradation even when a large number of edits are applied, substantially reducing the need for retrain-ing. Table 12 reports the results as the number of edits increases up to 5,000. As shown, the perfor-mance drop is negligible, demonstrating that the model maintains stable accuracy and low sensitiv-ity to the scale of applied edits. 
+
+C.5 Comparison with IKE 
+
+IKE (Zheng et al., 2023) is an in-context learning-based knowledge editing method that performs single-edit operations by injecting new informa-tion into the prompt. Our approach differs in both scalability and mechanism. IKE relies on long in-put contexts to represent new knowledge, which inherently limits its applicability when the number of edits increases. In contrast, LightEdit performs lightweight editing through explicit edit-aware se-lection and controlled decoding, enabling efficient handling of up to 1,000 edits without prompt length constraints. To further examine this distinction, we evaluated IKE under restricted context settings on Method AVG Reliability Generality Locality                                     
+
+> BASE 65.16 43.68 51.81 100.00 FT 87.51 100.00 69.00 93.54 IKE 87.95 93.54 89.52 80.79 ROME 74.10 75.81 51.38 95.12 SERAC 88.96 98.96 85.66 84.25 T-Patcher 68.71 73.03 49.83 83.27 GRACE 83.93 99.92 51.89 99.97
+> AlphaEdit 79.30 84.09 55.10 98.72 LightEdit 91.65 99.32 83.27 92.36
+
+Table 14: Evaluation Results on UniEdit. 
+
+the ZSRE dataset. As shown in Table 13, IKE demonstrates lower generality and locality com-pared to LightEdit, indicating that few-shot in-context editing struggles to maintain accuracy and consistency when scaling to multiple edits. These results highlight that LightEdit achieves scalable and stable knowledge editing beyond the limita-tions of ICL-based methods. 
+
+C.6 Evaluation on UniEdit Benchmark 
+
+We further evaluate LightEdit on the UniEdit benchmark (Chen et al., 2025), which provides a broader testbed covering diverse domains and eval-uation criteria. Table 14 reports the results. LightE-dit achieves the best overall average performance among all compared methods, obtaining an aver-age score of 91.65. In particular, LightEdit shows consistently strong and well-balanced performance across all three editing metrics. We emphasize that these results are out-of-distribution evalua-tions. The edit-aware selector used in LightEdit was trained only on ZSRE, Counterfact, and RIPE, without any training on UniEdit. Despite this set-ting, LightEdit still generalizes well and outper-forms all baselines in terms of average perfor-mance. 
+
+C.7 Case Study 
+
+Table 15 presents two representative examples that highlight the behavioral differences between RECIPE and LightEdit, in terms of generality and locality. In the Generality example, the retrieved ev-idence correctly contains the updated knowledge. However, even though RECIPE successfully re-trieves this information, it fails to reflect the newly edited knowledge in its final response, continuing to output the outdated answer soprano . In contrast, LightEdit incorporates the revised knowledge and correctly answers bass , demonstrating its ability         
+
+> Generality Example
+> Question What was Salvatore Papaccio’s range like? Edited Knowledge What type of tone does Salvatore Papaccio sing in? →bass Target Answer bass RECIPE soprano
+> LightEdit bass
+> Locality Example
+> Question ASP.NET MVC Framework was created by Edited Knowledge –Target Answer Microsoft RECIPE Netherlands
+> LightEdit Microsoft
+
+Table 15: Case study illustrating the difference between RECIPE and LightEdit. 
+
+to integrate edited information while maintaining general consistency. In the Locality example, the retrieved corpus includes irrelevant information – “The headquarter of WaterAid is located in →
+
+Netherlands” . RECIPE fails to filter out this un-related content and incorrectly generates the an-swer Netherlands . By comparison, LightEdit ef-fectively suppresses such noisy retrievals and out-puts the correct answer Microsoft , showing im-proved locality and robustness to spurious retrieved facts.
